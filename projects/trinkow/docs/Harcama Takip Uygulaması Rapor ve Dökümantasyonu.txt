@@ -1,0 +1,78 @@
+﻿Yeni Nesil Davranışsal Finans ve Harcama Takip Uygulaması Fizibilite Raporu
+Kavramsal Çerçeve ve Problemin Tanımı
+Modern tüketim alışkanlıkları, fiziksel nakdin yerini büyük oranda dijital cüzdanlara, temassız kredi kartlarına ve pürüzsüz (frictionless) ödeme sistemlerine bırakmasıyla geri döndürülemez bir dönüşüm geçirmiştir. Bu teknolojik evrim, işlem hızını ve tüketici kolaylığını maksimize ederken, bireylerin kendi finansal durumları üzerindeki bilişsel kontrollerini ve harcama farkındalıklarını derinden zedelemiştir. Tüketiciler, kira veya taşıt kredisi gibi büyük ve sabit giderlerin farkında olsalar da, günlük yaşantı içerisinde yapılan rutin ve küçük ölçekli harcamaların kümülatif etkisini çoğunlukla gözden kaçırmaktadır. Günde 125 TL tutarında alınan bir veya iki paket sigara, dışarıda yenilen standart öğle yemekleri, plansız kahve harcamaları veya anlık uygulama içi satın alımlar, mikro-harcama (micro-spending) veya literatürdeki popüler adıyla "Latte Faktörü" (Latte Factor) olarak bilinen sinsi bir bütçe sızıntısına dönüşmektedir1. Tıpkı gün içinde fark edilmeden tüketilen küçük atıştırmalıkların toplam kalori miktarını aşarak uzun vadede kilo artışına yol açması gibi, bu küçük meblağlar da aylık ve yıllık bazda devasa finansal yüklere dönüşmektedir.
+Bireylerin bu tür bir uygulamayı indirme motivasyonları da büyük çeşitlilik göstermektedir. Bir kullanıcı yalnızca günlük harcamalarının nereye gittiğini görmek için uygulamayı indirebileceği gibi, birikmiş bir borcunu eritmek veya gelecekteki yatırımları için bütçe ayırmak amacıyla da sisteme dahil olabilir. Oyunlaştırılmış finansal uygulamalarda bu farklı motivasyonlar; "Gider Takipçisi", "Tasarruf Oluşturucu" veya "Borç Avcısı" gibi farklı kullanıcı seviyeleri ve özelleştirilmiş hedefler olarak kişiselleştirilebilmektedir3.
+Bu fizibilite raporu, bir "kalori takip uygulaması" mantığıyla çalışan, kullanıcının finansal farkındalığını artırmayı, dürtüsel harcamalarını kontrol altına almayı hedefleyen yeni nesil bir mobil uygulamanın teknik, ticari ve psikolojik temellerini analiz etmektedir.
+Tüketici Psikolojisi ve Davranışsal Finans Dinamikleri
+Salt matematiksel bir muhasebe defteri olarak tasarlanan finansal uygulamalar, insan psikolojisini göz ardı ettikleri için genellikle uzun vadeli kullanıcı etkileşimi yaratmada başarısız olurlar. Geliştirilecek uygulamanın bir "davranışsal müdahale" aracına dönüşebilmesi için temel psikolojik kuramların ürün mimarisine entegre edilmesi gerekmektedir.
+Zihinsel Muhasebe (Mental Accounting)
+Zihinsel Muhasebe teorisi, insanların parayı tamamen birbirinin yerine geçebilir bir varlık olarak görmediğini; paranın kaynağına, saklama biçimine ve harcama niyetine göre zihinlerinde farklı hesaplara böldüğünü ortaya koyar4. Uygulamanın temel değeri, kullanıcının bu zihinsel hesaplarını şeffaf bir arayüzle görselleştirerek, her bir kategorinin kendi içindeki limitlerini aşmasını engellemesi olmalıdır.
+Ödeme Acısı (Pain of Paying) ve Harcama Yanılsaması (Spendception)
+"Ödeme Acısı" (Pain of Paying) kavramı, insanların para harcarken hissettikleri nörolojik ve psikolojik rahatsızlığı ifade eder6. İnsanlar doğaları gereği kayıptan kaçınma eğilimindedir ve fiziksel nakit kullanıldığında bu acı en yüksek seviyede hissedilir6. Dijitalleşmenin yarattığı uyuşma hali olan "Spendception" (Harcama Yanılsaması), tüketicilerin finansal kayıp hissini yitirmesini açıklar2. Geliştirilecek olan kalori takibi benzeri uygulamanın en büyük misyonu, bu "ödeme acısını" anlık farkındalık yaratarak yeniden inşa etmektir.
+"Kalori Takibi" Analojisi ve Bilişsel Sınırlandırma
+Kalori takip uygulamaları (örneğin MyFitnessPal), gün içindeki "kalan kalori hakkını" göstererek davranışı kısıtlar8. Bir kalori sayacının ilerleme çubuğu nasıl yeme davranışını kısıtlıyorsa, günlük bütçe çubukları da kullanıcının o gün yapacağı bir sonraki harcamayı sorgulatır.
+Küresel ve Yerel Pazar Analizi (Rakip İncelemesi)
+Kişisel Finans Yönetimi pazarı, farklı felsefelere sahip uygulamalarla doludur.
+Küresel Oyuncular ve Temel Farklılıklar
+
+
+Uygulama
+	Finansal Felsefe ve Temel Özellikler
+	Fiyatlama Stratejisi
+	Hedef Kitle ve Kullanım Senaryosu
+	Tüketici Memnuniyeti (CSI)
+	YNAB
+	"Her dolara bir iş ver" prensibiyle sıfır tabanlı bütçeleme10.
+	~$99/Yıl
+	Yüksek finansal disiplin arayanlar, borç kapatmak isteyenler11.
+	7.1 / 10
+	Copilot Money
+	Yapay zeka destekli otomatik kategorizasyon, pürüzsüz arayüz10.
+	~$95/Yıl
+	Pasif takip isteyen, estetiğe önem verenler.
+	7.1 / 10
+	Monarch Money
+	Tüm hesapları tek ekranda toplayan dashboard. Aile paylaşımı10.
+	~$99.99/Yıl
+	Aileler, ortak hesap yöneten veri tutkunları.
+	7.1 / 10
+	Wallet
+	Gider/gelir takibi, çoklu para birimi15.
+	Freemium
+	Esnek raporlama isteyen küresel kullanıcılar.
+	N/A
+	Fortune City
+	Harcama takibini "şehir inşa etme" simülasyonuna dönüştürür16.
+	Freemium
+	Oyunlaştırma sevenler, düşük baskılı takip3.
+	N/A
+	Pazarda ya çok katı bir disiplin isteyen uygulamalar (YNAB) ya da çok yüzeysel kalan oyunlar vardır. İkisinin ortasında bir "kalori takibi" hibrit yapısı pazarda ciddi bir boşluğu dolduracaktır.
+Oyunlaştırma (Gamification), Alışkanlık Tasarımı ve Manuel Etkileşim
+Kullanıcının talep ettiği sistemin kalbinde alışkanlık yaratma yatar.
+Seriler (Streaks), İlerleme Çubukları ve Günlük Görevler
+Uygulamayı bir angaryadan çıkarıp alışkanlığa dönüştürmek için manuel veri giriş süreci oyunlaştırılmalıdır. Manuel harcama eklemek "Günlük Görev" (Daily Mission) haline getirilerek, örneğin harcama girildiğinde 10 XP, bütçe aşılmadığında 25 XP gibi ödüller verilmelidir. Duolingo'nun kullandığı "streak" (zinciri kırmama) mekanizmaları bu noktada sadakati artıracaktır18.
+İlk Karşılama (Onboarding), Aşamalı Profilleme ve Niyet Tespiti
+Kullanıcının uygulamayı neden indirdiğini (yatırım, borç ödeme, günlük takip) anlamak uygulamanın kişiselleştirilmesi için şarttır. Ancak yeni bir kullanıcıyı uzun sorularla yormak, daha uygulamayı deneyimlemeden silmesine (churn) neden olur20. Bu aşamada "Aşamalı Profilleme" (Progressive Profiling) ve akıllı indikatör (gösterge) tasarımları kullanılmalıdır.
+* Sürtünmesiz (Frictionless) Anketler: İlk girişte kullanıcıya en fazla 3 soru sorulmalıdır. Açık uçlu metin kutuları yerine, büyük ve çekici ikonlarla desteklenmiş çoktan seçmeli butonlar (Örn: "Amacınız nedir? 🚀 Yatırım İçin Bütçe Yaratmak / 🛡️ Borç Kapatmak / 📊 Sadece Takip Etmek") sunulmalıdır21.
+* Aşamalı Profilleme (Progressive Profiling): Kullanıcıyı sıkmamak adına her şey 1. günde sorulmamalıdır21. Ana niyet (hedef) ilk kayıtta alınırken; kullanıcının aylık gelir düzeyi, taksit alışkanlıkları veya bildirim tercihleri gibi detaylar, uygulama kullanıldıkça 2. veya 3. günlerde bağlama uygun olarak (örneğin ilk tasarrufunu yaptığında) karşısına çıkarılmalıdır20.
+* Anında Özelleştirme (Immediate Value): Kullanıcı hedefini seçtiği anda, sistem ona bu bilginin boşa gitmediğini hissettirmelidir21. Örneğin "Borç Ödeme"yi seçen bir kullanıcının panosu (dashboard) anında "Borç Avcısı Modu"na geçmeli ve bu hedefe uygun bir oyunlaştırma teması yüklenmelidir21.
+* Görsel İlerleme İndikatörleri: İlk kayıt anında kullanıcıya kaç adım kaldığı net olarak gösterilmelidir (Örn: "Adım 1/3"). Belirsizliği ortadan kaldıran bu görsel indikatörler, kullanıcının psikolojik direncini kırarak anketi tamamlama oranlarını (completion rate) ciddi oranda artırır23.
+Teknik Mimari ve Esnek Veri Girişi
+Esnek Manuel Veri Girişi, Nakit ve Taksit Yönetimi
+Maliyetli API veya açık bankacılık entegrasyonlarının kurulamadığı senaryolarda, esnek bir manuel veri girişi sistemin temel taşıdır. Kullanıcıların dijital kredi kartlarının yanı sıra nakit harcamalarını, aylara yayılan taksitli işlemlerini veya birikmiş borç ödemelerini kolayca sisteme manuel olarak girebilmesi gerekir. Manuel veri girişinin kullanıcıyı yormaması için hızlı ve pürüzsüz bir arayüz tasarlanmalıdır.
+Çevrimdışı Öncelikli Mimari ve iOS Live Activities
+Kullanıcılar harcamalarını metrodan geçerken dahi girebilmelidir. Bu nedenle SQLite gibi yerel bir veritabanı (local database) kullanılarak "Çevrimdışı Öncelikli" (Offline-First) bir yapı kurulmalıdır25. Ek olarak, iOS Live Activities (Canlı Etkinlikler) ile telefonun kilit ekranına "Günün Kalan Bütçesi: 500 TL" şeklinde bir ilerleme çubuğu yansıtılarak anlık farkındalık canlı tutulabilir27.
+Yapay Zeka ile Tek Kişilik (Solo) Geliştirici Yol Haritası (Step-by-Step)
+Büyük finansal uygulamaların gerektirdiği yüksek bütçeli (örneğin $30.000-$100.000 arası geliştirme maliyeti29) yapılar, tek bir geliştiricinin yapay zeka kod asistanları (Cursor, GitHub Copilot vb.) kullanarak ilerleyeceği bir senaryoda aşama aşama (step-by-step) kurgulanmalıdır.
+Faz 1: Temel Manuel Takip ve Kalori Mantığı (Basit MVP)
+* Odak: Kullanıcının günlük temel harcamalarını görmesi, taksitli/nakit işlemlerini manuel kaydedebilmesi ve "Günlük Harcama Limiti" ilerleme çubuğunu ("kalori limiti") takip edebilmesi.
+* Kullanıcı Hedefleri: Sisteme ilk girişte kısa anketle motivasyon sorulmalıdır: "Günlük Takip", "Tasarruf/Yatırım" veya "Borç Kapatma".
+* Maliyet ve Mimari: Geliştirme maliyeti $0'dır. Uygulama içi API veya sunucu masrafı yoktur. Tüm veriler çevrimdışı öncelikli olarak kullanıcının telefonunda (SQLite) tutulur25.
+Faz 2: Oyunlaştırma (Gamification) ve Davranışsal Döngü
+* Odak: Sıkıcı bir hesap defteri olmaktan çıkıp alışkanlık yaratmak.
+* Özellikler: Harcamaları manuel girmek bir "Görev" olarak kodlanır. Kullanıcı her harcamasını girdiğinde veya bütçe altında kaldığında XP (Deneyim Puanı) kazanır ve örneğin "Seviye 2: Gider Takipçisi" konumundan "Seviye 5: Borç Avcısı" (Debt Slayer) seviyesine yükselir. Zinciri kırmama (streak) özellikleri ile 7 gün arka arkaya limit aşmama hedefleri eklenir.
+Faz 3: İleri Seviye (Advanced) Özellikler ve Dış Entegrasyonlar
+* Odak: Uygulama ücretsiz kullanıcılarla (freemium) belli bir kitleye ulaşıp gelir üretmeye başladığında, elde edilen bütçe ile sistemi otomatize etmek.
+* Özellikler: Fiş okuma (GPT-4o-mini gibi çok düşük maliyetli API'ler ile faturaların fotoğrafını çekip JSON verisi olarak okutma31) ve Türkiye pazarı için BDDK onaylı sağlayıcılar üzerinden Açık Bankacılık (otomatik kredi kartı okuma) entegrasyonu32.
+Sonuç
+Özetle, "Latte Faktörü" harcamalarının takibini merkeze alan kalori sayacı mantığındaki bu proje, doğru aşamalara bölünürse tek kişilik bir girişim olarak sıfır bütçeyle başlatılmaya oldukça uygundur. İlk aşamada açık bankacılık veya pahalı otomasyonlar yerine; kullanıcıyı yormayan aşamalı profilleme anketleri, esnek manuel veri girişi ve oyunlaştırmayı temel alan "Faz 1 (MVP)" vizyonuyla yola çıkmak, piyasadaki en akılcı ve maliyetsiz strateji olacaktır.

@@ -1,0 +1,496 @@
+/* ============================================================================
+   Trinkow prototip v2 — "Gün Işığı"
+   Tek stil dosyası. İKİ BÖLÜM VAR, ARALARINDAKİ SINIR BAĞLAYICIDIR:
+
+   BÖLÜM A — ÇERÇEVE / KABUK (open-design şablonu)
+     Telefon gövdesi, Dynamic Island, durum çubuğu, home indicator,
+     sayfa zemini, sistem klavyesi. React Native'e ASLA kodlanmaz.
+     Burada grid / ::before / z-index / backdrop-filter SERBEST.
+
+   BÖLÜM B — EKRAN İÇERİĞİ (.content içi, "rn-" öneki taşıyan her şey)
+     Birebir React Native'e kodlanacak. Kural:
+       flexbox VAR · grid YOK · ::before/::after YOK · sticky YOK
+       float YOK · calc() YOK · vh/vw YOK · z-index oyunu YOK · :hover YOK
+     Gölge ve gradyan serbest (K-019) — RN karşılığı yorumlarda yazılı.
+
+   Değerler: docs/brand/tokens.md v2.0. Buradaki hiçbir sayı serbest seçilmedi.
+   ========================================================================== */
+
+/* ─── Fontlar (OFL, yerel statik dosya — CDN yok, VARIABLE FONT YOK) ──────
+   tokens.md §2.1: 3 statik dosya, artırılamaz. React Native variable font
+   desteği tutarsız olduğu için ağırlık dosya seçimiyle gelir; `font-weight`
+   sayısıyla ara ağırlık üretilmez.
+   Figtree'de ₺ glifi YOK → RN'de ₺ ayrı <Text> ile Space Grotesk'ten dizilir
+   (web'de aşağıdaki font ailesi sırası bunu kendiliğinden yapar). */
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('fonts/SpaceGrotesk-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: 'Figtree';
+  src: url('fonts/Figtree-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: 'Figtree';
+  src: url('fonts/Figtree-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  /* renk — tokens.md §1 */
+  --bg:            #F6F4F1;
+  --surface:       #FFFCF8;
+  --surface-2:     #EFEAE3;
+  --line:          #E6E1DA;
+  --line-strong:   #CFC9C0;
+  --text:          #17181C;
+  --text-2:        #5A5B63;
+  --text-3:        #6B6C75;
+  --disabled-bg:   #E7E1D8;
+  --pressed-neutral:#E5DFD6;
+  --scrim:         rgba(23, 24, 28, 0.45);
+
+  --accent:        #D9661A;
+  --accent-deep:   #A8500C;
+  --accent-soft:   #FDEBD8;
+  --ink:           #17181C;
+  --ink-pressed:   #2C2E34;
+  --edge:          #6E3B6B;
+  --edge-soft:     #F0E4EF;
+  --danger:        #9B2C1F;
+  --danger-on:     #FFFCF8;
+
+  /* kategori aileleri — tokens.md §1.3 */
+  --cat-kahve:      #7A5233;  --cat-kahve-soft:  #F1E7DC;
+  --cat-yemek:      #C2405A;  --cat-yemek-soft:  #FBE3E7;
+  --cat-ulasim:     #1F7A8C;  --cat-ulasim-soft: #DDEEF1;
+  --cat-market:     #4C7A34;  --cat-market-soft: #E4EFDC;
+  --cat-fatura:     #2F4A8C;  --cat-fatura-soft: #E2E7F5;
+  --cat-diger:      #5A5B63;  --cat-diger-soft:  #EAEAED;
+
+  /* tipografi — tokens.md §2. Figtree'de ₺ glifi yok, Space Grotesk'e düşer. */
+  --font-ui:  'Figtree', 'Space Grotesk', sans-serif;
+  --font-num: 'Space Grotesk', 'Figtree', sans-serif;
+
+  /* gölge — tokens.md §5, renk #3A2A1C, opaklık ≤0.12 */
+  --elev-1: 0 4px 12px rgba(58, 42, 28, 0.06);
+  --elev-2: 0 8px 24px rgba(58, 42, 28, 0.10);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BÖLÜM A — ÇERÇEVE / KABUK.  RN'e kodlanmaz. CSS serbest.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background:
+    radial-gradient(70% 55% at 50% 0%, #F0E6DC 0%, #E9E4DD 55%, #E4DFD8 100%);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  padding: 40px 32px 64px;
+}
+
+.sheet {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 56px 48px;
+  max-width: 1560px;
+  margin: 0 auto;
+}
+
+.sheet-head {
+  max-width: 720px;
+  margin: 0 auto 48px;
+  text-align: center;
+}
+.sheet-head h1 {
+  font-size: 30px; font-weight: 600; letter-spacing: -0.02em;
+  margin: 0 0 8px; color: var(--text);
+}
+.sheet-head p { margin: 0; color: var(--text-2); font-size: 15px; }
+.sheet-head a { color: var(--accent-deep); }
+
+.stage { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.caption {
+  /* Büyük harfe çevirme YOK — Türkçe i/İ sorunu + marka adı yalnız 'Trinkow'
+     biçiminde yazılır (tokens §2.4). Ayrım boyut ve renkle kuruluyor. */
+  font-size: 13px; letter-spacing: 0.02em;
+  color: #6B6459; text-align: center; max-width: 390px;
+}
+.caption strong { color: #3A2A1C; font-weight: 600; }
+.caption span { display: block; letter-spacing: 0; margin-top: 6px; }
+
+/* iPhone 15 Pro çerçevesi — open-design şablonundan, değiştirilmedi */
+.device {
+  position: relative;
+  width: 390px; height: 844px;
+  border-radius: 56px;
+  padding: 12px;
+  background: linear-gradient(160deg, #2a2a2c 0%, #1a1a1c 50%, #0e0e10 100%);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04) inset,
+    0 0 0 2px #000 inset,
+    0 28px 60px -12px rgba(0,0,0,0.45),
+    0 8px 20px -8px rgba(0,0,0,0.35);
+  isolation: isolate;
+  flex: 0 0 auto;
+}
+.device::before, .device::after {
+  content: ''; position: absolute; width: 3px;
+  background: linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.06) 8%, transparent 16%, transparent 84%, rgba(255,255,255,0.04) 92%, transparent 100%);
+  top: 100px; bottom: 100px; pointer-events: none;
+}
+.device::before { left: -1px; }
+.device::after  { right: -1px; }
+
+.island {
+  position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+  width: 124px; height: 36px; background: #000; border-radius: 999px; z-index: 5;
+}
+.btn-rail { position: absolute; width: 4px; background: #0a0a0c; border-radius: 2px; }
+.btn-rail.left-1  { left: -3px; top: 174px; height: 32px; }
+.btn-rail.left-2  { left: -3px; top: 220px; height: 60px; }
+.btn-rail.left-3  { left: -3px; top: 290px; height: 60px; }
+.btn-rail.right-1 { right: -3px; top: 250px; height: 100px; }
+
+.screen {
+  position: relative; width: 100%; height: 100%;
+  background: var(--bg); border-radius: 44px; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+/* kahraman kartın ambiyansı ekranın en üstüne kadar uzansın diye */
+.screen.warm { background: linear-gradient(180deg, #FBF2E7 0%, #F6F4F1 320px); }
+
+.statusbar {
+  flex: 0 0 47px; padding: 18px 26px 0;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -0.01em;
+}
+.statusbar .num { font-family: var(--font-num); font-weight: 700; }
+.statusbar .right { display: inline-flex; align-items: center; gap: 6px; }
+.statusbar svg { width: 17px; height: 11px; fill: var(--text); }
+.statusbar .battery { width: 25px; }
+
+.content {
+  flex: 1 1 auto; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+.content::-webkit-scrollbar { display: none; }
+
+.home-indicator { flex: 0 0 28px; position: relative; }
+.home-indicator::after {
+  content: ''; position: absolute; left: 50%; bottom: 8px;
+  transform: translateX(-50%); width: 134px; height: 5px;
+  background: var(--text); border-radius: 999px; opacity: 0.85;
+}
+.home-indicator.on-dark::after { background: #1B1B1F; }
+
+/* iOS sistem klavyesi — OS chrome. Bizim kodumuz değil, ama "Kaydet klavye
+   açıkken görünür kalır" kuralını kanıtlamak için çiziliyor. */
+.keyboard {
+  flex: 0 0 auto; background: #D2D0D5; padding: 8px 6px 4px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+}
+.keyboard .key {
+  height: 46px; border-radius: 6px; background: #FFFFFF;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.3);
+  display: grid; place-items: center;
+  font-family: var(--font-ui); font-size: 25px; font-weight: 400; color: #17181C;
+}
+.keyboard .key.blank { background: transparent; box-shadow: none; }
+.keyboard .key.fn { background: #ADB2BD; box-shadow: none; }
+.keyboard .key svg { width: 24px; height: 18px; stroke: #17181C; fill: none; stroke-width: 1.6; }
+
+/* açıklama etiketi — çerçevenin dışında, sunum amaçlı */
+.note {
+  max-width: 390px; font-size: 13px; line-height: 1.5; color: #5A544A;
+  border-left: 2px solid #C9BFB2; padding-left: 12px;
+}
+.note b { color: #3A2A1C; font-weight: 600; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BÖLÜM B — EKRAN İÇERİĞİ.  Birebir React Native'e kodlanır.
+   Bu satırdan sonra: grid yok, ::before yok, sticky yok, calc yok, hover yok.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* --- düzen ilkelleri (RN: View + flex) ---------------------------------- */
+.rn-pad   { padding-left: 20px; padding-right: 20px; }   /* screen-padding-x 20 */
+.rn-col   { display: flex; flex-direction: column; }
+.rn-row   { display: flex; flex-direction: row; align-items: center; }
+.rn-row-top { display: flex; flex-direction: row; align-items: flex-start; }
+.rn-between { justify-content: space-between; }
+.rn-center  { align-items: center; justify-content: center; }
+.rn-fill  { flex: 1 1 auto; min-width: 0; }              /* RN: flex: 1 */
+.rn-wrap  { flex-wrap: wrap; }
+/* boşluk: RN 0.71+ gap destekler; desteklemezse aradaki Spacer View. */
+.g4 { gap: 4px; } .g8 { gap: 8px; } .g12 { gap: 12px; } .g16 { gap: 16px; }
+.g20 { gap: 20px; } .g24 { gap: 24px; } .g32 { gap: 32px; }
+/* boşluk yardımcıları dosyanın EN SONUNDA — t-* kuralları margin:0 dediği
+   için sonra gelmeleri gerekiyor (RN'de bu sorun yok: stil dizisi sıralı). */
+
+/* --- tipografi (RN: Text stilleri; CSS kalıtımına güvenilmez, hepsi açık) - */
+.t-hero    { font-family: var(--font-num); font-weight: 700; font-size: 56px; line-height: 60px; letter-spacing: -1.5px; font-variant-numeric: tabular-nums; color: var(--text); margin: 0; }
+.t-display { font-family: var(--font-num); font-weight: 700; font-size: 32px; line-height: 38px; letter-spacing: -0.8px; font-variant-numeric: tabular-nums; color: var(--text); margin: 0; }
+.t-amount  { font-family: var(--font-num); font-weight: 700; font-size: 17px; line-height: 24px; font-variant-numeric: tabular-nums; color: var(--text); margin: 0; }
+.t-h1      { font-family: var(--font-ui); font-weight: 600; font-size: 26px; line-height: 32px; letter-spacing: -0.3px; color: var(--text); margin: 0; }
+.t-h2      { font-family: var(--font-ui); font-weight: 600; font-size: 19px; line-height: 25px; letter-spacing: -0.1px; color: var(--text); margin: 0; }
+.t-body    { font-family: var(--font-ui); font-weight: 400; font-size: 16px; line-height: 24px; color: var(--text); margin: 0; }
+.t-strong  { font-family: var(--font-ui); font-weight: 600; font-size: 16px; line-height: 24px; color: var(--text); margin: 0; }
+.t-label   { font-family: var(--font-ui); font-weight: 600; font-size: 13px; line-height: 18px; letter-spacing: 0.3px; color: var(--text); margin: 0; }
+.t-caption { font-family: var(--font-ui); font-weight: 400; font-size: 13px; line-height: 18px; color: var(--text-2); margin: 0; }
+.t-micro   { font-family: var(--font-ui); font-weight: 400; font-size: 12px; line-height: 16px; letter-spacing: 0.2px; color: var(--text-2); margin: 0; }
+.c-2 { color: var(--text-2); } .c-3 { color: var(--text-3); }
+.c-edge { color: var(--edge); } .c-deep { color: var(--accent-deep); }
+.c-danger { color: var(--danger); } .c-on-ink { color: var(--surface); }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.tnum { font-variant-numeric: tabular-nums; }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* RN: numberOfLines={1} */
+
+/* --- başlık bloğu ------------------------------------------------------- */
+.rn-header { display: flex; flex-direction: row; align-items: flex-start; justify-content: space-between; padding: 8px 20px 8px; }
+.rn-iconbtn {
+  width: 44px; height: 44px; border-radius: 999px;  /* dokunma hedefi 44 */
+  background: transparent; border: 0; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-2); cursor: pointer;
+}
+.rn-iconbtn svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rn-iconbtn.is-pressed { background: var(--pressed-neutral); color: var(--text); }
+.rn-iconbtn.on-surface { background: var(--surface); box-shadow: var(--elev-1); }
+
+/* --- kart (RN: View + shadow) ------------------------------------------- */
+.rn-card {
+  background: var(--surface); border-radius: 24px; padding: 20px;
+  box-shadow: var(--elev-1);   /* iOS #3A2A1C 0.06/12/{0,4} · Android elevation 2 */
+  display: flex; flex-direction: column;
+}
+.rn-card.is-pressed { background: var(--bg); box-shadow: none; }
+.rn-card.tile { border-radius: 16px; padding: 16px; box-shadow: none; }
+.rn-card.flat { box-shadow: none; }
+
+/* kahraman kart — radius 28, elev.2, grad.hero-bg (#FFFCF8 → #FDEBD8) */
+.rn-hero-card {
+  border-radius: 28px; padding: 32px 20px;
+  background: linear-gradient(180deg, #FFFCF8 0%, #FDEBD8 100%);
+  box-shadow: var(--elev-2);   /* iOS #3A2A1C 0.10/24/{0,8} · Android elevation 8 */
+  display: flex; flex-direction: column; align-items: center;
+}
+
+/* --- kahraman gösterge -------------------------------------------------- */
+/* 232 tuval 200pt gostergeyi + tasma yayini tasir; tasma yokken 8pt kirpilir
+   (RN: overflow visible + absolute Svg) */
+.rn-gauge { position: relative; width: 232px; height: 232px; display: flex; align-items: center; justify-content: center; }
+.rn-gauge svg { position: absolute; top: 0; left: 0; width: 232px; height: 232px; }
+.rn-gauge.tight { width: 216px; height: 216px; }
+.rn-gauge.tight svg { top: -8px; left: -8px; }
+.rn-gauge-center { position: relative; display: flex; flex-direction: column; align-items: center; margin-top: -8px; }
+.rn-hero-num { display: flex; flex-direction: row; align-items: baseline; gap: 8px; }
+.rn-mini-gauge { position: relative; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; }
+.rn-mini-gauge svg { position: absolute; top: 0; left: 0; width: 56px; height: 56px; }
+
+/* --- buton (tokens §7.1) ------------------------------------------------ */
+.rn-btn {
+  display: flex; flex-direction: row; align-items: center; justify-content: center;
+  gap: 8px; border: 0; border-radius: 999px; padding: 0 24px;
+  font-family: var(--font-ui); font-weight: 600; font-size: 16px;
+  cursor: pointer; width: 100%;
+}
+.rn-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rn-btn.primary   { height: 54px; background: var(--ink); color: var(--surface); }
+.rn-btn.primary.is-pressed { background: var(--ink-pressed); }
+.rn-btn.primary.is-disabled { background: var(--disabled-bg); color: var(--text-2); cursor: default; }
+.rn-btn.secondary { height: 50px; background: var(--surface-2); color: var(--text); }
+.rn-btn.secondary.is-pressed { background: var(--pressed-neutral); }
+.rn-btn.ghost     { height: 44px; background: transparent; color: var(--text-2); padding: 0; }
+.rn-btn.ghost.is-pressed { background: var(--pressed-neutral); }
+.rn-btn.auto { width: auto; }
+
+/* yükleniyor göstergesi (RN: ActivityIndicator 20pt) */
+.rn-spinner {
+  width: 20px; height: 20px; border-radius: 999px;
+  border: 2px solid rgba(255, 252, 248, 0.35);
+  border-top-color: var(--surface);
+}
+
+/* odak halkası — tokens §6, kaldırılmaz */
+.rn-focus { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* --- pill / çip (tokens §7.6) ------------------------------------------ */
+.rn-pill {
+  display: flex; flex-direction: row; align-items: center; gap: 8px;
+  height: 36px; padding: 0 14px; border-radius: 999px; border: 0;
+  background: var(--surface-2); cursor: pointer;
+  font-family: var(--font-ui); font-weight: 600; font-size: 13px; letter-spacing: 0.3px;
+  color: var(--text-2);
+}
+.rn-pill.is-selected { color: var(--text); }
+.rn-pill.is-pressed  { background: var(--pressed-neutral); }
+.rn-pill .dot { width: 8px; height: 8px; border-radius: 999px; }
+.rn-pill svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* --- kategori kabı (tokens §7.3) ---------------------------------------- */
+.rn-cat-box {
+  width: 40px; height: 40px; border-radius: 16px; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+}
+.rn-cat-box svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* --- liste satırı (tokens §7.3) ----------------------------------------- */
+.rn-row-item {
+  display: flex; flex-direction: row; align-items: center; gap: 12px;
+  min-height: 68px; padding: 12px 20px; background: transparent;
+}
+.rn-row-item.is-pressed { background: var(--surface-2); }
+.rn-row-item.is-edge { background: var(--edge-soft); }
+.rn-sep { height: 1px; background: var(--line); margin-left: 72px; }
+
+/* --- girdi (tokens §7.4) ------------------------------------------------ */
+.rn-input {
+  display: flex; flex-direction: row; align-items: center;
+  height: 54px; border-radius: 16px; background: var(--surface);
+  border: 1.5px solid var(--line-strong); padding: 0 16px;
+}
+.rn-input.is-focused { border-color: var(--accent-deep); }
+.rn-input.is-error   { border-color: var(--danger); }
+
+/* --- ilerleme çubuğu (kategori) ----------------------------------------- */
+.rn-bar { height: 8px; border-radius: 999px; background: var(--surface-2); display: flex; flex-direction: row; overflow: hidden; }
+.rn-bar .fill { height: 8px; border-radius: 999px; }
+
+/* --- yüzen sekme çubuğu + FAB (tokens §7.7) ----------------------------- */
+.rn-tabwrap { flex: 0 0 auto; padding: 0 16px 8px; position: relative; }
+.rn-tabbar {
+  height: 64px; border-radius: 999px; background: var(--surface);
+  box-shadow: var(--elev-2);
+  display: flex; flex-direction: row; align-items: center; justify-content: space-around;
+}
+.rn-tab {
+  width: 48px; height: 48px; border: 0; background: transparent; padding: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  cursor: pointer; color: var(--text-2);
+}
+.rn-tab .icowrap { width: 40px; height: 28px; border-radius: 999px; display: flex; align-items: center; justify-content: center; }
+.rn-tab.is-active { color: var(--accent-deep); }
+.rn-tab.is-active .icowrap { background: var(--accent-soft); }
+.rn-tab svg { width: 28px; height: 28px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rn-tab .lbl { font-family: var(--font-ui); font-weight: 400; font-size: 13px; line-height: 18px; }
+.rn-tab.is-active .lbl { font-weight: 600; }
+.rn-fab {
+  width: 56px; height: 56px; border-radius: 999px; border: 0; padding: 0;
+  background: var(--accent); box-shadow: var(--elev-2);
+  display: flex; align-items: center; justify-content: center;
+  margin-top: -20px; cursor: pointer; color: var(--ink);
+}
+.rn-fab.is-pressed { background: var(--accent-deep); color: var(--surface); }
+.rn-fab svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* --- bilgi şeridi / toast (tokens §7.9) --------------------------------- */
+.rn-strip {
+  display: flex; flex-direction: row; align-items: center; gap: 12px;
+  border-radius: 16px; padding: 12px 16px; background: var(--surface-2);
+}
+.rn-strip .dot { width: 8px; height: 8px; border-radius: 999px; flex: 0 0 auto; }
+.rn-toast {
+  display: flex; flex-direction: row; align-items: center; gap: 12px;
+  border-radius: 24px; padding: 16px; background: var(--surface); box-shadow: var(--elev-2);
+}
+
+/* --- adım göstergesi (onboarding) --------------------------------------- */
+.rn-steps { display: flex; flex-direction: row; align-items: center; gap: 8px; }
+.rn-steps .seg { height: 4px; border-radius: 999px; background: var(--surface-2); }
+.rn-steps .seg.done { background: var(--accent-deep); }
+.rn-steps .seg.now  { background: var(--accent); }
+
+/* --- iskelet / yükleniyor (RN: Animated.View, blink yok, sabit ton) ----- */
+.rn-skel { background: var(--surface-2); border-radius: 16px; }
+
+/* --- bottom sheet + scrim (E-11) ---------------------------------------- */
+/* RN: <Modal transparent><Pressable scrim/><KeyboardAvoidingView sheet/></Modal>
+   Sıra belirleyici, z-index kullanılmıyor. Scrim durum çubuğunun altından
+   başlar; iOS'ta sheet açıkken durum çubuğu okunur kalır. */
+.rn-scrim {
+  position: absolute; left: 0; right: 0; top: 47px; bottom: 0;
+  background: var(--scrim);
+}
+.rn-sheetwrap { position: relative; flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
+/* Sheet açıkken panonun en az 48pt'si görünür kalır (basis 48 + shrink 0):
+   kullanıcı neyin üstünde olduğunu görür, sheet'i aşağı atmak için dokunacağı
+   yer kalır. Kalan yer sheet'in; yetmezse sheet'in GÖVDESİ kayar. */
+.screen.has-sheet .content { flex: 1 0 48px; min-height: 48px; }
+.rn-sheet {
+  flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column;
+  background: var(--surface);
+  border-top-left-radius: 28px; border-top-right-radius: 28px;
+  box-shadow: var(--elev-2);   /* iOS #3A2A1C 0.10/24/{0,8} · Android elevation 8 */
+}
+.rn-sheet-head { flex: 0 0 auto; padding: 12px 20px 0; }
+/* Yaygın hâlde kaydırma YOK (mood: "her şey klavyenin üstüne sığar").
+   Yalnız taksit paneli / not alanı / limit dışı şeridi açıkken devreye girer.
+   RN: <ScrollView bounces={false} keyboardShouldPersistTaps="handled"> */
+.rn-sheet-body { flex: 0 1 auto; min-height: 0; overflow-y: auto; padding: 0 20px; }
+.rn-sheet-body::-webkit-scrollbar { display: none; }
+.rn-sheet-foot { flex: 0 0 auto; padding: 16px 20px 16px; }
+
+/* tutar alanı — tokens §7.4, yükseklik 54, odaklı kenarlık accent-deep */
+.rn-input.amount { justify-content: space-between; padding: 0 16px; }
+.rn-caret { width: 2px; height: 32px; border-radius: 999px; background: var(--accent-deep); flex: 0 0 auto; }
+.rn-help { display: flex; flex-direction: row; align-items: center; gap: 8px; }
+
+/* not alanı — çok satırlı, RN: TextInput multiline */
+.rn-textarea {
+  border-radius: 16px; background: var(--surface);
+  border: 1.5px solid var(--line-strong); padding: 12px 16px;
+  display: flex; flex-direction: column;
+}
+.rn-textarea.is-focused { border-color: var(--accent-deep); }
+
+/* --- onboarding seçim satırı (E-01) ------------------------------------- */
+/* İkon satırın SOLUNDA 24pt, daire zemin YOK (anti-pattern §"daire ikon +
+   başlık + tek cümle" üçlüsü kurulmuyor: dikey liste, tek sütun). */
+.rn-choice {
+  display: flex; flex-direction: row; align-items: center; gap: 16px;
+  background: var(--surface); border-radius: 24px; padding: 20px;
+  box-shadow: var(--elev-1); border: 0; width: 100%; text-align: left; cursor: pointer;
+}
+.rn-choice .ico { flex: 0 0 auto; display: flex; color: var(--text-2); }
+.rn-choice .ico svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rn-choice.is-selected { background: var(--accent-soft); box-shadow: none; }
+.rn-choice.is-selected .ico { color: var(--accent-deep); }
+.rn-choice.is-pressed { background: var(--bg); box-shadow: none; }
+.rn-choice .mark { flex: 0 0 auto; display: flex; color: var(--accent-deep); }
+.rn-choice .mark svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* --- ekran altına sabitlenen eylem alanı (onboarding) ------------------- */
+/* RN: ScrollView'ün DIŞINDA, kardeş View. Klavye açılınca klavyenin üstünde
+   kalır (KeyboardAvoidingView). */
+.rn-footer { flex: 0 0 auto; position: relative; padding: 12px 20px 8px; background: var(--bg); }
+
+/* adım göstergesi segmenti — genişlik flex ile paylaşılır */
+.rn-steps .seg { flex: 1 1 auto; }
+
+/* --- boşluk yardımcıları (EN SON: t-* kurallarındaki margin:0'ı ezerler) -- */
+/* RN karşılığı: <Text style={[t.label, {marginTop: 20}]} /> — dizide sonra
+   gelen kazanır, yani burada da sonda olmaları doğru sıralama. */
+.mt4{margin-top:4px}.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
+.mt20{margin-top:20px}.mt24{margin-top:24px}.mt32{margin-top:32px}.mt48{margin-top:48px}
+.mb4{margin-bottom:4px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}
+.mb16{margin-bottom:16px}.mb24{margin-bottom:24px}
+
+/* --- tam genişlik hairline ayraç (form bölümleri arası) ------------------ */
+/* Dekoratif değil: etiketsiz bir kontrol satırının üstteki bölüme ait
+   olmadığını söyler. tokens §1.1 — `line` anlam taşımaz, GRUPLAR ayırır. */
+.rn-hairline { height: 1px; background: var(--line); }

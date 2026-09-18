@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Trinkow · Prototip v2 — Gün Işığı</title>
+<link rel="stylesheet" href="stil.css"/>
+<style>
+/* BÖLÜM A — yalnızca bu giriş sayfası. React Native'e kodlanmaz. */
+.idx { max-width: 720px; margin: 0 auto; }
+.idx-card {
+  display: block; text-decoration: none; color: inherit;
+  background: #FFFCF8; border-radius: 24px; padding: 20px;
+  box-shadow: 0 4px 12px rgba(58, 42, 28, 0.06); margin-bottom: 12px;
+}
+.idx-card:active { background: #F6F4F1; box-shadow: none; }
+.idx-top { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.idx-kod { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 17px; color: #A8500C; }
+.idx-ad  { font-weight: 600; font-size: 19px; color: #17181C; margin: 4px 0 0; }
+.idx-alt { font-size: 13px; line-height: 18px; color: #5A5B63; margin: 8px 0 0; }
+.idx-etiketler { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.idx-et {
+  font-size: 12px; line-height: 16px; color: #5A5B63;
+  background: #EFEAE3; border-radius: 999px; padding: 4px 12px;
+}
+.idx-bolum { font-weight: 600; font-size: 19px; color: #17181C; margin: 48px 0 12px; }
+.idx-tablo { width: 100%; border-collapse: collapse; font-size: 13px; color: #5A5B63; }
+.idx-tablo th, .idx-tablo td { text-align: left; padding: 8px 12px 8px 0; border-bottom: 1px solid #E6E1DA; vertical-align: top; }
+.idx-tablo th { color: #17181C; font-weight: 600; white-space: nowrap; }
+.idx-not { font-size: 13px; line-height: 20px; color: #5A544A; border-left: 2px solid #C9BFB2; padding-left: 12px; margin-top: 24px; }
+.idx-not b { color: #3A2A1C; }
+</style>
+</head>
+<body>
+
+<div class="sheet-head">
+  <h1>Trinkow · Prototip v2 — “Gün Işığı”</h1>
+  <p>Faz 1 · React Native (Expo) · 390 × 844 · tek tema (açık).
+     Değerlerin tamamı <code>projects/trinkow/docs/brand/tokens.md</code> v2.0'dan.</p>
+</div>
+
+<div class="idx">
+
+  <a class="idx-card" href="01-bugun.html">
+    <div class="idx-top">
+      <span class="idx-kod">E-10</span>
+      <span class="idx-et">Arketip F · Focus</span>
+    </div>
+    <p class="idx-ad">Bugün — pano</p>
+    <p class="idx-alt">Günün tek sorusu: ne kadar kaldı. 200pt dairesel gösterge,
+      bugünkü kayıtlar, üç kategori limiti. Yüzen sekme çubuğu ve merkez eylem burada.</p>
+    <div class="idx-etiketler">
+      <span class="idx-et">Takip kipi</span>
+      <span class="idx-et">%60 kullanılmış</span>
+      <span class="idx-et">Sekme çubuğu var</span>
+    </div>
+  </a>
+
+  <a class="idx-card" href="02-harcama-ekle.html">
+    <div class="idx-top">
+      <span class="idx-kod">E-11</span>
+      <span class="idx-et">Arketip E · Checkout</span>
+    </div>
+    <p class="idx-ad">Harcama ekle — bottom sheet</p>
+    <p class="idx-alt">Tek ölçüt üç dokunuş: ekle → kategori → Kaydet. Tutar alanı
+      otomatik odaklı açılır, Kaydet klavyenin üstünde kalır. Sekme çubuğu düşer.</p>
+    <div class="idx-etiketler">
+      <span class="idx-et">7 durum</span>
+      <span class="idx-et">Boş · hata · yükleniyor</span>
+      <span class="idx-et">Limit dışı uyarısı</span>
+      <span class="idx-et">Uzun tutar · uzun not</span>
+      <span class="idx-et">Taksit</span>
+    </div>
+  </a>
+
+  <a class="idx-card" href="03-onboarding.html">
+    <div class="idx-top">
+      <span class="idx-kod">E-01 · E-02 · E-03</span>
+      <span class="idx-et">Arketip C · 1 of N</span>
+    </div>
+    <p class="idx-ad">Kurulum — üç adım</p>
+    <p class="idx-alt">Niyet (Takip / Bütçe / Borç), günlük limit, kipe bağlı tek soru.
+      Seçilen niyet panodaki büyük sayıyı değiştirir; bunu anlatmıyoruz, aynı ekranda
+      gösteriyoruz. Sekme çubuğu düşer.</p>
+    <div class="idx-etiketler">
+      <span class="idx-et">6 durum</span>
+      <span class="idx-et">Adım 1/3 göstergesi</span>
+      <span class="idx-et">Kip önizlemesi</span>
+      <span class="idx-et">Klavyeli adım</span>
+    </div>
+  </a>
+
+  <h2 class="idx-bolum">Tasarım temeli — üç ekranda da aynı</h2>
+  <table class="idx-tablo">
+    <tr><th>Boşluk</th><td>4pt taban · 4 · 8 · 12 · 16 · 20 · 24 · 32 · 48 · 64. Ekran yan boşluğu her yerde <b>20</b>.</td></tr>
+    <tr><th>Tipografi</th><td>Space Grotesk Bold yalnız rakam · Figtree 400/600 metin.
+      Punto: 12 · 13 · 16 · 17 · 19 · 26 · 32 · 56. Ekranda 56pt <b>tek</b> öğe.</td></tr>
+    <tr><th>Köşe</th><td>Elemanın tipinden türer: kahraman kart/sheet 28 · kart 24 · kutu ve girdi 16 · buton ve çip 999. Serbest değer yok.</td></tr>
+    <tr><th>Gölge</th><td>İki seviye, ikisi de yükseklik anlatır. <b>elev.1</b> kart, <b>elev.2</b> kahraman kart / sheet / sekme çubuğu / FAB.
+      Buton, çip, girdi ve liste satırı gölge almaz.</td></tr>
+    <tr><th>Renk</th><td>Tek vurgu <code>#D9661A</code> (metin olarak kullanılmaz), metin varyantı <code>#A8500C</code>.
+      Limit dışı <code>#6E3B6B</code>, yıkıcı <code>#9B2C1F</code>. Kategoriler daima renk + ikon + metin.</td></tr>
+    <tr><th>Durumlar</th><td>basılı · pasif · yükleniyor · hata · boş. <b>Hover yok</b> — basılı durum tek geri bildirim.
+      Pasiflik renkle verilir, opaklıkla değil.</td></tr>
+    <tr><th>Dokunma</th><td>Her hedef ≥ 44 × 44pt. Sol üst köşede kritik hedef yok (iOS geri kaydırması).</td></tr>
+  </table>
+
+  <h2 class="idx-bolum">Prototip nasıl okunur</h2>
+  <div class="idx-not">
+    <b>İki bölüm var.</b> Telefon gövdesi, durum çubuğu, home indicator ve sistem
+    klavyesi <b>çerçevedir</b> — React Native'e kodlanmaz, CSS'i serbesttir.
+    <code>&lt;main class="content"&gt;</code> içindeki her şey (<code>rn-</code> önekli
+    sınıflar) birebir kodlanacak bölümdür ve şu kurala uyar: yalnız flexbox,
+    <code>grid</code> yok, <code>::before/::after</code> yok, <code>calc()</code> yok,
+    <code>vh/vw</code> yok, <code>z-index</code> oyunu yok, <code>:hover</code> yok.
+    Her telefonun altındaki kısa not, o hâlde neyin bilinçli olduğunu söyler.
+    <br><br>
+    <b>Fontlar gömülüdür</b> (<code>fonts/</code>, OFL — bkz. <a href="fonts/LISANS.md">LISANS.md</a>),
+    CDN yok, variable font yok. Figtree'de <code>₺</code> glifi olmadığı için o karakter
+    Space Grotesk'ten gelir; React Native'de ayrı bir <code>Text</code> ile dizilir.
+  </div>
+
+</div>
+</body>
+</html>

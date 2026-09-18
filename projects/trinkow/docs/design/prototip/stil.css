@@ -1,0 +1,199 @@
+/* Trinkow — Prototip stil sistemi
+   Kaynak: docs/brand/tokens.md v1.0 · Faz 1 · tek tema (acik)
+   KURAL: Bu dosya "RN'e cevrilebilir CSS"tir.
+   Kullanilmayanlar (bilincli): :hover · grid · ::before/::after · sticky
+   float · calc() · vh/vw · z-index · transition · box-shadow
+   Sadece flexbox. Her element kendi stilini acikca alir (cascade'e guvenilmez).
+   Sinif adi -> RN karsiligi: .col/.row -> View, .t-* -> Text stili,
+   .btn-* -> Pressable, .scroll -> ScrollView, .list -> FlatList.
+*/
+
+/* ---------- 0. Gomulu fontlar (CDN yok, tokens.md 2.1) ---------- */
+@font-face { font-family: "SerifR"; src: url("fonts/SourceSerif4-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; }
+@font-face { font-family: "SerifSB"; src: url("fonts/SourceSerif4-SemiBold.ttf") format("truetype"); font-weight: 600; font-style: normal; }
+@font-face { font-family: "SansR"; src: url("fonts/PublicSans-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; }
+@font-face { font-family: "SansSB"; src: url("fonts/PublicSans-SemiBold.ttf") format("truetype"); font-weight: 600; font-style: normal; }
+
+html, body { margin: 0; padding: 0; background: #E3DCCC; }
+div, span, p, a, section, main, header, nav, svg { box-sizing: border-box; }
+
+/* ---------- 1. Tipografi olcegi (tokens.md 2.2 — 9 rol, ara deger yok) ---------- */
+.t-display { font-family: "SerifSB"; font-size: 44px; line-height: 48px; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; margin: 0; }
+.t-h1      { font-family: "SerifSB"; font-size: 28px; line-height: 34px; letter-spacing: -0.2px; margin: 0; }
+.t-h2      { font-family: "SerifSB"; font-size: 20px; line-height: 26px; margin: 0; }
+.t-amount  { font-family: "SerifSB"; font-size: 17px; line-height: 24px; font-variant-numeric: tabular-nums; margin: 0; }
+.t-body    { font-family: "SansR";  font-size: 16px; line-height: 24px; margin: 0; }
+.t-bodys   { font-family: "SansSB"; font-size: 16px; line-height: 24px; margin: 0; }
+.t-label   { font-family: "SansSB"; font-size: 13px; line-height: 18px; letter-spacing: 0.4px; margin: 0; }
+.t-caption { font-family: "SansR";  font-size: 13px; line-height: 18px; margin: 0; }
+.t-micro   { font-family: "SansR";  font-size: 12px; line-height: 16px; letter-spacing: 0.2px; margin: 0; }
+/* splash tek istisna */
+.t-splash  { font-family: "SerifSB"; font-size: 32px; line-height: 40px; letter-spacing: -0.58px; margin: 0; }
+.tab-num   { font-variant-numeric: tabular-nums; }
+.clip1     { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.right     { text-align: right; }
+.mid       { text-align: center; }
+
+/* ---------- 2. Renk (tokens.md 1.1-1.2) ---------- */
+.c-ink   { color: #1B1A17; }
+.c-ink2  { color: #5C574C; }
+.c-ink3  { color: #6F6A5C; }
+.c-acc   { color: #14484C; }
+.c-edge  { color: #A24A2A; }
+.c-dan   { color: #8E2F20; }
+.c-paper { color: #F4F1EA; }
+.c-page  { color: #FFFDF8; }
+.bg-paper { background: #F4F1EA; }
+.bg-page  { background: #FFFDF8; }
+.bg-acc   { background: #14484C; }
+.bg-accp  { background: #0E3A3E; }
+.bg-soft  { background: #DCE7E5; }
+.bg-edges { background: #F3E3DB; }
+.bg-dis   { background: #E3DCCC; }
+.bg-ghostp{ background: #E9E4D8; }
+.bg-dan   { background: #8E2F20; }
+
+/* ---------- 3. Duzen (yalniz flexbox) ---------- */
+.col { display: flex; flex-direction: column; }
+.row { display: flex; flex-direction: row; align-items: center; }
+.rowt { display: flex; flex-direction: row; align-items: flex-start; }
+.wrap { flex-wrap: wrap; }
+.between { justify-content: space-between; }
+.mid-x { align-items: center; }
+.mid-y { justify-content: center; }
+.grow { flex: 1 1 auto; min-width: 0; }
+.shrink0 { flex-shrink: 0; }
+.px20 { padding-left: 20px; padding-right: 20px; }
+.px16 { padding-left: 16px; padding-right: 16px; }
+.pad16 { padding: 16px; }
+.hide-x { overflow: hidden; }
+
+/* Bosluk elemanlari — RN'de `gap` guvenilmez, aralara View konur */
+.h4{height:4px}.h8{height:8px}.h12{height:12px}.h16{height:16px}
+.h20{height:20px}.h24{height:24px}.h32{height:32px}.h48{height:48px}.h64{height:64px}
+.w4{width:4px}.w8{width:8px}.w12{width:12px}.w16{width:16px}.w20{width:20px}.w24{width:24px}
+
+/* ---------- 4. Cihaz cercevesi (390x844) + safe area ---------- */
+.frame { width: 390px; height: 844px; background: #F4F1EA; display: flex; flex-direction: column; position: relative; overflow: hidden; border: 1px solid #C9C0AC; border-radius: 12px; }
+.chrome-top { height: 48px; flex-shrink: 0; display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding-left: 20px; padding-right: 20px; }
+.chrome-island { width: 100px; height: 28px; border-radius: 14px; background: #1B1A17; }
+.chrome-bottom { height: 32px; flex-shrink: 0; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.chrome-bar { width: 140px; height: 4px; border-radius: 2px; background: #1B1A17; }
+.scroll { flex: 1 1 auto; overflow: hidden; display: flex; flex-direction: column; }
+
+/* ---------- 5. Butonlar (tokens.md 7.1) ---------- */
+.btn-p  { height: 52px; border-radius: 12px; background: #14484C; display: flex; flex-direction: row; align-items: center; justify-content: center; padding-left: 20px; padding-right: 20px; }
+.btn-p-press { background: #0E3A3E; }
+.btn-p-dis   { background: #E3DCCC; }
+.btn-s  { height: 48px; border-radius: 12px; background: transparent; border: 1.5px solid #14484C; display: flex; flex-direction: row; align-items: center; justify-content: center; padding-left: 20px; padding-right: 20px; }
+.btn-s-press { background: #DCE7E5; }
+.btn-g  { height: 44px; border-radius: 12px; background: transparent; display: flex; flex-direction: row; align-items: center; justify-content: center; padding-left: 20px; padding-right: 20px; }
+.btn-g-press { background: #E9E4D8; }
+.btn-d  { height: 52px; border-radius: 12px; background: #8E2F20; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.iconbtn { width: 44px; height: 44px; border-radius: 12px; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.iconbtn-press { background: #E9E4D8; }
+/* Odak halkasi — tokens.md 6: 2pt accent, 2pt bosluk, radius = eleman radius + 2 */
+.focusring { border: 2px solid #14484C; border-radius: 14px; padding: 2px; display: flex; flex-direction: column; }
+.focusring-pill { border: 2px solid #14484C; border-radius: 18px; padding: 2px; display: flex; flex-direction: row; align-self: flex-start; }
+.spin { width: 20px; height: 20px; border-radius: 10px; border: 2px solid #DCE7E5; border-top-color: #14484C; }
+.spin-acc { width: 20px; height: 20px; border-radius: 10px; border: 2px solid #5C574C; border-top-color: #FFFDF8; }
+
+/* ---------- 6. Kart / satir / ayrac (tokens.md 7.2-7.3) ---------- */
+.card { background: #FFFDF8; border: 1px solid #DCD5C6; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; }
+.card-press { background: #F4F1EA; }
+.card-edge { background: #F3E3DB; border: 1px solid #DCD5C6; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; }
+.srow { min-height: 64px; padding-top: 12px; padding-bottom: 12px; padding-left: 20px; padding-right: 20px; background: #FFFDF8; display: flex; flex-direction: row; align-items: center; }
+.srow-press { background: #F4F1EA; }
+.srow-edge { background: #F3E3DB; }
+.divider { height: 1px; background: #DCD5C6; }
+.divider-56 { height: 1px; background: #DCD5C6; margin-left: 56px; }
+
+/* ---------- 7. Girdi (tokens.md 7.4) ---------- */
+.field { height: 52px; border-radius: 12px; background: #FFFDF8; border: 1.5px solid #C9C0AC; padding-left: 16px; padding-right: 16px; display: flex; flex-direction: row; align-items: center; }
+.field-focus { border-color: #14484C; }
+.field-err { border-color: #8E2F20; }
+.caret { width: 2px; height: 32px; background: #14484C; }
+
+/* ---------- 8. Cip (tokens.md 7.6) ---------- */
+.chip { height: 32px; border-radius: 16px; border: 1px solid #DCD5C6; background: transparent; padding-left: 12px; padding-right: 12px; display: flex; flex-direction: row; align-items: center; }
+.chip-sel { background: #DCE7E5; border-color: #14484C; }
+.chip-press { background: #E9E4D8; }
+.chip-dis { background: #E3DCCC; border-color: #E3DCCC; }
+.seg { height: 32px; border-radius: 16px; border: 1px solid #DCD5C6; background: transparent; display: flex; flex-direction: row; overflow: hidden; }
+.seg-i { height: 32px; padding-left: 16px; padding-right: 16px; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.seg-on { background: #DCE7E5; }
+
+/* ---------- 9. LimitBar (tokens.md 7.5) — flexbox oranlariyla ---------- */
+.barwrap { height: 22px; display: flex; flex-direction: row; align-items: center; }
+.bar-seg { height: 14px; background: #DCD5C6; }
+.bar-fill { height: 14px; background: #14484C; }
+.bar-over { height: 14px; background: #A24A2A; }
+.bar-l { border-top-left-radius: 7px; border-bottom-left-radius: 7px; }
+.bar-r { border-top-right-radius: 7px; border-bottom-right-radius: 7px; }
+.bar-thr { width: 1.5px; height: 22px; background: #5C574C; flex-shrink: 0; }
+.minibar { height: 4px; display: flex; flex-direction: row; align-items: center; background: #DCD5C6; border-radius: 2px; overflow: hidden; }
+.minibar-fill { height: 4px; background: #14484C; }
+.minibar-over { height: 4px; background: #A24A2A; }
+
+/* ---------- 10. WeekStrip (hairline cetvel) ---------- */
+.week { height: 96px; display: flex; flex-direction: row; align-items: flex-end; justify-content: space-between; }
+.weekcol { width: 24px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+.wbar { width: 10px; background: #14484C; border-top-left-radius: 2px; border-top-right-radius: 2px; }
+.wbar-over { width: 10px; background: #A24A2A; border-top-left-radius: 2px; border-top-right-radius: 2px; }
+.wbar-empty { width: 10px; background: #DCD5C6; border-top-left-radius: 2px; border-top-right-radius: 2px; }
+.wthr { height: 1.5px; background: #5C574C; }
+
+/* ---------- 11. TabBar (tokens.md 7.7) ---------- */
+.tabbar { height: 56px; flex-shrink: 0; background: #FFFDF8; border-top: 1px solid #DCD5C6; display: flex; flex-direction: row; align-items: center; }
+/* Icerik kutusu 48pt: odak halkasi 48 + 2pt bosluk + 2pt kenarlik = 56 = bar yuksekligi.
+   Halka bar ICINDE kalir, kirpma bagimliligi yok. Dokunma hedefi 48 >= 44. */
+.tabitem { flex: 1 1 0; height: 48px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.tabitem-press { background: #E9E4D8; }
+
+/* ---------- 12. Toast / Sheet / Dialog (tokens.md 7.9, 5) ---------- */
+.toast { background: #FFFDF8; border: 1px solid #DCD5C6; border-radius: 12px; padding: 16px; display: flex; flex-direction: row; align-items: center; overflow: hidden; }
+.toast-strip { width: 3px; background: #14484C; align-self: stretch; }
+.toast-strip-edge { width: 3px; background: #A24A2A; align-self: stretch; }
+.toast-strip-dan { width: 3px; background: #8E2F20; align-self: stretch; }
+.scrim { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(27, 26, 23, 0.45); display: flex; flex-direction: column; justify-content: flex-end; }
+.scrim-mid { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(27, 26, 23, 0.45); display: flex; flex-direction: column; justify-content: center; align-items: center; }
+/* Golge istisnasi YALNIZ burada — tokens.md 5 */
+.sheet { background: #FFFDF8; border-top-left-radius: 12px; border-top-right-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 -2px 16px rgba(27, 26, 23, 0.12); }
+.sheet-grab { width: 32px; height: 4px; border-radius: 2px; background: #DCD5C6; }
+.dialog { width: 310px; background: #FFFDF8; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; box-shadow: 0 -2px 16px rgba(27, 26, 23, 0.12); }
+.keyboard { background: #E3DCCC; border-top: 1px solid #C9C0AC; display: flex; flex-direction: column; flex-shrink: 0; }
+.kbrow { display: flex; flex-direction: row; }
+.kbkey { flex: 1 1 0; height: 48px; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.kbkey-press { background: #F4F1EA; border-radius: 12px; }
+
+/* ---------- 13. Skeleton (parildama YOK) ---------- */
+.sk { background: #DCD5C6; border-radius: 12px; }
+
+/* ---------- 14. TallyGraphic (tek cizim primitifi) ---------- */
+.tally { height: 48px; display: flex; flex-direction: row; align-items: flex-end; justify-content: center; }
+.tallymark { width: 1.75px; height: 32px; background: #C9C0AC; }
+.tallyslash { width: 1.75px; height: 40px; background: #C9C0AC; transform: rotate(24deg); }
+.tallyline { height: 1.5px; background: #5C574C; }
+
+/* ---------- 15. Monogram (brandbook 5.3) ---------- */
+.mono { position: relative; overflow: hidden; }
+
+/* ---------- 16. Sosyal medya karti (4:5 — 1080x1350 -> 432x540) ----------
+   Tipografi: tokens.md 2.5 "sosyal disa aktarim olcegi" (1080 izgarasi).
+   ig-h1 100 / ig-h2 75 / ig-cap 40 / ig-lbl 35 -> x0.4 = 40 / 30 / 16 / 14 px. */
+.igcard { width: 432px; height: 540px; display: flex; flex-direction: column; overflow: hidden; margin-right: 16px; margin-bottom: 24px; }
+.ig-h1 { font-family: "SerifSB"; font-size: 40px; line-height: 48px; letter-spacing: -0.7px; margin: 0; }
+.ig-h2 { font-family: "SerifSB"; font-size: 30px; line-height: 38px; letter-spacing: -0.5px; margin: 0; }
+.ig-lbl { font-family: "SansSB"; font-size: 14px; line-height: 20px; letter-spacing: 0.4px; margin: 0; }
+.ig-cap { font-family: "SansR"; font-size: 16px; line-height: 24px; margin: 0; }
+
+/* ---------- 17. Galeri iskelesi (PROTOTIP DISI — RN'e cevrilmez) ---------- */
+.g-page { padding: 32px; display: flex; flex-direction: column; background: #E3DCCC; }
+.g-sec { display: flex; flex-direction: column; }
+.g-strip { display: flex; flex-direction: row; flex-wrap: wrap; }
+.g-item { display: flex; flex-direction: column; margin-right: 24px; margin-bottom: 32px; }
+.g-cap { width: 390px; display: flex; flex-direction: column; padding-top: 12px; }
+.g-note { width: 390px; background: #FFFDF8; border: 1px solid #C9C0AC; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; }
+.g-link { font-family: "SansSB"; font-size: 16px; line-height: 24px; color: #14484C; text-decoration: none; }
+.g-list { width: 390px; background: #FFFDF8; border: 1px solid #C9C0AC; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
+.g-row { display: flex; flex-direction: row; align-items: center; padding: 16px 20px; text-decoration: none; background: #FFFDF8; }

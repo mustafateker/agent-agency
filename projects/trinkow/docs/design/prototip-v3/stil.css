@@ -1,0 +1,565 @@
+/* ============================================================
+   Trinkow — prototip v3 · Claymorphism
+   Görsel otorite: docs/design/design-systems/library/claymorphism/DESIGN.md
+   Token kaynağı : docs/brand/tokens.md (v3.1)
+
+   İKİ BÖLGE VARDIR (docs/design/open-design-entegrasyon.md):
+   [A] ÇERÇEVE / KABUK  → RN'e kodlanmaz. CSS serbest (grid, ::before, z-index).
+   [B] EKRAN İÇERİĞİ    → `.content` altındaki her şey RN'e kodlanır.
+                          Sadece flexbox. grid/::before/::after/sticky/float/
+                          calc()/vh/vw/:hover YOK. Gölge + gradyan serbest.
+   ============================================================ */
+
+/* ---------- Fontlar (RN'de gömülü .ttf) ---------- */
+@font-face { font-family: 'Montserrat'; src: url('fonts/Montserrat-Regular.ttf')  format('truetype'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'Montserrat'; src: url('fonts/Montserrat-SemiBold.ttf') format('truetype'); font-weight: 600; font-style: normal; font-display: block; }
+@font-face { font-family: 'Montserrat'; src: url('fonts/Montserrat-Bold.ttf')     format('truetype'); font-weight: 700; font-style: normal; font-display: block; }
+@font-face { font-family: 'Poppins';    src: url('fonts/Poppins-SemiBold.ttf')    format('truetype'); font-weight: 600; font-style: normal; font-display: block; }
+
+:root {
+  /* zemin & yüzey */
+  --bg:          #E6EFFE;
+  --surface:     #FFFFFF;
+  --groove:      #F2F7FE;
+  --well:        #E6EFFE;
+  --line:        #DCE6F9;
+  --disabled-bg: #DCE6F9;
+  --scrim:       rgba(28,57,142,0.38);
+
+  /* metin */
+  --text:   #1C398E;
+  --text-2: #4961A5;
+  --text-3: #556AAA;
+  --on-primary: #FFFFFF;
+
+  /* eylem & durum */
+  --primary:       #3B82F6;
+  --primary-deep:  #2F68C5;
+  --primary-press: #295BAC;
+  --primary-text:  #2C62B8;
+  --primary-soft:  #E4EEFE;
+  --warning:       #D97706;
+  --warning-deep:  #B45309;
+  --warning-ink:   #8A4B04;
+  --warning-soft:  #FAECDC;
+  --danger:        #DC2626;
+  --danger-ink:    #C62222;
+  --danger-soft:   #FAE1E1;
+  --success:       #16A34A;
+  --success-ink:   #12823B;
+  --success-soft:  #DEF2E6;
+
+  /* kategori aileleri */
+  --cat-mavi:      #306BCA; --cat-mavi-soft:      #E4EEFE;
+  --cat-lacivert:  #172F74; --cat-lacivert-soft:  #DFE3EF;
+  --cat-yesil:     #12863D; --cat-yesil-soft:     #DEF2E6;
+  --cat-amber:     #B26205; --cat-amber-soft:     #FAECDC;
+  --cat-kiremit:   #B41F1F; --cat-kiremit-soft:   #FAE1E1;
+  --cat-duman:     #2E3A5C; --cat-duman-soft:     #DEDFE5;
+
+  /* ---- clay elevation (tokens.md §5.1) — RN'e birebir boxShadow ---- */
+  --clay-raised:
+      0 8px 16px -4px rgba(28,57,142,0.16),
+      0 2px 4px -1px rgba(28,57,142,0.10),
+      inset 0 -5px 8px -4px rgba(28,57,142,0.14),
+      inset 0 5px 8px -4px rgba(255,255,255,0.95);
+  --clay-raised-lg:
+      0 16px 32px -8px rgba(28,57,142,0.22),
+      0 4px 8px -2px rgba(28,57,142,0.12),
+      inset 0 -8px 12px -6px rgba(28,57,142,0.16),
+      inset 0 8px 12px -6px rgba(255,255,255,0.98);
+  --clay-pressed:
+      0 1px 2px 0 rgba(28,57,142,0.10),
+      inset 0 3px 6px -2px rgba(28,57,142,0.20),
+      inset 0 -2px 4px -2px rgba(255,255,255,0.60);
+  --clay-sunken:
+      inset 0 3px 6px -2px rgba(28,57,142,0.18),
+      inset 0 -2px 3px -2px rgba(255,255,255,0.80);
+  --clay-action:
+      0 8px 16px -4px rgba(47,104,197,0.42),
+      0 2px 4px -1px rgba(47,104,197,0.28),
+      inset 0 -4px 8px -3px rgba(28,57,142,0.34),
+      inset 0 4px 8px -3px rgba(255,255,255,0.42);
+  --clay-action-pressed:
+      0 2px 4px -2px rgba(47,104,197,0.30),
+      inset 0 4px 8px -2px rgba(28,57,142,0.42),
+      inset 0 -2px 4px -2px rgba(255,255,255,0.22);
+
+  /* kabarık yüzeyin üst parlaması (grad.clay-face) */
+  --clay-face: linear-gradient(180deg, rgba(255,255,255,0.90) 0%, rgba(255,255,255,0) 45%);
+  --grad-action: linear-gradient(180deg, #3B82F6 0%, #2F68C5 100%);
+  --grad-action-press: linear-gradient(180deg, #2F68C5 0%, #295BAC 100%);
+}
+
+/* ============================================================
+   [A] ÇERÇEVE / KABUK — RN'e kodlanmaz, CSS serbest
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background:
+    radial-gradient(70% 50% at 50% 0%, #F3F7FF 0%, #DCE8FC 55%, #CFDFF9 100%);
+  color: var(--text);
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  padding: 32px 24px 64px;   /* [A] kabuk ölçeği: 32 · 64 (tokens.md §3.2) */
+}
+.sayfa-basligi { max-width: 1320px; margin: 0 auto 32px; }
+.sayfa-basligi h1 { font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 26px; letter-spacing: -0.6px; margin: 0 0 8px; }
+.sayfa-basligi p  { margin: 0; font-size: 13px; color: var(--text-2); max-width: 720px; }
+.sayfa-basligi a  { color: var(--primary-text); }
+
+.sahne {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(414px, max-content));
+  gap: 48px 32px;              /* [A] kabuk ölçeği: 48 · 32 (tokens.md §3.2) */
+  justify-content: center;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+.sahne-birim { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.baslik-etiket {
+  font-family: 'Montserrat', sans-serif; font-weight: 600;
+  font-size: 13px; letter-spacing: 0.2px; color: var(--text);
+  background: var(--surface); border-radius: 999px; padding: 8px 16px;
+  box-shadow: var(--clay-raised);
+}
+.baslik-etiket span { color: var(--text-2); font-weight: 400; }
+.not-kutu {
+  width: 414px; font-size: 12px; line-height: 1.5; color: var(--text-2);
+  background: rgba(255,255,255,0.62); border-radius: 16px; padding: 12px 16px;
+}
+.not-kutu b { color: var(--text); font-weight: 600; }
+
+.device {
+  /* Çerçeve 12px kalın; EKRAN tam 390x844 olsun diye dış ölçü 414x868. */
+  position: relative; width: 414px; height: 868px;
+  border-radius: 56px; padding: 12px;
+  background: linear-gradient(160deg, #2a2a2c 0%, #1a1a1c 50%, #0e0e10 100%);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04) inset,
+    0 0 0 2px #000 inset,
+    0 28px 60px -12px rgba(16,34,84,0.45),
+    0 8px 20px -8px rgba(16,34,84,0.35);
+  isolation: isolate;
+}
+.device::before, .device::after {
+  content: ''; position: absolute; width: 3px; top: 100px; bottom: 100px; pointer-events: none;
+  background: linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.06) 8%, transparent 16%, transparent 84%, rgba(255,255,255,0.04) 92%, transparent 100%);
+}
+.device::before { left: -1px; }
+.device::after  { right: -1px; }
+.island { position: absolute; top: 22px; left: 50%; transform: translateX(-50%); width: 124px; height: 36px; background: #000; border-radius: 999px; z-index: 5; }
+.btn-rail { position: absolute; width: 4px; background: #0a0a0c; border-radius: 2px; }
+.btn-rail.left-1  { left: -3px; top: 174px; height: 32px; }
+.btn-rail.left-2  { left: -3px; top: 220px; height: 60px; }
+.btn-rail.left-3  { left: -3px; top: 290px; height: 60px; }
+.btn-rail.right-1 { right: -3px; top: 250px; height: 100px; }
+
+.screen {
+  position: relative; width: 100%; height: 100%;
+  background: var(--bg); border-radius: 44px; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.statusbar {
+  flex: 0 0 47px; padding: 16px 24px 0;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -0.01em;
+}
+.statusbar .right { display: inline-flex; align-items: center; gap: 4px; }
+.statusbar svg { width: 17px; height: 11px; fill: var(--text); }
+.statusbar .battery { width: 25px; }
+.statusbar .saat { font-variant-numeric: tabular-nums; }
+
+.content {
+  position: relative;           /* RN: View varsayılanı — absolute çocuklar buna göre yerleşir */
+  flex: 1 1 auto; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+/* RN karşılığı: <ScrollView>. Sekme çubuğu bunun DIŞINDA, ekrana sabittir. */
+.kaydir { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; }
+.kaydir::-webkit-scrollbar { display: none; }
+
+.home-indicator { flex: 0 0 28px; position: relative; background: var(--bg); }
+.home-indicator::after {
+  content: ''; position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%);
+  width: 134px; height: 5px; background: var(--text); border-radius: 999px; opacity: 0.85;
+}
+/* karanlık zeminli ekranlarda (onboarding yok — ileride gerekirse) */
+
+/* ============================================================
+   [B] EKRAN İÇERİĞİ — RN'e kodlanır.
+       Kural: yalnız flexbox. Aşağıda grid/::before/::after/sticky/
+       float/calc/vh/vw/:hover YOKTUR.
+   ============================================================ */
+
+/* --- düzen ilkelleri --- */
+.pad      { padding-left: 16px; padding-right: 16px; }
+.kolon    { display: flex; flex-direction: column; }
+.satir    { display: flex; flex-direction: row; align-items: center; }
+.satir-ust{ display: flex; flex-direction: row; align-items: flex-start; }
+.aralik   { display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.esnek    { flex: 1 1 auto; min-width: 0; }
+.orta     { align-items: center; }
+/* Boşluk ilkelleri. RN'de flexShrink varsayılanı 0'dır; CSS'te 1'dir —
+   bu kural olmadan tarayıcı boşlukları sessizce eziyor ve prototip yalan söylüyor. */
+.h4, .h8, .h12, .h16, .h24, .h32, .w4, .w8, .w12, .w16, .w24 { flex: 0 0 auto; }
+.kaydir > *, .alt-sabit > *, .sheet > * { flex-shrink: 0; }
+.h4  { height: 4px; }  .h8  { height: 8px; }  .h12 { height: 12px; }
+.h16 { height: 16px; } .h24 { height: 24px; } .h32 { height: 32px; }
+.w4  { width: 4px; }   .w8  { width: 8px; }   .w12 { width: 12px; }
+.w16 { width: 16px; }  .w24 { width: 24px; }
+
+/* --- tipografi rolleri (tokens.md §2.2) --- */
+.t-hero   { font-family:'Montserrat'; font-weight:700; font-size:56px; line-height:60px; letter-spacing:-2px;   font-variant-numeric: tabular-nums; color: var(--text); }
+.t-display{ font-family:'Montserrat'; font-weight:700; font-size:32px; line-height:38px; letter-spacing:-1px;   font-variant-numeric: tabular-nums; color: var(--text); }
+.t-amount { font-family:'Montserrat'; font-weight:700; font-size:17px; line-height:24px; letter-spacing:-0.2px; font-variant-numeric: tabular-nums; color: var(--text); }
+.t-h1     { font-family:'Poppins';    font-weight:600; font-size:26px; line-height:32px; letter-spacing:-0.6px; color: var(--text); }
+.t-h2     { font-family:'Poppins';    font-weight:600; font-size:19px; line-height:25px; letter-spacing:-0.3px; color: var(--text); }
+.t-body   { font-family:'Montserrat'; font-weight:400; font-size:16px; line-height:24px; color: var(--text); }
+.t-strong { font-family:'Montserrat'; font-weight:600; font-size:16px; line-height:24px; color: var(--text); }
+.t-label  { font-family:'Montserrat'; font-weight:600; font-size:13px; line-height:18px; letter-spacing:0.2px; color: var(--text); }
+.t-cap    { font-family:'Montserrat'; font-weight:400; font-size:13px; line-height:18px; color: var(--text-2); }
+.t-micro  { font-family:'Montserrat'; font-weight:400; font-size:12px; line-height:16px; letter-spacing:0.2px; color: var(--text-2); }
+.c-2 { color: var(--text-2); } .c-3 { color: var(--text-3); }
+.c-warn { color: var(--warning-ink); } .c-danger { color: var(--danger-ink); }
+.c-primary { color: var(--primary-text); } .c-success { color: var(--success-ink); }
+.c-on { color: #FFFFFF; }
+.num { font-variant-numeric: tabular-nums; }
+.sag { text-align: right; }
+
+/* --- clay yüzeyler --- */
+.clay {
+  background-color: var(--surface); background-image: var(--clay-face);
+  border-radius: 24px; box-shadow: var(--clay-raised);
+}
+.clay-lg {
+  background-color: var(--surface); background-image: var(--clay-face);
+  border-radius: 32px; box-shadow: var(--clay-raised-lg);
+}
+.clay-tile {
+  background-color: var(--surface); background-image: var(--clay-face);
+  border-radius: 16px; box-shadow: var(--clay-raised);
+}
+.clay-cukur { background-color: var(--groove); border-radius: 16px; box-shadow: var(--clay-sunken); }
+.clay-kuyu  { background-color: var(--well);   border-radius: 16px; box-shadow: var(--clay-sunken); }
+.basili     { box-shadow: var(--clay-pressed); background-image: none; background-color: var(--groove); }
+
+.kart-ic { padding: 16px; }   /* kart iç boşluğu — istisnasız tek değer */
+
+/* --- başlık çubuğu --- */
+.ekran-basi { padding: 8px 16px 16px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.ikon-btn {
+  width: 44px; height: 44px; border-radius: 999px; border: 0; padding: 0;
+  background-color: var(--surface); background-image: var(--clay-face);
+  box-shadow: var(--clay-raised);
+  display: flex; align-items: center; justify-content: center; color: var(--text);
+}
+.ikon-btn.basili { box-shadow: var(--clay-pressed); background-image: none; background-color: var(--groove); }
+.ikon-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* --- butonlar --- */
+.btn-primary {
+  display: flex; flex-direction: row; align-items: center; justify-content: center;
+  width: 100%; height: 56px; padding: 0 24px; border: 0; border-radius: 999px;
+  background-image: var(--grad-action); box-shadow: var(--clay-action);
+  color: #FFFFFF; font-family: 'Montserrat'; font-weight: 600; font-size: 16px; letter-spacing: 0;
+}
+.btn-primary.basili { background-image: var(--grad-action-press); box-shadow: var(--clay-action-pressed); }
+.btn-primary.pasif  { background-image: none; background-color: var(--disabled-bg); box-shadow: var(--clay-sunken); color: var(--text-2); }
+.btn-secondary {
+  display: flex; flex-direction: row; align-items: center; justify-content: center;
+  width: 100%; height: 52px; padding: 0 24px; border: 0; border-radius: 999px;
+  background-color: var(--surface); background-image: var(--clay-face); box-shadow: var(--clay-raised);
+  color: var(--text); font-family: 'Montserrat'; font-weight: 600; font-size: 16px;
+}
+.btn-secondary.basili { background-image: none; background-color: var(--well); box-shadow: var(--clay-pressed); }
+.btn-ghost {
+  display: flex; flex-direction: row; align-items: center; justify-content: center;
+  height: 44px; padding: 0 24px; border: 0; border-radius: 999px; background: transparent;
+  color: var(--text-2); font-family: 'Montserrat'; font-weight: 600; font-size: 16px;
+}
+.btn-ghost.basili { background-color: var(--well); box-shadow: var(--clay-pressed); }
+.btn-danger {
+  display: flex; flex-direction: row; align-items: center; justify-content: center;
+  width: 100%; height: 56px; border: 0; border-radius: 999px;
+  background-color: var(--danger); color: #FFFFFF;
+  box-shadow: 0 8px 16px -4px rgba(28,57,142,0.16), 0 2px 4px -1px rgba(28,57,142,0.10),
+              inset 0 -5px 8px -4px rgba(28,57,142,0.34), inset 0 5px 8px -4px rgba(255,255,255,0.30);
+  font-family: 'Montserrat'; font-weight: 600; font-size: 16px;
+}
+.btn-primary svg, .btn-secondary svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* dönen yükleniyor göstergesi yalnız buton içinde */
+.spinner { width: 20px; height: 20px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #FFFFFF; }
+
+/* --- çipler --- */
+.cip {
+  display: flex; flex-direction: row; align-items: center; flex: 0 0 auto;
+  height: 40px; padding: 0 16px; max-width: 240px;
+  border: 0; border-radius: 999px; white-space: nowrap;
+  background-color: var(--surface); background-image: var(--clay-face); box-shadow: var(--clay-raised);
+  font-family: 'Montserrat'; font-weight: 600; font-size: 13px; letter-spacing: 0.2px; color: var(--text-2);
+}
+/* tokens.md §7.6 · TAŞMA KURALI — ürün adları uzun olabilir, çip asla sarmaz.
+   Ad kırpılır (ellipsis), tutar kırpılmaz: `₺` görünmezse çip işlevini yitirir. */
+.cip-ad    { flex: 0 1 auto; min-width: 0; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cip-tutar { flex: 0 0 auto; white-space: nowrap; }
+.cip.secili { background-image: none; background-color: var(--primary-soft); box-shadow: var(--clay-sunken); color: var(--text); }
+.cip.basili { background-image: none; background-color: var(--well); box-shadow: var(--clay-pressed); }
+.nokta { width: 8px; height: 8px; border-radius: 999px; background-color: var(--primary); }
+
+/* --- kategori ikon kabı --- */
+.kat-kab { width: 44px; height: 44px; border-radius: 16px; display: flex; align-items: center; justify-content: center; box-shadow: var(--clay-sunken); }
+.kat-kab svg { width: 20px; height: 20px; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.kat-mavi     { background-color: var(--cat-mavi-soft); }     .kat-mavi svg     { stroke: var(--cat-mavi); }
+.kat-lacivert { background-color: var(--cat-lacivert-soft); } .kat-lacivert svg { stroke: var(--cat-lacivert); }
+.kat-yesil    { background-color: var(--cat-yesil-soft); }    .kat-yesil svg    { stroke: var(--cat-yesil); }
+.kat-amber    { background-color: var(--cat-amber-soft); }    .kat-amber svg    { stroke: var(--cat-amber); }
+.kat-kiremit  { background-color: var(--cat-kiremit-soft); }  .kat-kiremit svg  { stroke: var(--cat-kiremit); }
+.kat-duman    { background-color: var(--cat-duman-soft); }    .kat-duman svg    { stroke: var(--cat-duman); }
+
+/* --- liste satırı (her satır ayrı kabarık yüzey) --- */
+.satir-kart {
+  display: flex; flex-direction: row; align-items: center;
+  min-height: 68px; padding: 12px 16px; border-radius: 16px;
+  background-color: var(--surface); background-image: var(--clay-face); box-shadow: var(--clay-raised);
+}
+.satir-kart.limit-disi { background-color: var(--warning-soft); }
+.satir-kart.basili { background-image: none; background-color: var(--groove); box-shadow: var(--clay-pressed); }
+
+/* --- yüzen sekme çubuğu --- */
+.sekme-cubugu {
+  display: flex; flex-direction: row; align-items: center; justify-content: space-between;
+  height: 68px; padding: 0 8px; border-radius: 999px;
+  background-color: var(--surface); background-image: var(--clay-face); box-shadow: var(--clay-raised-lg);
+}
+.sekme { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 64px; height: 56px; border: 0; background: transparent; }
+.sekme svg { width: 24px; height: 24px; stroke: var(--text-2); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sekme .ad { font-family:'Montserrat'; font-weight:400; font-size:13px; line-height:18px; color: var(--text-2); margin-top: 4px; }
+.sekme-ikon-kab { width: 40px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 999px; }
+.sekme.aktif .sekme-ikon-kab { width: 40px; height: 32px; background-color: var(--primary-soft); box-shadow: var(--clay-sunken); }
+.sekme.aktif svg { stroke: var(--primary-text); }
+.sekme.aktif .ad { color: var(--primary-text); font-weight: 600; }
+.fab {
+  width: 64px; height: 64px; border-radius: 999px; border: 0;
+  background-image: var(--grad-action); box-shadow: var(--clay-action);
+  display: flex; align-items: center; justify-content: center;
+}
+.fab svg { width: 28px; height: 28px; stroke: #FFFFFF; fill: none; stroke-width: 2.5; stroke-linecap: round; }
+.fab.basili { background-image: var(--grad-action-press); box-shadow: var(--clay-action-pressed); }
+
+/* --- metin girişi --- */
+.giris {
+  display: flex; flex-direction: row; align-items: center;
+  height: 56px; padding: 0 16px; border-radius: 16px;
+  background-color: var(--well); box-shadow: var(--clay-sunken);
+}
+.giris.odakli { box-shadow: var(--clay-sunken), 0 0 0 2px var(--primary-text); }
+.giris.hatali { box-shadow: var(--clay-sunken), 0 0 0 2px var(--danger); }
+
+/* --- bilgi şeritleri --- */
+.serit { display: flex; flex-direction: row; align-items: flex-start; padding: 12px 16px; border-radius: 16px; box-shadow: var(--clay-sunken); }
+.serit-warn { background-color: var(--warning-soft); }
+.serit-info { background-color: var(--primary-soft); }
+.serit-danger { background-color: var(--danger-soft); }
+.serit svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
+
+/* --- toast --- */
+.toast {
+  display: flex; flex-direction: row; align-items: center; padding: 16px; border-radius: 24px;
+  background-color: var(--surface); background-image: var(--clay-face); box-shadow: var(--clay-raised-lg);
+}
+
+/* --- ilerleme çubuğu --- */
+.cubuk-oluk { height: 12px; border-radius: 999px; background-color: var(--groove); box-shadow: var(--clay-sunken); display: flex; flex-direction: row; }
+.cubuk-dolgu { height: 12px; border-radius: 999px; }
+
+/* --- yükleniyor iskeleti --- */
+.iskelet { background-color: var(--well); border-radius: 999px; box-shadow: var(--clay-sunken); }
+
+/* --- adım göstergesi --- */
+.adim-oluk { flex: 1 1 auto; height: 8px; border-radius: 999px; background-color: var(--well); box-shadow: var(--clay-sunken); }
+.adim-dolu { flex: 1 1 auto; height: 8px; border-radius: 999px; background-image: var(--grad-action); box-shadow: 0 2px 4px -1px rgba(47,104,197,0.45); }
+
+/* --- tuş takımı (harcama ekle) --- */
+.tus {
+  flex: 1 1 0; height: 56px; border: 0; border-radius: 16px; margin: 0 4px;
+  background-color: var(--surface); background-image: var(--clay-face); box-shadow: var(--clay-raised);
+  font-family: 'Montserrat'; font-weight: 600; font-size: 26px; color: var(--text);
+  display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums;
+}
+.tus.basili { background-image: none; background-color: var(--groove); box-shadow: var(--clay-pressed); }
+.tus svg { width: 24px; height: 24px; stroke: var(--text); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+
+/* --- sekme alanı: bar + taşan FAB (RN'de absolute ile) --- */
+.sekme-alan { position: relative; height: 84px; }  /* bar 68 + FAB taşması 16 */
+.sekme-alan .sekme-cubugu { position: absolute; left: 0; right: 0; bottom: 0; }
+.sekme-bosluk { width: 64px; height: 56px; }
+.sekme-alan .fab { position: absolute; right: 8px; top: 0; }  /* bar iç boşluğu 8 ile hizalı */
+
+/* --- kahraman gösterge --- */
+.hero-kart { background-color: var(--primary-soft); background-image: var(--clay-face); border-radius: 32px; box-shadow: var(--clay-raised-lg); }
+.hero-daire { position: relative; width: 224px; height: 224px; border-radius: 999px;
+  background-color: var(--surface); background-image: var(--clay-face); box-shadow: var(--clay-raised-lg); }
+.hero-orta { position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.hero-daire .yay { position: absolute; left: 0; top: 0; }
+.hata-daire { width: 96px; height: 96px; border-radius: 999px; background-color: var(--groove); box-shadow: var(--clay-sunken); display: flex; align-items: center; justify-content: center; }
+.hata-daire svg { width: 32px; height: 32px; stroke: var(--text-2); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.hero-daire-bos { width: 176px; height: 176px; }   /* boş durum göstergesi (tokens.md §7.8) */
+.hero-bos { background-color: var(--groove); box-shadow: var(--clay-sunken); background-image: none; }
+
+/* --- tek satıra kırpma (RN: numberOfLines={1} + ellipsizeMode="tail") --- */
+.tek-satir { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- kahraman sayı + ₺ (₺ display ölçeğinde, taban çizgisine hizalı) --- */
+.para-hero { display: flex; flex-direction: row; align-items: baseline; }
+.t-hero-simge { font-family:'Montserrat'; font-weight:700; font-size:32px; line-height:38px; letter-spacing:-1px; color: var(--text); }
+
+/* --- harcama ekle: tuş takımı, segment, kategori seçici --- */
+/* oluk telafisi −4: çocukların 4px gutter'ının negatifi, yeni boşluk değeri değil (tokens.md §3.3) */
+.tus-satir { display: flex; flex-direction: row; margin-left: -4px; margin-right: -4px; }
+.segment { display: flex; flex-direction: row; padding: 4px; border-radius: 999px; background-color: var(--well); box-shadow: var(--clay-sunken); }
+.segment-btn { flex: 1 1 0; height: 44px; border: 0; border-radius: 999px; background: transparent;
+  font-family:'Montserrat'; font-weight:600; font-size:16px; color: var(--text-2);
+  display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.segment-btn.secili { background-color: var(--surface); background-image: var(--clay-face); box-shadow: var(--clay-raised); color: var(--text); }
+.ikon-kutu { display: flex; width: 20px; height: 20px; }
+.ikon-kutu svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.segment-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* oluk telafisi −4 (tokens.md §3.3) */
+.kat-sec { display: flex; flex-direction: row; flex-wrap: wrap; margin-left: -4px; margin-right: -4px; }
+.kat-sec-oge { width: 33.33%; padding: 4px; display: flex; flex-direction: column; align-items: center; }
+.kat-sec-kutu { width: 100%; padding: 12px 4px; border-radius: 16px; border: 0; background-color: var(--surface);
+  background-image: var(--clay-face); box-shadow: var(--clay-raised);
+  display: flex; flex-direction: column; align-items: center; }
+.kat-sec-kutu.secili { background-image: none; background-color: var(--primary-soft); box-shadow: var(--clay-sunken); }
+
+.scrim-kat { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background-color: rgba(28,57,142,0.38); }
+.sheet { background-color: var(--bg); border-top-left-radius: 32px; border-top-right-radius: 32px;
+  box-shadow: var(--clay-raised-lg); padding: 16px; }
+.sheet-tutamac { width: 44px; height: 4px; border-radius: 999px; background-color: var(--line); }
+.katman { position: relative; flex: 1 1 auto; display: flex; flex-direction: column; }
+.katman-ust { position: absolute; left: 0; right: 0; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: flex-end; }
+.katman-ust .scrim-kat { position: static; flex: 1 1 auto; }
+.imlec { width: 3px; height: 44px; border-radius: 999px; background-color: var(--primary); }
+
+/* --- yatay kaydırılan çip şeridi (RN: horizontal ScrollView) --- */
+.yatay-kaydir { display: flex; flex-direction: row; align-items: center; overflow-x: auto; }
+.yatay-kaydir::-webkit-scrollbar { display: none; }
+.alt-sabit { display: flex; flex-direction: column; padding-top: 8px; }
+.giris-hatali { box-shadow: var(--clay-sunken), 0 0 0 2px var(--danger); }
+
+/* --- onboarding --- */
+.secim-kart { display: flex; flex-direction: row; align-items: center; width: 100%; padding: 16px; border: 0;
+  border-radius: 24px; text-align: left;
+  background-color: var(--surface); background-image: var(--clay-face); box-shadow: var(--clay-raised); }
+.secim-kart.secili { background-image: none; background-color: var(--primary-soft); box-shadow: var(--clay-sunken), inset 0 0 0 2px var(--primary-text); }
+.secim-kart.basili { background-image: none; background-color: var(--groove); box-shadow: var(--clay-pressed); }
+.secim-ikon { width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
+  background-color: var(--groove); box-shadow: var(--clay-sunken); }
+.secim-ikon svg { width: 24px; height: 24px; stroke: var(--primary-text); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.secim-kart.secili .secim-ikon { background-color: var(--surface); background-image: var(--clay-face); box-shadow: var(--clay-raised); }
+.cip-ag { display: flex; flex-direction: row; flex-wrap: wrap; }
+.cip-ag-oge { margin-right: 8px; margin-bottom: 8px; }
+.cip svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ikon-kutu-32 { width: 32px; height: 32px; }
+.ikon-kutu-32 svg { width: 32px; height: 32px; }
+
+/* --- E-12 detay sheet · E-13 silme onayı (dialog) --- */
+.dialog {
+  background-color: var(--surface); background-image: var(--clay-face);
+  border-radius: 24px; box-shadow: var(--clay-raised-lg);
+}
+/* danger'ın izinli DÖRT bağlamı (tokens §1.3 · K-029 ölçütü: yüksek etkili +
+   geri alınamaz): 1) E-13 taksit serisi silme onayı  2) E-19 tüm verileri
+   silme onayı  3) form hatası kenarlığı + hata metni  4) silme toast'ının
+   8pt göstergesi. Limit aşımı ASLA kırmızı değildir (warning ailesi). */
+.ikon-kab-danger {
+  width: 44px; height: 44px; border-radius: 16px;
+  background-color: var(--danger-soft); box-shadow: var(--clay-sunken);
+  display: flex; align-items: center; justify-content: center;
+}
+.ikon-kab-danger svg { width: 20px; height: 20px; stroke: var(--danger-ink); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.btn-danger.basili {
+  background-color: var(--danger-ink);
+  box-shadow: 0 1px 2px 0 rgba(28,57,142,0.10),
+              inset 0 3px 6px -2px rgba(28,57,142,0.40),
+              inset 0 -2px 4px -2px rgba(255,255,255,0.22);
+}
+.btn-danger svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* seçili kategori özeti (E-12) — çip değil, okunur bir kutu */
+.secim-ozet {
+  display: flex; flex-direction: row; align-items: center; width: 100%;
+  min-height: 56px; padding: 0 16px; border: 0; border-radius: 16px;
+  background-color: var(--surface); background-image: var(--clay-face); box-shadow: var(--clay-raised);
+}
+.secim-ozet.basili { background-image: none; background-color: var(--groove); box-shadow: var(--clay-pressed); }
+.secim-ozet svg { width: 20px; height: 20px; stroke: var(--text-2); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.btn-ghost svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* --- kil anahtar (switch) — E-19. RN: Pressable + 2 View, platform Switch değil --- */
+.anahtar { width: 56px; height: 32px; border-radius: 999px; border: 0; padding: 4px; flex: 0 0 auto;
+  background-color: var(--well); box-shadow: var(--clay-sunken);
+  display: flex; flex-direction: row; align-items: center; justify-content: flex-start; }
+.anahtar.acik { background-color: var(--primary-deep); background-image: var(--grad-action);
+  box-shadow: var(--clay-action); justify-content: flex-end; }
+.anahtar .topuz { width: 24px; height: 24px; border-radius: 999px; background-color: var(--surface);
+  background-image: var(--clay-face); box-shadow: var(--clay-raised); }
+.anahtar.basili { box-shadow: var(--clay-pressed); }
+.anahtar.acik.basili { background-image: var(--grad-action-press); box-shadow: var(--clay-action-pressed); }
+
+/* --- ayar / limit satırı: kendi kabarık yüzeyi olan tek karar satırı --- */
+.ayar-satir { display: flex; flex-direction: row; align-items: center; width: 100%; border: 0;
+  padding: 16px; border-radius: 16px; background-color: var(--surface); background-image: var(--clay-face);
+  box-shadow: var(--clay-raised); text-align: left; }
+.ayar-satir.basili { background-image: none; background-color: var(--groove); box-shadow: var(--clay-pressed); }
+.ayar-satir svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
+
+/* --- ay yükü çubuğu (E-18): oluk + dolgu, satır içinde esner --- */
+.yuk-oluk { flex: 1 1 auto; height: 12px; border-radius: 999px; background-color: var(--well);
+  box-shadow: var(--clay-sunken); display: flex; flex-direction: row; }
+.yuk-dolgu { height: 12px; border-radius: 999px; background-image: var(--grad-action);
+  box-shadow: 0 2px 4px -1px rgba(47,104,197,0.45); }
+
+/* --- dokunulabilir değer kuyusu (E-17 limit alanları) --- */
+.kuyu-btn { display: flex; flex-direction: row; align-items: center; width: 100%; border: 0;
+  padding: 16px; border-radius: 16px; background-color: var(--well); box-shadow: var(--clay-sunken); text-align: left; }
+.kuyu-btn.basili { background-color: var(--groove); box-shadow: var(--clay-pressed); }
+.kuyu-btn.hatali { box-shadow: var(--clay-sunken), 0 0 0 2px var(--danger); }
+.kuyu-btn svg { width: 20px; height: 20px; stroke: var(--text-2); fill: none; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
+
+/* --- gün kutusu (E-15): kategori sabitken sol sütun günü taşır --- */
+.gun-kutu { width: 44px; height: 44px; border-radius: 16px; flex: 0 0 auto;
+  background-color: var(--well); box-shadow: var(--clay-sunken);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.gun-kutu .t-micro { color: var(--text-2); }
+
+/* ============================================================
+   SİSTEM KLAVYESİ — bölge [A] · RN'e kodlanmaz
+   Bu klavyeyi işletim sistemi çizer. Prototipte yalnız "metin girerken
+   ekranın ne kadarı kalıyor" sorusunu dürüst göstermek için duruyor;
+   marka dili (clay) BİLEREK uygulanmamıştır — bizim yüzeyimiz değil.
+   ============================================================ */
+.sistem-klavye {
+  flex: 0 0 224px; background: #D1D4DA; padding: 8px 3px 12px;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.ksatir { display: flex; flex-direction: row; justify-content: center; gap: 6px; }
+.ktus {
+  flex: 1 1 0; height: 42px; border-radius: 5px; background: #FFFFFF;
+  display: flex; align-items: center; justify-content: center;
+  font-family: -apple-system, 'Montserrat', sans-serif; font-size: 22px;
+  color: #1C1C1E; box-shadow: 0 1px 0 rgba(0,0,0,0.28);
+}
+.ktus.koyu { background: #ADB3BE; font-size: 15px; }
+.ktus.genis { flex: 1.4 1 0; }
+.ktus.genis2 { flex: 1.9 1 0; font-size: 13px; }
+.ktus.bosluk { flex: 5 1 0; font-size: 13px; color: #3A3A3C; }

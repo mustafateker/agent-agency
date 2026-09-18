@@ -1,44 +1,54 @@
-# ai-ajans (pilot)
+# ai-ajans
 
 "PM ajanı + aşamalara göre devreye giren uzman alt-ajanlar" ile çalışan bir
-yapay zeka ajansı pilotu. Şu an tamamen yerel (VS Code + Claude Code CLI).
+yapay zeka ajansı. Yerel çalışır (VS Code + Claude Code CLI).
+
+```
+ai-ajans/
+├── CLAUDE.md      ← ajans talimatları · aşama modeli · onay kuralları
+├── .claude/       ← alt-ajan tanımları (10 ajan)
+├── agency/        ← 🏢 OTOMASYON — tüm projelerde ortak
+│   ├── templates/   proje kurulum checklist'i, brandbook şablonu
+│   ├── reference/   anti-pattern listesi, referans repolar, RN kısıtları
+│   └── vendor/      open-design skill'i, 138 design system kütüphanesi
+└── projects/      ← 📦 ÜRÜNLER — her proje kendi içinde kapalı
+    └── trinkow/     docs/ · status/ · app/
+```
+
+**Ayrımın kuralı:** *"İkinci bir proje başlasa bu dosyayı kopyalar mıydım?"*
+Evet → `agency/` · Hayır → `projects/<ad>/`
 
 ## Nasıl çalıştırılır
-1. Bu klasörü VS Code'da aç, gerçek Terminal'de `claude` çalıştır
-   (Claude Code CLI kurulu olmalı; kontrol: `claude --version`).
-2. `.claude/settings.json` sayesinde oturum otomatik `pm-orchestrator` ile
-   açılır.
-3. `docs/` klasörüne proje dökümanını ekle.
-4. PM'e "docs/ klasöründeki dökümanı oku ve BACKLOG.md'yi oluştur" de.
-5. İlerlemeyi `status/STATUS.md` ve `status/STAGE.md` üzerinden izle.
+1. Bu klasörü aç, terminalde `claude` çalıştır.
+2. `.claude/settings.json` oturumu otomatik `pm-orchestrator` ile açar.
+3. PM, `CLAUDE.md`'deki **aktif projenin** `status/` dosyalarını okuyup
+   kaldığı yerden devam eder.
 
-## Aşamalar ve ajanlar
-| Aşama | Ajan(lar) | Ne zaman devreye girer |
+## Aşamalar
+| Aşama | Ajan(lar) | Model |
 |---|---|---|
-| 0. Keşif | pm-orchestrator | Her zaman ilk |
-| 1. Marka | brand-strategist | docs/ dökümanı okunduktan sonra |
-| 2. UI/UX | ui-ux-designer, design-reviewer | Brandbook ONAYLANDIKTAN sonra |
-| 3. Geliştirme | frontend-developer, python-developer | Tasarım ONAYLANDIKTAN sonra |
-| 4. Kalite | qa-engineer | Geliştirme bittikçe |
-| 5. DevOps/Yayın | devops-engineer | QA'dan geçtikten sonra |
-| 6. Büyüme/Sosyal Medya | social-media-strategist, social-media-analyst | Brandbook onaylanır onaylanmaz, PARALEL |
+| 0 Keşif | pm-orchestrator | opus |
+| 1 Marka | brand-strategist | opus |
+| 2 UI/UX | ui-ux-designer, design-reviewer | opus |
+| 3 Geliştirme | frontend-developer, python-developer | sonnet |
+| 4 Kalite | qa-engineer | sonnet |
+| 5 DevOps/Yayın | devops-engineer | sonnet |
+| 6 Büyüme | social-media-strategist, social-media-analyst | sonnet |
 
-Detaylı çıkış kriterleri ve onay kuralları: `status/STAGE.md` ve `CLAUDE.md`.
+Aşama 6, marka onayından sonra diğerleriyle paralel yürür.
+Çıkış kriterleri ve onay kuralları: `CLAUDE.md` + aktif projenin `status/STAGE.md`.
 
-İleride eklenecek (agency-agents'tan, ihtiyaç oldukça): Satış, Müşteri
-Destek, Finans/Operasyon, Hukuk/Uyumluluk ajanları.
+## Aktif proje
+**Trinkow** — harcamaları "kalori sayar gibi" takip ettiren davranışsal finans
+uygulaması. React Native (Expo), Türkçe, offline-first, sunucusuz.
+Aşama 3 (Geliştirme). Tasarım onaylandı: 13 dosya, 62 yüzey, claymorphism.
+→ `projects/trinkow/docs/CONTEXT.md`
 
-## Tasarım kalite güvencesi
-UI/UX'in "AI yapmış gibi" jenerik durmaması için:
-- Her ürün önce `docs/brand/brandbook.md` ile markalanır (2+ farklı yön
-  sunulur, gerekçeli seçilir).
-- Her tasarım `docs/design/jenerik-ai-ui-anti-pattern-listesi.md`'ye göre
-  `design-reviewer` tarafından PASS/REVİZE olarak denetlenir.
-- Son görsel onay her zaman Mustafa'dan alınır.
-
-## Notlar
-- Backend/otomasyon: Python. Frontend/UI: onaylı tasarıma sadık kalarak
-  uygun web teknolojisi.
-- Ücretli servis/yeni bağımlılık/silme/deploy/marka-tasarım onayı gibi
-  kararlar otomatik yapılmaz — PM bunları `status/DECISIONS.md`'ye yazıp
-  onayını bekler.
+## İlkeler
+- **Tasarım jenerik olmayacak** — her çıktı anti-pattern listesine karşı
+  `design-reviewer` tarafından denetlenir; REVİZE bloklayıcıdır.
+- **Ücretli bağımlılık yok** — font OFL, ikon MIT/ISC, sunucu yok.
+- **Uygulama yalan söylemez** — eksik veri uydurulmaz, tahmin "güncel" diye
+  sunulmaz.
+- **Onay kapıları PM tarafından varsayılamaz** (marka, tasarım, deploy,
+  ücretli servis, silme).

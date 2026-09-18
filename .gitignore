@@ -3,3 +3,9 @@ __pycache__/
 .venv/
 .env
 .DS_Store
+
+# Expo / RN
+node_modules/
+.expo/
+dist/
+*.tsbuildinfo

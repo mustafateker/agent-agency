@@ -1,0 +1,3 @@
+- [User role](user_role.md) — Mustafa is the owner/approval gate for ai-ajans; Turkish, cares deeply about non-generic UI.
+- [Çalışma tarzı](feedback_calisma_tarzi.md) — Geniş direktif verir, uçtan uca yorumlayıp bitirmemi bekler; sadece gerçek onay kapılarında dur.
+- [Ücretli bağımlılık](feedback_ucretli_bagimlilik.md) — Paralı hiçbir şeye onay vermez; ücretli seçeneği önüne getirme, yukarıda ele.
