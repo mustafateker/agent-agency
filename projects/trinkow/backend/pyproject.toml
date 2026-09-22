@@ -1,0 +1,31 @@
+[project]
+name = "trinkow-backend"
+version = "0.1.0"
+description = "Trinkow backend servisi — auth ve sonraki modüller"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "pydantic[email]>=2.6",
+    "motor>=3.4",
+    "passlib[bcrypt]>=1.7.4",
+    "bcrypt<4.1",  # passlib 1.7.4'ün kendi-testi bcrypt>=4.1 ile kırılıyor (bilinen uyumsuzluk)
+    "pyjwt>=2.8",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]

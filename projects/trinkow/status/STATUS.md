@@ -1,9 +1,46 @@
 # Durum
 
-Son güncelleme: 2026-09-18 (3. oturum)
+Son güncelleme: 2026-09-19 (4. oturum)
 Proje: **Trinkow** — harcama takip uygulaması (davranışsal finans / "kalori sayacı")
-Mevcut aşama: **2 — UI/UX Tasarım (YENİDEN AÇILDI)** 🔄 · Aşama 3 duraklatıldı
-Neden: 2026-09-17'de Mustafa kapsamı genişletti (K-047…K-058). Detay en altta.
+Mevcut aşama: **3 — Geliştirme** · **arayüz TAMAMLANDI**, backend başladı
+
+## 4. oturumun özeti (en üstte — eski notlar tarihseldir)
+**Arayüz bitti.** Kodlanan turlar: D-2d-1 (Günlük + seri + gün seçici) · D-2d-2
+(ürün arama + 80 kalemlik katalog + `limit_gecmisi`) · D-2d-3a (onboarding Katman 1
++ limit önerisi) · D-2d-3b (Katman 2 + "Planın hazır" + kategori tohumlama + F-11) ·
+D-2c-1/1b (Ayarlar + profilleme sheet + Ayarlar'a giriş) · D-2c-2 (oturum aç /
+hesap oluştur + API istemcisi + oturum deposu). Şema sürümü **5**. Her turda
+`tsc` 0 hata + iOS export temiz, **hiç yeni bağımlılık eklenmedi**.
+
+**Backend başladı** (Mustafa direktifi K-067/K-068): `projects/trinkow/backend/`,
+Python + FastAPI + MongoDB, modüler yapı (`modules/<ad>/{controller,service,dto,model}`).
+`auth` modülü yazıldı: kayıt · giriş · token yenile · çıkış · ben · hesap sil.
+
+**Temel değişti:** artık "offline-first, veri cihazda" DEĞİL — **veri sunucuda**,
+kimlik kendi backend'imizde JWT ile (Supabase düştü). `CONTEXT.md` güncellendi.
+
+### 🔵 Mustafa'da bekleyen kararlar (hepsi ilerlemeyi yavaşlatıyor)
+1. **Yerel MongoDB yok** (BE-2a/K-069) — brew kurulumu / Docker / mevcut bağlantı?
+   Backend testleri gerçek veritabanına karşı **hiç çalıştırılamadı**.
+2. **K-073** — "Hesapsız devam et" K-068 ile çelişiyor: hesap zorunlu mu, misafir
+   hesabı mı? PM eğilimi: misafir hesabı.
+3. **Bağımlılık onayı:** `expo-notifications` (bildirim izni) · `expo-secure-store`
+   (token'lar şu an SQLite'ta, yayın öncesi şart) · Google/Apple giriş kütüphaneleri.
+4. Eskiden beri bekleyen: gizlilik politikası + kullanım şartları (K-057/7) ·
+   tütün fiyatları (K-037) · IG/X hesabı (K-010).
+
+### 🔴 Yayın bloklayıcıları (teknik)
+- "Şifremi unuttum" **sahte** — backend'de sıfırlama ucu yok (K-074/3).
+- Yenileme token'ı rotasyonu yok (K-069/1).
+- Token'lar güvenli depoda değil.
+- E-00 açılış ekranı yapılmadı.
+
+### Sıradaki iş (karar gelince)
+BE-3 `kullanici` + BE-4 `harcama` modülleri → **BE-6: istemcinin `src/db/*`
+katmanının API'ye bağlanması** (K-068'in asıl işi) → D-3 QA (Aşama 4) →
+T-5 doküman senkronu (tasarım dokümanları koddan geride kaldı, 12+ madde birikti).
+
+---
 
 ## Genel özet
 Ürün: harcamaları kalori sayar gibi takip ettiren, günlük limit çubuğuyla

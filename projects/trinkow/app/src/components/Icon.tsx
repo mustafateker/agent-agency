@@ -189,6 +189,69 @@ export const icons = {
   check: [p('M20 6 9 17l-5-5')],
   /** v4 E-10 — "seriye sayılmadı" uyarı şeridi (aynı geometri: `limit-kaldir`) */
   'alert-circle': [{ t: 'c', cx: 12, cy: 12, r: 10 } as Sekil, p('m4.9 4.9 14.2 14.2')],
+  /** F-18 E-11 arama alanı ikonu */
+  search: [{ t: 'c', cx: 11, cy: 11, r: 8 } as Sekil, p('m21 21-4.3-4.3')],
+  /** D-2d-3a E-01 niyet — "Param nereye gidiyor" (Takip) */
+  target: [
+    { t: 'c', cx: 12, cy: 12, r: 10 } as Sekil,
+    { t: 'c', cx: 12, cy: 12, r: 6 } as Sekil,
+    { t: 'c', cx: 12, cy: 12, r: 2 } as Sekil,
+  ],
+  /** D-2d-3a E-01 niyet — "Bütçe yaratmak" (Tasarruf) */
+  landmark: [
+    p('M3 22h18'),
+    p('M6 18v-7'),
+    p('M10 18v-7'),
+    p('M14 18v-7'),
+    p('M18 18v-7'),
+    p('M12 2 21 7H3Z'),
+  ],
+  /** D-2c-1 E-19 — "Bildirim izni kapalı" bilgi şeridi */
+  bell: [
+    p('M10.3 21a1.9 1.9 0 0 0 3.4 0'),
+    p('M4 17h16a2 2 0 0 1-2-2V9a6 6 0 1 0-12 0v6a2 2 0 0 1-2 2Z'),
+  ],
+  /** D-2c-1 E-19 — Hesap bölümü "Çıkış yap" */
+  'log-out': [
+    p('M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4'),
+    p('m16 17 5-5-5-5'),
+    p('M21 12H9'),
+  ],
+  /** D-2c-2 · E-22/E-23 — şifre alanı görünürlük düğmesi (Lucide "eye"). */
+  eye: [
+    p('M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0'),
+    { t: 'c', cx: 12, cy: 12, r: 3 } as Sekil,
+  ],
+  /** D-2c-2 · E-22/E-23 — şifre gizli (Lucide "eye-off"). */
+  'eye-off': [
+    p('M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68'),
+    p('M6.61 6.61A13.5 13.5 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61'),
+    p('M14.12 14.12a3 3 0 1 1-4.24-4.24'),
+    p('m2 2 20 20'),
+  ],
+  /** D-2c-2 · E-22 — bağlantı hatası şeridi (Lucide "wifi-off"). */
+  'wifi-off': [
+    p('M12 20h.01'),
+    p('M8.5 16.42a5 5 0 0 1 7 0'),
+    p('M5 12.86a10 10 0 0 1 5.2-2.7'),
+    p('M19 12.86a10 10 0 0 0-3.6-2.4'),
+    p('M2 8.82a16 16 0 0 1 4.6-2.9'),
+    p('M22 8.82a16 16 0 0 0-10.7-4.1'),
+    p('m2 2 20 20'),
+  ],
+  /** D-2c-2 · E-22 — "Bağlantıyı gönderdik" kartı (Lucide "mail-check"). */
+  'mail-check': [
+    p('M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h8'),
+    p('m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'),
+    p('m16 19 2 2 4-4'),
+  ],
+  /** D-2c-1b K-072 — E-16 başlığı, Ayarlar'a giriş (Lucide "settings"). */
+  ayarlar: [
+    p(
+      'M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z',
+    ),
+    { t: 'c', cx: 12, cy: 12, r: 3 } as Sekil,
+  ],
 } as const;
 
 export type IconName = keyof typeof icons;

@@ -6,10 +6,11 @@ import { a11y, clay, color, radius, rhythm } from '@/theme/tokens';
 
 /**
  * Bileşen envanteri §1 `SegmentedControl` — track çukur, seçili segment
- * KABARIK (seçim renkle değil yükseklikle okunur). Bu turda tek kullanım:
- * ödeme tipi (Nakit/Kart). E-19'daki 3'lü gün sınırı sonraki tur.
+ * KABARIK (seçim renkle değil yükseklikle okunur). Kullanım: ödeme tipi
+ * (Nakit/Kart, ikonlu) · E-19 gün sınırı (00.00/03.00/06.00, ikonsuz —
+ * prototipte üç düz sayı, `icon` isteğe bağlı).
  */
-export type SegmentSecenek<T extends string> = { value: T; label: string; icon: IconName };
+export type SegmentSecenek<T extends string> = { value: T; label: string; icon?: IconName };
 
 export function SegmentedControl<T extends string>({
   secenekler,
@@ -37,8 +38,12 @@ export function SegmentedControl<T extends string>({
               secili && { backgroundColor: color.surface, boxShadow: clay.raised },
               !secili && pressed && { backgroundColor: color.groove },
             ]}>
-            <Icon name={s.icon} size={20} color={secili ? color.text : color.text2} />
-            <View style={{ width: rhythm.group }} />
+            {s.icon ? (
+              <>
+                <Icon name={s.icon} size={20} color={secili ? color.text : color.text2} />
+                <View style={{ width: rhythm.group }} />
+              </>
+            ) : null}
             <Txt role="bodyStrong" tone={secili ? color.text : color.text2}>
               {s.label}
             </Txt>

@@ -1,20 +1,28 @@
 # Aşama Takibi
 
-Mevcut aşama: **2 — UI/UX Tasarım · ✅ design-reviewer PASS · 🔵 Mustafa'nın görsel onayı bekleniyor (K-063)**
+Mevcut aşama: **4 ✅ KAPANDI → 5 (DevOps/Yayın) kapısında, Mustafa kararı bekleniyor**
+QA delta: BLOCKER yok (K-092). Backend 123/123 · istemci tsc 0 hata.
+Aşama 5 açılmadan önce yayın öncesi borç listesi önceliklendirilmeli.
+Aşama 3 ✅ KAPANDI (2026-09-20, K-088): arayüz + 5 modüllük Python/MongoDB backend +
+istemcinin tamamen sunucuya bağlanması. Backend 118/118 test geçiyor (Atlas).
+Aşama 2 ✅ KAPANDI: design-reviewer PASS + Mustafa onayı (K-063).
 Tasarım: `docs/design/prototip-v4/` — **18 ekran · 122 yüzey · 0 bulgu**, anti-pattern 20/20 temiz.
 Kaynak dokümanlar senkron: `tokens.md` **v4.0** · bileşen envanteri · metinler · varlıklar · ekran envanteri.
-Denetim raporu: `docs/design/denetim-raporu-v4.md` (2 tur: REVİZE → PASS).
 
-⚠️ **Aşama 2 çıkış kriteri: PASS + Mustafa onayı.** PASS geldi, onay bekleniyor.
-Onay gelince Aşama 3'e dönülür:
-D-1 ✅ · D-2a ✅ · D-1b ✅ · D-2b ✅ · D-2c (onboarding/ayarlar — K-052 ile blok kalktı) ·
-**D-2d 🆕 Günlük sekmesi · seri sistemi · gün seçici · oturum/hesap · profilleme+plan · ürün arama** ·
-D-3 QA (Aşama 4).
+**Kodlama sırası (K-063, hız önceliği):**
+D-1 ✅ · D-2a ✅ · D-1b ✅ · D-2b ✅ · D-2d-1 ✅ (Günlük + seri + gün seçici) ·
+D-2d-2 ✅ · D-2d-3a ✅ · D-2d-3b ✅ · D-2c-1 ✅ · D-2c-1b ✅ · D-2c-2 ✅
+→ **ARAYÜZ TAMAMLANDI** (2026-09-19).
+Kalan: E-00 açılış ekranı · "şifremi unuttum" sahte (yayın bloklayıcı) ·
+**BE-6 istemcinin API'ye bağlanması** · D-3 QA (Aşama 4) · T-5 doküman senkronu.
+Açık PM kararları: K-065 · K-066. Arayüz bitince T-5 doküman birleştirmesi yapılır.
 
 Yayın öncesi bloklayıcılar (Mustafa'da): gizlilik politikası + kullanım şartları
 metni (K-057/7) · hesap silme Edge Function (K-057/4).
 
-Faz 1'de backend YOK, yalnız kimlik doğrulama var → `python-developer` hâlâ devrede değil (K-003).
+Backend: Mustafa 2026-09-19'da **Python + modüler + MongoDB** backend direktifi verdi (K-067).
+`projects/trinkow/backend/` kuruldu. **Kural: arayüz bitmeden backend kodu yazılmaz**
+→ `python-developer` sıraya girdi ama henüz çağrılmadı; önce K-067'nin 4 sorusu cevaplanmalı.
 Aşama 6 (Büyüme): içerik takvimi hazır, yayın zamanlaması Mustafa'da (K-010).
 Aşama 1 ✅ (K-006/K-021, brandbook 2026-09-17'de K-052/K-048'e göre revize edildi).
 Proje: Trinkow · Bağlam: `projects/trinkow/docs/CONTEXT.md` · Stack: RN (Expo) + TypeScript.

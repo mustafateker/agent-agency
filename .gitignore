@@ -9,3 +9,7 @@ node_modules/
 .expo/
 dist/
 *.tsbuildinfo
+
+# backend (BE-2)
+.pytest_cache/
+*.egg-info/

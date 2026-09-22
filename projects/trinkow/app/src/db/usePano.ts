@@ -1,23 +1,19 @@
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
 
-import {
-  ayAsimSayisi,
-  gununHarcamalari,
-  gunlukLimit,
-  gunToplami,
-  kategoriDurumlari,
-  type Harcama,
-  type KategoriDurumu,
-} from '@/db/harcama';
-import { gunSeriBilgisi, ilkSinirGunu, type GunSeriBilgisi } from '@/db/seri';
-import { ayAnahtari, gunAnahtari, gunEkle } from '@/lib/tarih';
+import { gununHarcamalari, type Harcama, type KategoriDurumu } from '@/db/harcama';
+import type { Niyet } from '@/db/profil';
+import type { GunSeriBilgisi } from '@/db/seri';
+import { ozetPanoGetir } from '@/lib/api';
+import { gunAnahtari, gunEkle } from '@/lib/tarih';
 import { veriDegisimineAbone } from '@/lib/veriBus';
 
 export type PanoVerisi = {
   yukleniyor: boolean;
   hata: boolean;
   tarih: Date;
+  /** F-11 — HeroCard kip çipi buna bağlanır (K-053 niyet, varsayılan 'takip'). */
+  niyet: Niyet;
   gunFarki: number;
   /** null → günlük limit tanımsız (limitsiz kip) */
   limitKurus: number | null;
@@ -44,12 +40,17 @@ const BOS_SERI: GunSeriBilgisi = {
  * Bir günün panosu (E-10 Günlük — K-049 sayfalama). `gunFarki` bugüne göre
  * kaydırma; 0 = bugün, negatif = geçmiş. Her sayfa kendi kancasını çağırır
  * (`FlatList` yalnız görünür sayfaları monte eder, bkz. `app/index.tsx`).
+ *
+ * BE-6c: toplam/limit durumu/kategori kırılımı/ay aşımı/seri/`ilkGunMu` artık
+ * TEK bir `GET /ozet/pano` isteğiyle sunucudan gelir (K-068 — istemci bir
+ * daha kendi toplamaz). Günün HAM kayıt listesi (satır satır göstermek için)
+ * ayrıca `gununHarcamalari` ile çekilir — `ozet/pano` yanıtı bir liste
+ * DÖNMEZ, yalnız aggregate alanlar döner (backend/README.md "ozet" bölümü).
  */
 export function usePano(gunFarki = 0): PanoVerisi & { yenile: () => void } {
   const db = useSQLiteContext();
   const tarih = gunEkle(new Date(), gunFarki);
   const gun = gunAnahtari(tarih);
-  const ay = ayAnahtari(tarih);
   const bugunMu = gunFarki === 0;
 
   const [veri, setVeri] = useState<PanoVerisi>({
@@ -57,6 +58,7 @@ export function usePano(gunFarki = 0): PanoVerisi & { yenile: () => void } {
     hata: false,
     tarih,
     gunFarki,
+    niyet: 'takip',
     limitKurus: null,
     harcananKurus: 0,
     harcamalar: [],
@@ -68,33 +70,39 @@ export function usePano(gunFarki = 0): PanoVerisi & { yenile: () => void } {
 
   const oku = useCallback(async () => {
     try {
-      const limitKurus = await gunlukLimit(db);
-      const [harcamalar, harcananKurus, kategoriler, ayAsimi, seri, ilkGun] = await Promise.all([
-        gununHarcamalari(db, gun),
-        gunToplami(db, gun),
-        bugunMu ? kategoriDurumlari(db, ay, gun) : Promise.resolve([]),
-        limitKurus === null ? Promise.resolve(0) : ayAsimSayisi(db, ay, limitKurus),
-        gunSeriBilgisi(db, gun, limitKurus),
-        ilkSinirGunu(db),
-      ]);
+      const [pano, harcamalar] = await Promise.all([ozetPanoGetir(gun), gununHarcamalari(db, gun)]);
       setVeri({
         yukleniyor: false,
         hata: false,
         tarih,
         gunFarki,
-        limitKurus,
-        harcananKurus,
+        niyet: (pano.niyet as Niyet) || 'takip',
+        limitKurus: pano.limit_kurus,
+        harcananKurus: pano.harcanan_kurus,
         harcamalar,
-        kategoriler,
-        ayAsimi,
-        seri,
-        ilkGunMu: gun <= ilkGun,
+        // K-056/metinler.md §23.4 — kategori kartları yalnız BUGÜNÜN sayfasında.
+        kategoriler: bugunMu
+          ? pano.kategoriler.map((k) => ({
+              kategori: k.kategori,
+              limitKurus: k.limit_kurus,
+              harcananKurus: k.harcanan_kurus,
+              bugunKurus: k.bugun_kurus,
+            }))
+          : [],
+        ayAsimi: pano.ay_asimi,
+        seri: {
+          harcananKurus: pano.seri.harcanan_kurus,
+          kayitAdedi: pano.seri.kayit_adedi,
+          harcamasizIsaretli: pano.seri.harcamasiz_isaretli,
+          seriyeSayildiMi: pano.seri.seriye_sayildi_mi,
+        },
+        ilkGunMu: pano.ilk_gun_mu,
       });
     } catch {
       setVeri((o) => ({ ...o, yukleniyor: false, hata: true }));
     }
-    // `tarih` her render'da yeni nesne olduğu için bağımlılık `gun`/`ay`
-  }, [db, gun, ay, bugunMu, gunFarki]); // eslint-disable-line react-hooks/exhaustive-deps
+    // `tarih` her render'da yeni nesne olduğu için bağımlılık `gun`
+  }, [db, gun, bugunMu, gunFarki]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     void oku();

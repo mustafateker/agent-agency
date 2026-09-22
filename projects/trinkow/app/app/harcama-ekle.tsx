@@ -4,17 +4,37 @@ import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AmountWell } from '@/components/AmountWell';
+import { AmountWell, type AmountWellGunButonu } from '@/components/AmountWell';
 import { Button } from '@/components/Button';
 import { CategoryPicker } from '@/components/CategoryPicker';
+import { CategoryValueRow } from '@/components/CategoryValueRow';
 import { Chip } from '@/components/Chip';
 import { ClayKeypad } from '@/components/ClayKeypad';
 import { InfoStrip } from '@/components/InfoStrip';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { SearchField } from '@/components/SearchField';
+import { SearchResultRow } from '@/components/SearchResultRow';
+import { SearchResultSkeleton } from '@/components/SearchResultSkeleton';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { TextField } from '@/components/TextField';
 import { Txt } from '@/components/Txt';
-import { ekleLimitDisiUyari, ekleTaksitOnizleme, t, toastKaydedildi, toastKaydedildiLimitDisi } from '@/content/metinler';
+import type { KatalogOgesi } from '@/content/urunKatalogu';
+import {
+  a11yEkleGun,
+  a11yEkleKategoriDeger,
+  a11yEkleOneriCip,
+  a11yEkleSonKullanilan,
+  ekleAramaSatirGecen,
+  ekleAramaYeniBaslik,
+  ekleGunSeridi,
+  ekleLimitDisiUyari,
+  ekleTaksitOnizleme,
+  ekleTutarOneriCip,
+  EKLE_ARAMA_YENI_ALT,
+  t,
+  toastKaydedildi,
+  toastKaydedildiLimitDisi,
+} from '@/content/metinler';
 import {
   ODEME_VARSAYILAN,
   gunToplami,
@@ -22,9 +42,12 @@ import {
   harcamaEkle,
   sikAlinanlar,
   taksitSerisiOlustur,
+  urunAra,
   type OdemeTipi,
   type SikAlinan,
 } from '@/db/harcama';
+import { varsayilanOdemeOku } from '@/db/ayarTercihleri';
+import { tumOgrenilenKategoriler } from '@/db/urunKategori';
 import { aileRenkleri, kategori as kategoriGetir, type KategoriKodu } from '@/lib/kategoriler';
 import {
   TUTAR_BUYUK_ESIK_KURUS,
@@ -35,15 +58,18 @@ import {
   tutarGosterimi,
   kurustanTutarGirisi,
 } from '@/lib/para';
-import { gunAnahtari, gunEkle, kisaTarih } from '@/lib/tarih';
+import { gunAnahtari, gunEkle, kisaTarih, uzunTarih } from '@/lib/tarih';
+import { katalogAra, turkceNormalize } from '@/lib/urunArama';
+import { gunSeciciAbone } from '@/lib/gunSeciciBus';
 import { toastGoster } from '@/lib/toastBus';
 import { veriDegisti } from '@/lib/veriBus';
 import { color, layout, rhythm } from '@/theme/tokens';
 
 /**
- * E-11 · Harcama ekle. Referans: prototip-v3/02-harcama-ekle.html.
+ * E-11 · Harcama ekle. Referans: prototip-v4/02-harcama-ekle.html (17 yüzey, T-4).
  * Dokunuş bütçesi (ekran-envanteri §4): 1) Harcama ekle 2) Kategori 3) Kaydet.
- * Tarih/ödeme/taksit/not varsayılanları bu sayıyı korumak için seçildi.
+ * Ürün arama (F-18) bu bütçeyi UZATMAZ: arama boş bırakılırsa hiçbir dalda
+ * doğrulama hatası doğmaz (delta-v4.md "Bilinçli tasarım kararları" #1).
  *
  * K-032: kategori önceden seçili GELMEZ (yalnız v4 K-049 "geçmiş güne geç
  * kayıt" ve K-051 kategori kartı "+" hızlı eklemesi istisna — `kategori`
@@ -52,6 +78,9 @@ import { color, layout, rhythm } from '@/theme/tokens';
  * tutar>0 iken etkin; kategori eksikse gönderim anında hata gösterilir.
  */
 const TAKSIT_SECENEKLERI = [3, 6, 9, 12];
+
+/** Tutar kuyusunun altındaki tek cümlelik köken açıklaması (design point #5 — tekrar yok). */
+type TutarAltMetinTuru = 'gecmisten' | 'katalogdan' | 'kategori' | null;
 
 export default function HarcamaEkleEkrani() {
   const db = useSQLiteContext();
@@ -65,14 +94,32 @@ export default function HarcamaEkleEkrani() {
     gunFarkiParam !== null && Number.isFinite(gunFarkiParam) && gunFarkiParam !== 0 && gunFarkiParam !== -1;
 
   const [buffer, setBuffer] = useState('');
+
+  // F-18 — arama alanı. `urunAdi` doluysa alan "seçili" durumdadır (ürün
+  // kaydın AYRI alanı, K-033); `aramaMetni` yalnız seçim yokken canlıdır.
   const [urunAdi, setUrunAdi] = useState('');
+  const [aramaMetni, setAramaMetni] = useState('');
+  const [gecmisSonuclar, setGecmisSonuclar] = useState<SikAlinan[]>([]);
+  const [gecmisYukleniyor, setGecmisYukleniyor] = useState(false);
+  const [ogrenilenKategoriler, setOgrenilenKategoriler] = useState<Map<string, string>>(new Map());
+  const [oneriTutarKurus, setOneriTutarKurus] = useState<number | null>(null);
+  const [tutarAltMetinTuru, setTutarAltMetinTuru] = useState<TutarAltMetinTuru>(null);
+
   const [kategoriKodu, setKategoriKodu] = useState<KategoriKodu | null>(() =>
     params.kategori ? kategoriGetir(params.kategori).kod : null,
   );
+  // F-18 — kategori ÜRÜNDEN mi doldu (değer satırı) yoksa kullanıcı mı
+  // seçiyor (çip şeridi)? Design point #4: tek kural, iki görünüm.
+  const [kategoriUrundenMi, setKategoriUrundenMi] = useState(false);
+
+  // D-2c-1b — Ayarlar'daki "varsayılan ödeme" ön-seçim olarak gelir; burada
+  // değiştirmek yalnız BU kaydı etkiler, tercihi KALICI değiştirmez.
   const [odeme, setOdeme] = useState<OdemeTipi>(ODEME_VARSAYILAN);
   const [taksitliAcik, setTaksitliAcik] = useState(false);
   const [taksitSayisi, setTaksitSayisi] = useState<number | null>(null);
-  const [dun, setDun] = useState(gunFarkiParam === -1);
+  // D-2d-2 — gün yalnız E-24 Gün seçici'den değişir (kip=sec); FAB'dan
+  // "Dün" ile açılan geçmiş sayfası akışı ilk değer olarak korunur (K-049).
+  const [secilenGunFarki, setSecilenGunFarki] = useState<number | null>(gunFarkiParam === -1 ? -1 : null);
   const [notAcik, setNotAcik] = useState(false);
   const [notMetni, setNotMetni] = useState('');
 
@@ -89,16 +136,23 @@ export default function HarcamaEkleEkrani() {
     let canli = true;
     void sikAlinanlar(db, 3).then((l) => canli && setSikAlinanlarListesi(l));
     void gunlukLimit(db).then((l) => canli && setLimitKurus(l));
+    void tumOgrenilenKategoriler(db).then((m) => canli && setOgrenilenKategoriler(m));
+    // K-072 — yalnız İLK yüklemede ön-seçim olarak uygulanır; kullanıcının
+    // ekranda `odemeSec` ile yaptığı değişikliği bu efekt geç render'da EZMEZ
+    // (bağımlılık dizisi yalnız `db`, taksitliAcik/odeme buraya eklenmez).
+    void varsayilanOdemeOku(db).then((v) => canli && setOdeme(v));
     return () => {
       canli = false;
     };
   }, [db]);
 
-  const seciliTarih = useMemo(
-    () => gunEkle(new Date(), sabitGunFarki ? gunFarkiParam! : dun ? -1 : 0),
-    [dun, sabitGunFarki, gunFarkiParam],
-  );
+  // D-2d-2 — E-24 Gün seçici (kip=sec) seçtiği günü bu bus'la bildirir.
+  useEffect(() => gunSeciciAbone(setSecilenGunFarki), []);
+
+  const gunFarki = sabitGunFarki ? gunFarkiParam! : (secilenGunFarki ?? 0);
+  const seciliTarih = useMemo(() => gunEkle(new Date(), gunFarki), [gunFarki]);
   const seciliGun = useMemo(() => gunAnahtari(seciliTarih), [seciliTarih]);
+  const bugunMu = !sabitGunFarki && gunFarki === 0;
 
   useEffect(() => {
     let canli = true;
@@ -108,6 +162,28 @@ export default function HarcamaEkleEkrani() {
     };
   }, [db, seciliGun]);
 
+  // F-18 — kullanıcının kendi geçmişinde arama (SQLite, tipik <50ms).
+  // Katalog senkron/RAM-içi olduğu için burada beklenmez (RN inşa notu #1).
+  useEffect(() => {
+    if (urunAdi.trim() !== '') return;
+    const sorgu = aramaMetni.trim();
+    if (!sorgu) {
+      setGecmisSonuclar([]);
+      setGecmisYukleniyor(false);
+      return;
+    }
+    let canli = true;
+    setGecmisYukleniyor(true);
+    void urunAra(db, sorgu, 20).then((sonuc) => {
+      if (!canli) return;
+      setGecmisSonuclar(sonuc);
+      setGecmisYukleniyor(false);
+    });
+    return () => {
+      canli = false;
+    };
+  }, [db, aramaMetni, urunAdi]);
+
   const tutarKurus = tutarGirisindenKurus(buffer);
   const tutarGosterim = tutarGosterimi(buffer);
   const limitDisiFarkKurus =
@@ -115,8 +191,54 @@ export default function HarcamaEkleEkrani() {
       ? gununToplamiKurus + tutarKurus - limitKurus
       : 0;
 
+  // F-18 — arama sonuçları açıkken kategori kontrolü ekranda YOKTUR (katlama
+  // tablosu istisnası): kategori bir sonraki dokunuşta üründen gelecek.
+  const aramaAktif = urunAdi.trim() === '' && aramaMetni.trim() !== '';
+  const sonKullanilanStripGoster = urunAdi.trim() === '' && aramaMetni.trim() === '' && sikAlinanlarListesi.length > 0;
+
+  const gecmisAdlarNormalize = useMemo(
+    () => new Set(gecmisSonuclar.map((g) => turkceNormalize(g.urunAdi))),
+    [gecmisSonuclar],
+  );
+  const katalogSonuclari = useMemo(
+    () => (aramaAktif ? katalogAra(aramaMetni, gecmisAdlarNormalize) : []),
+    [aramaAktif, aramaMetni, gecmisAdlarNormalize],
+  );
+  const aramaSonucYok =
+    aramaAktif && !gecmisYukleniyor && gecmisSonuclar.length === 0 && katalogSonuclari.length === 0;
+
+  const tutarAltMetin =
+    tutarAltMetinTuru === 'gecmisten'
+      ? t['ekle.tutar.alt.gecmisten']
+      : tutarAltMetinTuru === 'katalogdan'
+        ? t['ekle.tutar.alt.katalogdan']
+        : tutarAltMetinTuru === 'kategori'
+          ? t['ekle.tutar.alt.kategori']
+          : null;
+
+  const gunEtiket = sabitGunFarki
+    ? uzunTarih(seciliTarih)
+    : gunFarki === 0
+      ? `${t['ekle.tarih.bugun']} · ${kisaTarih(seciliTarih)}`
+      : gunFarki === -1
+        ? `${t['ekle.tarih.dun']} · ${kisaTarih(seciliTarih)}`
+        : uzunTarih(seciliTarih);
+  const gunButon: AmountWellGunButonu = {
+    etiket: gunEtiket,
+    vurgulu: !bugunMu,
+    tiklanabilir: !sabitGunFarki,
+    // D-2d-2 — dokununca artık Bugün/Dün arasında geçiş YAPMAZ, E-24 Gün
+    // seçici'yi seçim kipinde açar (K-049 sınırları orada uygulanır).
+    onPress: () => router.push(`/gun-sec?kip=sec${gunFarki !== 0 ? `&acikGun=${gunFarki}` : ''}` as never),
+    accessibilityLabel: a11yEkleGun(gunEtiket),
+  };
+
   function tutarDegistir(guncelle: (b: string) => string) {
     if (tutarHata) setTutarHata(undefined);
+    // RN inşa notu #3 — kullanıcı elle düzenlemeye başlarsa tutarla ilgili
+    // köken açıklaması ve "geçen sefer" önerisi artık geçerli değildir.
+    if (tutarAltMetinTuru === 'gecmisten' || tutarAltMetinTuru === 'katalogdan') setTutarAltMetinTuru(null);
+    if (oneriTutarKurus !== null) setOneriTutarKurus(null);
     setBuffer(guncelle);
   }
 
@@ -129,16 +251,71 @@ export default function HarcamaEkleEkrani() {
     }
   }
 
-  function sikAlinanSec(s: SikAlinan) {
-    setBuffer(kurustanTutarGirisi(s.tutarKurus));
-    setKategoriKodu(kategoriGetir(s.kategori).kod);
-    setUrunAdi(s.urunAdi);
+  /** Ürün + kategori + (varsa) tutar tek kaynaktan geldi — kendi geçmişi ya da "Son kullandıkların" çipi. */
+  function urunSec(ad: string, kategoriKoduSecilen: KategoriKodu, gecmisTutarKurus: number) {
+    setUrunAdi(ad);
+    setAramaMetni('');
+    setKategoriKodu(kategoriKoduSecilen);
+    setKategoriUrundenMi(true);
     setKategoriHata(undefined);
+    setTutarHata(undefined);
+    if (tutarKurus === 0) {
+      // RN inşa notu #3 — tutar 0 iken doldurmak "üzerine yazmak" değildir.
+      setBuffer(kurustanTutarGirisi(gecmisTutarKurus));
+      setTutarAltMetinTuru('gecmisten');
+      setOneriTutarKurus(null);
+    } else {
+      // Girilen metnin üzerine YAZILMAZ — "geçen sefer" öneri çipi sunulur.
+      setTutarAltMetinTuru(null);
+      setOneriTutarKurus(gecmisTutarKurus);
+    }
+  }
+
+  function katalogSec(oge: KatalogOgesi) {
+    const efektifKod = kategoriGetir(ogrenilenKategoriler.get(turkceNormalize(oge.ad)) ?? oge.kategori).kod;
+    setUrunAdi(oge.ad);
+    setAramaMetni('');
+    setKategoriKodu(efektifKod);
+    setKategoriUrundenMi(true);
+    setKategoriHata(undefined);
+    setOneriTutarKurus(null);
+    // Katalogda fiyat yok (K-050/K-037): tutar 0 kalırsa "sen yaz" denir.
+    setTutarAltMetinTuru(tutarKurus === 0 ? 'katalogdan' : 'kategori');
+  }
+
+  function serbestEkle() {
+    const ad = aramaMetni.trim();
+    if (!ad) return;
+    setUrunAdi(ad);
+    setAramaMetni('');
+    // Kategoriyi ve tutarı sen seç — kategori otomatik dolmaz.
+    setKategoriUrundenMi(false);
+    setOneriTutarKurus(null);
+    setTutarAltMetinTuru(null);
+  }
+
+  function urunKaldir() {
+    setUrunAdi('');
+    setAramaMetni('');
+    setOneriTutarKurus(null);
+    setTutarAltMetinTuru(null);
+    // RN inşa notu #4 — ürün silinince kategori ve tutar SİLİNMEZ.
+  }
+
+  function oneriKabulEt() {
+    if (oneriTutarKurus === null) return;
+    if (tutarHata) setTutarHata(undefined);
+    setBuffer(kurustanTutarGirisi(oneriTutarKurus));
+    setOneriTutarKurus(null);
   }
 
   async function kaydet() {
+    if (tutarKurus <= 0) {
+      setTutarHata(t['ekle.hata.tutar']);
+      return;
+    }
     if (!kategoriKodu) {
-      setKategoriHata(t['hata.kategori_yok']);
+      setKategoriHata(t['ekle.hata.kategori']);
       return;
     }
     if (tutarKurus > TUTAR_BUYUK_ESIK_KURUS) {
@@ -182,7 +359,7 @@ export default function HarcamaEkleEkrani() {
       });
       router.back();
     } catch {
-      setYazmaHata(t['hata.yazma']);
+      setYazmaHata(t['ekle.hata.yazilamadi']);
     } finally {
       setKaydediliyor(false);
     }
@@ -207,40 +384,73 @@ export default function HarcamaEkleEkrani() {
           <AmountWell
             tutarGosterim={tutarGosterim}
             ustSol={t['ekle.tutar.etiket']}
-            ustSag={sabitGunFarki ? kisaTarih(seciliTarih) : dun ? t['ekle.tarih.dun'] : t['ekle.tarih.bugun']}
+            ustSag={gunEtiket}
+            gunButon={gunButon}
             hata={tutarHata}
           />
         </View>
+
+        {!bugunMu ? (
+          <>
+            <View style={{ height: rhythm.group }} />
+            <View style={stil.pad}>
+              <InfoStrip variant="info" icon="calendar" metin={ekleGunSeridi(kisaTarih(seciliTarih))} />
+            </View>
+          </>
+        ) : null}
+
+        {tutarAltMetin ? (
+          <>
+            <View style={{ height: rhythm.group }} />
+            <View style={stil.pad}>
+              <Txt role="caption">{tutarAltMetin}</Txt>
+            </View>
+          </>
+        ) : null}
+
+        {oneriTutarKurus !== null ? (
+          <>
+            <View style={{ height: rhythm.group }} />
+            <View style={[stil.pad, stil.satir]}>
+              <Chip
+                ad={ekleTutarOneriCip(paraYaz(oneriTutarKurus))}
+                onPress={oneriKabulEt}
+                accessibilityLabel={a11yEkleOneriCip(paraYaz(oneriTutarKurus))}
+              />
+            </View>
+          </>
+        ) : null}
 
         {limitDisiFarkKurus > 0 ? (
           <>
             <View style={{ height: rhythm.group }} />
             <View style={stil.pad}>
-              <InfoStrip
-                variant="warning"
-                metin={ekleLimitDisiUyari(paraYaz(limitDisiFarkKurus))}
-              />
+              <InfoStrip variant="warning" metin={ekleLimitDisiUyari(paraYaz(limitDisiFarkKurus))} />
             </View>
           </>
         ) : null}
 
         <View style={{ height: rhythm.group }} />
         <View style={stil.pad}>
-          <TextField
-            value={urunAdi}
-            onChangeText={setUrunAdi}
-            placeholder={t['ekle.urun.placeholder']}
-            clearable
-            accessibilityLabel="Ürün adı, isteğe bağlı"
+          <SearchField
+            deger={aramaMetni}
+            onDegerDegisti={setAramaMetni}
+            secili={urunAdi.trim() ? urunAdi : null}
+            onKaldir={urunKaldir}
+            yukleniyor={gecmisYukleniyor}
+            placeholder={t['ekle.arama.placeholder']}
+            accessibilityLabel={t['a11y.ekle.arama']}
+            temizleEtiketi={t['a11y.ekle.aramaTemizle']}
+            kaldirEtiketi={t['a11y.ekle.urunKaldir']}
           />
         </View>
 
-        {sikAlinanlarListesi.length > 0 ? (
+        {sonKullanilanStripGoster ? (
           <>
             <View style={{ height: rhythm.section }} />
             <View style={stil.pad}>
               <Txt role="label" tone={color.text2}>
-                {t['ekle.sik_alinanlar']}
+                {t['ekle.arama.grup.gecmis']}
               </Txt>
             </View>
             <View style={{ height: rhythm.group }} />
@@ -254,28 +464,101 @@ export default function HarcamaEkleEkrani() {
                   ad={s.urunAdi}
                   tutar={paraYaz(s.tutarKurus)}
                   dotColor={aileRenkleri(kategoriGetir(s.kategori).aile).solid}
-                  onPress={() => sikAlinanSec(s)}
+                  dotAlways
+                  onPress={() => urunSec(s.urunAdi, kategoriGetir(s.kategori).kod, s.tutarKurus)}
+                  accessibilityLabel={a11yEkleSonKullanilan(s.urunAdi, paraYaz(s.tutarKurus))}
                 />
               ))}
             </ScrollView>
           </>
         ) : null}
 
-        <View style={{ height: rhythm.section }} />
-        <View style={stil.pad}>
-          <Txt role="label" tone={color.text2}>
-            {t['ekle.kategori.etiket']}
-          </Txt>
-        </View>
-        <View style={{ height: rhythm.group }} />
-        <CategoryPicker
-          value={kategoriKodu}
-          onChange={(k) => {
-            setKategoriKodu(k);
-            setKategoriHata(undefined);
-          }}
-          error={kategoriHata}
-        />
+        {aramaAktif ? (
+          <View style={stil.pad}>
+            <View style={{ height: rhythm.section }} />
+            {gecmisYukleniyor ? (
+              <SearchResultSkeleton />
+            ) : aramaSonucYok ? (
+              <SearchResultRow
+                baslik={ekleAramaYeniBaslik(aramaMetni.trim())}
+                altBaslik={EKLE_ARAMA_YENI_ALT}
+                onPress={serbestEkle}
+              />
+            ) : (
+              <>
+                {gecmisSonuclar.length > 0 ? (
+                  <>
+                    <Txt role="label" tone={color.text2}>
+                      {t['ekle.arama.grup.gecmis']}
+                    </Txt>
+                    <View style={{ height: rhythm.group }} />
+                    {gecmisSonuclar.map((s, i) => (
+                      <View key={s.urunAdi} style={i > 0 ? { marginTop: rhythm.group } : undefined}>
+                        <SearchResultRow
+                          kategori={kategoriGetir(s.kategori)}
+                          baslik={s.urunAdi}
+                          altBaslik={ekleAramaSatirGecen(kategoriGetir(s.kategori).ad, paraYaz(s.tutarKurus))}
+                          onPress={() => urunSec(s.urunAdi, kategoriGetir(s.kategori).kod, s.tutarKurus)}
+                        />
+                      </View>
+                    ))}
+                  </>
+                ) : null}
+                {katalogSonuclari.length > 0 ? (
+                  <>
+                    {gecmisSonuclar.length > 0 ? <View style={{ height: rhythm.section }} /> : null}
+                    <Txt role="label" tone={color.text2}>
+                      {t['ekle.arama.grup.katalog']}
+                    </Txt>
+                    <View style={{ height: rhythm.group }} />
+                    {katalogSonuclari.map((k, i) => {
+                      const efektifKategori = kategoriGetir(ogrenilenKategoriler.get(turkceNormalize(k.ad)) ?? k.kategori);
+                      return (
+                        <View key={k.id} style={i > 0 ? { marginTop: rhythm.group } : undefined}>
+                          <SearchResultRow
+                            kategori={efektifKategori}
+                            baslik={k.ad}
+                            altBaslik={efektifKategori.ad}
+                            onPress={() => katalogSec(k)}
+                          />
+                        </View>
+                      );
+                    })}
+                  </>
+                ) : null}
+              </>
+            )}
+          </View>
+        ) : (
+          <>
+            <View style={{ height: rhythm.section }} />
+            <View style={stil.pad}>
+              <Txt role="label" tone={color.text2}>
+                {t['ekle.kategori.etiket']}
+              </Txt>
+            </View>
+            <View style={{ height: rhythm.group }} />
+            {kategoriKodu && kategoriUrundenMi ? (
+              <View style={stil.pad}>
+                <CategoryValueRow
+                  kategori={kategoriGetir(kategoriKodu)}
+                  onPress={() => setKategoriUrundenMi(false)}
+                  accessibilityLabel={a11yEkleKategoriDeger(kategoriGetir(kategoriKodu).ad)}
+                />
+              </View>
+            ) : (
+              <CategoryPicker
+                value={kategoriKodu}
+                onChange={(k) => {
+                  setKategoriKodu(k);
+                  setKategoriUrundenMi(false);
+                  setKategoriHata(undefined);
+                }}
+                error={kategoriHata}
+              />
+            )}
+          </>
+        )}
 
         <View style={{ height: rhythm.section }} />
         <View style={stil.pad}>
@@ -346,18 +629,6 @@ export default function HarcamaEkleEkrani() {
 
         <View style={{ height: rhythm.section }} />
         <View style={[stil.pad, stil.satir]}>
-          {sabitGunFarki ? null : (
-            <>
-              <Chip
-                ad={t['ekle.tarih.dun']}
-                selected={dun}
-                dotColor={color.primary}
-                onPress={() => setDun((d) => !d)}
-                accessibilityLabel={dun ? 'Tarihi bugüne al' : 'Tarihi dün yap'}
-              />
-              <View style={{ width: rhythm.group }} />
-            </>
-          )}
           <Chip
             ad={t['ekle.not.ac']}
             selected={notAcik}

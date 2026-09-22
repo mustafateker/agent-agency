@@ -1,8 +1,9 @@
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
 
-import { gunAraligiToplamlari, gunlukLimit } from '@/db/harcama';
+import { gunAraligiToplamlari } from '@/db/harcama';
 import { gunSeriDurumu, ilkSinirGunu, type GunSeriDurumu } from '@/db/seri';
+import { kullaniciProfiliGetir } from '@/lib/api';
 import { ayAnahtari, ayGunSayisi, gunAnahtari, gunEkle, tarihtenGun } from '@/lib/tarih';
 import { veriDegisimineAbone } from '@/lib/veriBus';
 
@@ -36,6 +37,12 @@ const BOS_OZET: GunSeciciOzeti = { kayitliGun: 0, limitAltiGun: 0, birikenKurus:
  * "Biriken" formülü tokens.md §14.4: yalnız KAPANMIŞ (bugünden önceki) ve
  * limit altında kapanan günler toplanır; harcamasız-işaretli/kayıtsız
  * günler ve limit dışı günler toplama girmez.
+ *
+ * BE-6c: günlük limit `kullaniciProfiliGetir()`den (sunucu, BE-6a) gelir;
+ * ay içindeki gün toplamları `gunAraligiToplamlari` ile ham kayıt listesinden
+ * İSTEMCİDE gruplanır (sunucuda bu aralık için hazır bir uç yok, bkz.
+ * `db/harcama.ts` başı) — sınıflandırmanın kendisi (`gunSeriDurumu`) saf ve
+ * sunucudakiyle birebir aynı kuralı uygular.
  */
 export function useGunSecici(ay: string): GunSeciciVerisi & { yenile: () => void } {
   const db = useSQLiteContext();
@@ -53,7 +60,8 @@ export function useGunSecici(ay: string): GunSeciciVerisi & { yenile: () => void
     try {
       const bugun = new Date();
       const bugunGun = gunAnahtari(bugun);
-      const [limitKurus, ilkGun] = await Promise.all([gunlukLimit(db), ilkSinirGunu(db)]);
+      const [profil, ilkGun] = await Promise.all([kullaniciProfiliGetir(), ilkSinirGunu(db)]);
+      const limitKurus = profil.gunluk_limit_kurus;
       const gunSayisi = ayGunSayisi(ay);
       const ilkTarih = tarihtenGun(`${ay}-01`);
       const sonTarih = gunEkle(ilkTarih, gunSayisi - 1);

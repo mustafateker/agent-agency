@@ -1,9 +1,8 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { GradFill } from '@/components/GradFill';
 import { Icon, type IconName } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
-import { a11y, clay, color, gradient, radius, rhythm, size } from '@/theme/tokens';
+import { a11y, clay, color, radius, rhythm, size } from '@/theme/tokens';
 
 /** §7.1 — üç varyant. Ekran başına birincil buton en fazla 1. */
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
@@ -18,6 +17,8 @@ type Props = {
   /** Metin genişliğinde durması gerekiyorsa (prototipte kart içi ikincil buton) */
   auto?: boolean;
   accessibilityLabel?: string;
+  /** §7.1 varsayılan "Kaydediliyor" yerine ekrana özgü meşgul metni (ör. "Oturum açılıyor"). */
+  loadingLabel?: string;
 };
 
 const yukseklik: Record<ButtonVariant, number> = {
@@ -35,10 +36,11 @@ export function Button({
   icon,
   auto = false,
   accessibilityLabel,
+  loadingLabel,
 }: Props) {
   const pasif = disabled || loading;
   // §7.1 loading: metin "Kaydediliyor" + disabled. Spinner yalnız buton içinde.
-  const metin = loading ? 'Kaydediliyor' : label;
+  const metin = loading ? (loadingLabel ?? 'Kaydediliyor') : label;
 
   return (
     <Pressable
@@ -70,7 +72,7 @@ export function Button({
           boxShadow: pressed ? clay.pressed : undefined,
         },
       ]}>
-      {({ pressed }) => {
+      {() => {
         const metinRengi =
           pasif
             ? color.text2
@@ -81,9 +83,6 @@ export function Button({
                 : color.text2;
         return (
           <>
-            {variant === 'primary' && !pasif ? (
-              <GradFill colors={pressed ? gradient.actionPressed : gradient.action} />
-            ) : null}
             {icon ? (
               <>
                 <Icon name={icon} size={size.iconSm} color={metinRengi} />

@@ -1,12 +1,9 @@
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
 
-import { gunAraligiToplamlari, gunlukLimit } from '@/db/harcama';
-import { gunSeriDurumu, seriDurumuHesapla, type GunSeriDurumu, type SeriDurumu } from '@/db/seri';
-import { gunAnahtari, gunEkle, haftaAraligi } from '@/lib/tarih';
+import { seriGorunumuGetir, type GunSeriDurumu, type SeriDurumu } from '@/db/seri';
+import { haftaAraligi, tarihtenGun } from '@/lib/tarih';
 import { veriDegisimineAbone } from '@/lib/veriBus';
-
-const PENCERE_GUN = 28;
 
 export type SeriIzgaraGunu = { gun: number; anahtar: string; durum: GunSeriDurumu };
 
@@ -18,7 +15,13 @@ export type SeriEkraniVerisi = {
   pencereEtiketi: string;
 };
 
-/** E-21 Seri ekranı — seri durumu + "son 4 hafta" ızgarası (kapanmış günler, bugün hariç). */
+/**
+ * E-21 Seri ekranı — seri durumu + son 30 günün ızgarası (K-048+K-064/1).
+ * BE-6c: hesabın TAMAMI `GET /ozet/seri`den (`db/seri.ts#seriGorunumuGetir`)
+ * gelir — istemcide bir daha "son 4 hafta" toplama yapılmaz. Pencere artık
+ * sunucunun sabitlediği 30 gün (bugün DAHİL, önceki 28 günlük/"bugün hariç"
+ * pencereden FARKLI — bkz. rapor "sapmalar").
+ */
 export function useSeriEkrani(): SeriEkraniVerisi & { yenile: () => void } {
   const db = useSQLiteContext();
   const [veri, setVeri] = useState<SeriEkraniVerisi>({
@@ -31,32 +34,17 @@ export function useSeriEkrani(): SeriEkraniVerisi & { yenile: () => void } {
 
   const oku = useCallback(async () => {
     try {
-      const bugun = new Date();
-      const limitKurus = await gunlukLimit(db);
-      const bitis = gunEkle(bugun, -1);
-      const baslangic = gunEkle(bugun, -PENCERE_GUN);
-      const [durum, toplamlar] = await Promise.all([
-        seriDurumuHesapla(db, bugun, limitKurus),
-        gunAraligiToplamlari(db, gunAnahtari(baslangic), gunAnahtari(bitis)),
-      ]);
-      const izgara: SeriIzgaraGunu[] = [];
-      for (let i = 0; i < PENCERE_GUN; i += 1) {
-        const tarih = gunEkle(baslangic, i);
-        const anahtar = gunAnahtari(tarih);
-        const t = toplamlar.get(anahtar);
-        izgara.push({
-          gun: tarih.getDate(),
-          anahtar,
-          durum: gunSeriDurumu(t?.toplamKurus ?? 0, t?.kayitAdedi ?? 0, limitKurus),
-        });
-      }
-      setVeri({
-        yukleniyor: false,
-        hata: false,
-        durum,
-        izgara,
-        pencereEtiketi: haftaAraligi(baslangic, bitis),
-      });
+      const { durum, izgara: hamIzgara } = await seriGorunumuGetir(db);
+      const izgara: SeriIzgaraGunu[] = hamIzgara.map((h) => ({
+        gun: tarihtenGun(h.gun).getDate(),
+        anahtar: h.gun,
+        durum: h.durum,
+      }));
+      const pencereEtiketi =
+        izgara.length > 0
+          ? haftaAraligi(tarihtenGun(izgara[0].anahtar), tarihtenGun(izgara[izgara.length - 1].anahtar))
+          : '';
+      setVeri({ yukleniyor: false, hata: false, durum, izgara, pencereEtiketi });
     } catch {
       setVeri((o) => ({ ...o, yukleniyor: false, hata: true }));
     }

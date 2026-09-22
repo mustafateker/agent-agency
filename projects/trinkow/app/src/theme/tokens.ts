@@ -45,6 +45,25 @@ export const color = {
   successSoft: '#DEF2E6',
 } as const;
 
+/**
+ * §7.13 / §1.3 · K-059/4 — plan pay çubuğunun (E-26 `ShareBar`/`ShareRow`)
+ * ÜÇ segment rengi. Mevcut hex değerlerin YENİDEN ADLANDIRILMASI — yeni
+ * renk değeri değil. `success` yalnız bu grafik bağlamda kullanılır ve
+ * ÜSTÜNDE METİN TAŞIMAZ (K-066 · pay adları çubuğun dışındaki `ShareRow`da).
+ */
+export const share = {
+  zorunlu: color.primaryDeep,
+  sosyal: color.primary,
+  birikim: color.success,
+} as const;
+
+/** §7.13 `Slider` (E-25/E-26) — oluk/topuz/satır. Yeni ölçü ailesi açılmadı (12/32/44 mevcut, satır = §6 `a11y.minTarget`). */
+export const slider = {
+  track: 12,
+  knob: 32,
+  row: 44,
+} as const;
+
 /** §1.4 kategori aileleri — 6 aile. Kategoriyi ayıran şey ikon + ad. */
 export const catColor = {
   mavi: { solid: '#306BCA', soft: '#E4EEFE' },
@@ -293,6 +312,11 @@ export const size = {
   iconButtonGlyph: 22,
   /** §7.5 kategori çubuğu */
   catBarHeight: 12,
+  /** §7.12 `ClaySwitch` — track 56×32, iç boşluk 4, topuz 24 */
+  switchTrackW: 56,
+  switchTrackH: 32,
+  switchTrackPad: 4,
+  switchKnob: 24,
 } as const;
 
 /** §7.5 kahraman gösterge geometrisi — prototipteki ölçüler birebir. */

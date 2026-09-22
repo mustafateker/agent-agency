@@ -161,6 +161,9 @@ export default function OzetEkrani() {
         actionIcon="limitler"
         actionLabel={t['ozet.limitleri_ac']}
         onActionPress={() => router.push('/limitler')}
+        ikinciActionIcon="ayarlar"
+        ikinciActionLabel={t['ayar.baslik']}
+        onIkinciActionPress={() => router.push('/ayarlar')}
       />
 
       <ScrollView

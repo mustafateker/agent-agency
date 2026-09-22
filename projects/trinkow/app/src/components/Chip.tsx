@@ -20,12 +20,19 @@ type Props = {
   selected?: boolean;
   /** Seçili çipin solundaki 8pt nokta rengi */
   dotColor?: string;
+  /**
+   * F-18 `son-kullanilanlar-cip` — nokta bir SEÇİM işareti değil, kategori
+   * bilgisi taşır; bu yüzden `selected` olmadan da görünür (delta-v4.md
+   * satır 68, "Sık kullandıkların" şeridi). Diğer tüm çiplerde nokta yalnız
+   * `selected` iken görünmeye devam eder (§5.4 halka yoktur kuralı).
+   */
+  dotAlways?: boolean;
   onPress?: () => void;
   /** Tam ad + tutar; verilmezse ad/tutar'dan kurulur */
   accessibilityLabel?: string;
 };
 
-export function Chip({ ad, tutar, selected = false, dotColor, onPress, accessibilityLabel }: Props) {
+export function Chip({ ad, tutar, selected = false, dotColor, dotAlways = false, onPress, accessibilityLabel }: Props) {
   const etiket = accessibilityLabel ?? (tutar ? `${ad}, ${tutar}` : ad);
   return (
     <ClayPressable
@@ -38,7 +45,7 @@ export function Chip({ ad, tutar, selected = false, dotColor, onPress, accessibi
       shadow={selected ? clay.sunken : clay.raised}
       gloss={!selected}
       style={stil.cip}>
-      {selected && dotColor ? (
+      {(selected || dotAlways) && dotColor ? (
         <>
           <View style={[stil.nokta, { backgroundColor: dotColor }]} />
           <View style={{ width: rhythm.group }} />

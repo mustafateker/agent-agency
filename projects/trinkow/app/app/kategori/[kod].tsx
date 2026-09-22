@@ -102,9 +102,9 @@ export default function KategoriDetayEkrani() {
   // Satırlar en yeniden eskiye sıralı; hangi kayıt(lar) ay limitini aşmaya
   // sebep oldu bulmak için KRONOLOJİK yürüyen toplam gerekir (E-10 ile aynı yöntem).
   const limitDisiIdler = useMemo(() => {
-    if (limitKurus === null) return new Set<number>();
+    if (limitKurus === null) return new Set<string>();
     let yuruyenToplam = 0;
-    const set = new Set<number>();
+    const set = new Set<string>();
     for (const h of [...harcamalar].reverse()) {
       yuruyenToplam += h.tutarKurus;
       if (yuruyenToplam > limitKurus) set.add(h.id);

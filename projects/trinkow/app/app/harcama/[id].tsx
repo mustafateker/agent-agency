@@ -52,7 +52,10 @@ import { clay, color, layout, radius, rhythm, size } from '@/theme/tokens';
  */
 export default function HarcamaDetayEkrani() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const harcamaId = Number(id);
+  // BE-6b: `id` artık Mongo ObjectId (string) — `Number(id)` SAYISALLAŞTIRIRDI
+  // ve NaN üretirdi (sözleşme uyuşmazlığı, PM'e bildirildi). Route parametresi
+  // zaten string, doğrudan kullanılır.
+  const harcamaId = id ?? '';
   const db = useSQLiteContext();
   const insets = useSafeAreaInsets();
 

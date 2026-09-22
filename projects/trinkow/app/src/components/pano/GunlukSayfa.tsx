@@ -165,13 +165,16 @@ export function GunlukSayfa({
         <View style={stil.pad}>
           <HeroCard
             gunFarki={gunFarki}
+            niyet={veri.niyet}
             harcananKurus={veri.harcananKurus}
             limitKurus={limitKurus}
             bos={bos}
             oncekiPasif={veri.ilkGunMu}
             onOnceki={() => onGunDegistir(-1)}
             onSonraki={() => onGunDegistir(1)}
-            onLimitPress={() => router.push('/limitler')}
+            // Nötr "Limit belirle" kapısı (delta-v4.md ekran akışı) — limitsiz kipte
+            // profillemeye (E-25) yönlendirir; limit zaten varsa E-17'de düzenlenir.
+            onLimitPress={() => router.push(limitKurus === null ? '/tanisma' : '/limitler')}
             altMetin={altMetin}
           />
         </View>
@@ -310,7 +313,14 @@ function Baslik({
         />
       ) : null}
       <View style={{ width: rhythm.group }} />
-      <IconButton icon="calendar" accessibilityLabel={t['gunluk.a11y.takvim']} onPress={() => router.push('/gun-sec')} />
+      <IconButton
+        icon="calendar"
+        accessibilityLabel={t['gunluk.a11y.takvim']}
+        // K-064/2 — Günlük'te bakılan gün bugün değilse Gün seçici'ye taşınır;
+        // seçim halkası kaldırıldığı için (K-061) o gün "Açık gün {g} {Ay}"
+        // metniyle söylenir (bkz. gun-sec.tsx).
+        onPress={() => router.push(`/gun-sec${gunFarki !== 0 ? `?acikGun=${gunFarki}` : ''}` as never)}
+      />
     </View>
   );
 }

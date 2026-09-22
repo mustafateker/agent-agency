@@ -1,13 +1,45 @@
 import type { SQLiteBindValue, SQLiteDatabase } from 'expo-sqlite';
 
+import { gunlukLimitKurusOku } from '@/db/profil';
+import {
+  enEskiKayitGunuGetirIstegi,
+  harcamaEkleIstegi,
+  harcamaGetirIstegi,
+  harcamaGuncelleIstegi,
+  harcamalariListeleIstegi,
+  harcamaSilIstegi,
+  taksitSerisiSilIstegi,
+  tumVerileriSilIstegi,
+  type HarcamaGuncellemeGovdesi,
+  type HarcamaListeSuzgeci,
+  type HarcamaYaniti,
+} from '@/lib/api';
 import { ayEkle, gunAnahtari } from '@/lib/tarih';
+import { turkceNormalize } from '@/lib/urunArama';
 
 /**
  * Harcama veri modeli — backlog Ü-5'e hazır: ürün adı / tutar / tarih
  * AYRI alanlardır, tek serbest metin değil.
  *
  * PARA: `tutarKurus` DAİMA kuruş cinsinden integer. Float ile para tutmak
- * sessiz kuruş hatası üretir; SQLite kolonu da INTEGER.
+ * sessiz kuruş hatası üretir.
+ *
+ * BE-6b (K-068): harcama CRUD'u, taksit serisi silme, sık alınanlar/ürün
+ * arama, ay/gün toplamları artık `/harcama/*` uçlarından okunur — SQLite
+ * `harcama` tablosu bu fonksiyonlar için ARTIK YAZILMAZ/OKUNMAZ. `id` bu
+ * yüzden Mongo ObjectId'nin string hâlidir, SAYISAL DEĞİLDİR (auth/kullanici
+ * modülleriyle aynı desen).
+ *
+ * BE-6c: `gununHarcamalari` (yalnız `usePano.ts` kullanır) ve
+ * `gunAraligiToplamlari` (yalnız `useGunSecici.ts` kullanır) artık `/harcama/`
+ * ham liste ucundan çekilen kayıtları GRUPLAR — sunucuda bu aralıklar için
+ * hazır bir "gün başına toplam" ucu yok (yalnız tekil gün `/ozet/pano` ve
+ * dönem toplamı `/ozet/donem` var); bu, `ayHarcamalari`/`ayOzeti`nin zaten
+ * yaptığı istemci-taraflı LİSTE GRUPLAMASIYLA aynı desendir, sunucunun
+ * yaptığı toplama/seri hesabının TEKRARI değildir. `ilkKayitGunu` ve
+ * `tumVeriyiSil` artık `/harcama/ayar/en-eski-kayit-gunu` ve
+ * `/harcama/ayar/tum-veriler`i çağırır (K-085 Madde 3/4). Yerel `harcama`
+ * tablosu bu turdan sonra TAMAMEN ölüdür (bkz. `db/semasi.ts`).
  */
 export type OdemeTipi = 'nakit' | 'kart';
 
@@ -15,7 +47,8 @@ export type OdemeTipi = 'nakit' | 'kart';
 export const ODEME_VARSAYILAN: OdemeTipi = 'kart';
 
 export type Harcama = {
-  id: number;
+  /** Mongo ObjectId (string) — BE-6b öncesi SQLite INTEGER idi, artık DEĞİL. */
+  id: string;
   /** kuruş integer */
   tutarKurus: number;
   kategori: string;
@@ -36,95 +69,74 @@ export type Harcama = {
   taksitToplam: number | null;
 };
 
-type HarcamaSatiri = {
-  id: number;
-  tutar_kurus: number;
-  kategori: string;
-  urun_adi: string | null;
-  zaman: string;
-  gun: string;
-  odeme: OdemeTipi;
-  not_metni: string | null;
-  taksit_id: string | null;
-  taksit_no: number | null;
-  taksit_toplam: number | null;
-};
-
-function cevir(r: HarcamaSatiri): Harcama {
+function cevir(y: HarcamaYaniti): Harcama {
   return {
-    id: r.id,
-    tutarKurus: r.tutar_kurus,
-    kategori: r.kategori,
-    urunAdi: r.urun_adi,
-    zaman: r.zaman,
-    gun: r.gun,
-    odeme: r.odeme,
-    notMetni: r.not_metni,
-    taksitId: r.taksit_id,
-    taksitNo: r.taksit_no,
-    taksitToplam: r.taksit_toplam,
+    id: y.id,
+    tutarKurus: y.tutar_kurus,
+    kategori: y.kategori,
+    urunAdi: y.urun_adi,
+    zaman: y.zaman,
+    gun: y.gun,
+    odeme: y.odeme,
+    notMetni: y.not_metni,
+    taksitId: y.taksit_id,
+    taksitNo: y.taksit_no,
+    taksitToplam: y.taksit_toplam,
   };
 }
 
-const SATIR_SUTUNLARI = `id, tutar_kurus, kategori, urun_adi, zaman, gun, odeme, not_metni, taksit_id, taksit_no, taksit_toplam`;
+/** Sunucunun sabitlediği azami sayfa boyutu (`harcama_dto.py`). */
+const AZAMI_SAYFA_BOYUTU = 200;
 
-export async function gununHarcamalari(db: SQLiteDatabase, gun: string): Promise<Harcama[]> {
-  const satirlar = await db.getAllAsync<HarcamaSatiri>(
-    `SELECT ${SATIR_SUTUNLARI} FROM harcama WHERE gun = ? ORDER BY zaman ASC`,
-    gun,
-  );
-  return satirlar.map(cevir);
+/**
+ * Bir süzgece uyan TÜM kayıtları döner — 300+ günlük geçmiş senaryosunda tek
+ * istekte çekmek yerine sunucunun sayfa sınırına (≤200) saygılı, `toplam_kayit`e
+ * ulaşana kadar sayfa sayfa gerçek bir döngüyle çeker. Dışa açılan fonksiyonlar
+ * (ör. `ayHarcamalari`) eskisi gibi tam diziyi döndürmeye devam eder; sayfalama
+ * ağ katmanında GİZLİDİR. `db/ozet.ts` (E-16 hafta özeti) ve `useGunSecici.ts`
+ * (E-24 ay ızgarası) da aynı sayfalama döngüsünü paylaşmak için EXPORT edilir.
+ */
+export async function tumSayfalariGetir(suzgec: HarcamaListeSuzgeci): Promise<HarcamaYaniti[]> {
+  const kayitlar: HarcamaYaniti[] = [];
+  let sayfa = 1;
+  for (;;) {
+    const yanit = await harcamalariListeleIstegi({ ...suzgec, sayfa, sayfa_boyutu: AZAMI_SAYFA_BOYUTU });
+    kayitlar.push(...yanit.kayitlar);
+    if (yanit.kayitlar.length === 0 || kayitlar.length >= yanit.toplam_kayit) break;
+    sayfa += 1;
+  }
+  return kayitlar;
 }
 
 /** Bir ayın TÜM kayıtları — E-14 gün gruplama burada, `src/lib/gruplama.ts` ile. */
-export async function ayHarcamalari(db: SQLiteDatabase, ay: string): Promise<Harcama[]> {
-  const satirlar = await db.getAllAsync<HarcamaSatiri>(
-    `SELECT ${SATIR_SUTUNLARI} FROM harcama WHERE substr(gun, 1, 7) = ? ORDER BY zaman ASC`,
-    ay,
-  );
-  return satirlar.map(cevir);
+export async function ayHarcamalari(_db: SQLiteDatabase, ay: string): Promise<Harcama[]> {
+  const kayitlar = await tumSayfalariGetir({ baslangic_gun: `${ay}-01`, bitis_gun: `${ay}-31` });
+  return kayitlar.map(cevir);
 }
 
 export type AySpecifiOzeti = { adet: number; toplamKurus: number };
 
 /** `kayitlar.ay_ozet` — "{adet} kayıt · {tutar}" (E-14 ay değiştirici). */
-export async function ayOzeti(db: SQLiteDatabase, ay: string): Promise<AySpecifiOzeti> {
-  const r = await db.getFirstAsync<{ adet: number; toplam: number | null }>(
-    'SELECT COUNT(*) AS adet, SUM(tutar_kurus) AS toplam FROM harcama WHERE substr(gun, 1, 7) = ?',
-    ay,
-  );
-  return { adet: r?.adet ?? 0, toplamKurus: r?.toplam ?? 0 };
+export async function ayOzeti(_db: SQLiteDatabase, ay: string): Promise<AySpecifiOzeti> {
+  const kayitlar = await tumSayfalariGetir({ baslangic_gun: `${ay}-01`, bitis_gun: `${ay}-31` });
+  return { adet: kayitlar.length, toplamKurus: kayitlar.reduce((t, k) => t + k.tutar_kurus, 0) };
 }
 
 /** E-14 — hiç kayıt yok mu (tüm zamanlar)? Ay değiştiricinin gösterilip gösterilmeyeceğini belirler. */
-export async function herhangiKayitVarMi(db: SQLiteDatabase): Promise<boolean> {
-  const r = await db.getFirstAsync<{ adet: number }>('SELECT COUNT(*) AS adet FROM harcama LIMIT 1');
-  return (r?.adet ?? 0) > 0;
+export async function herhangiKayitVarMi(_db: SQLiteDatabase): Promise<boolean> {
+  const yanit = await harcamalariListeleIstegi({ sayfa: 1, sayfa_boyutu: 1 });
+  return yanit.toplam_kayit > 0;
 }
 
-export async function gunToplami(db: SQLiteDatabase, gun: string): Promise<number> {
-  const r = await db.getFirstAsync<{ toplam: number | null }>(
-    'SELECT SUM(tutar_kurus) AS toplam FROM harcama WHERE gun = ?',
-    gun,
-  );
-  return r?.toplam ?? 0;
+export async function gunToplami(_db: SQLiteDatabase, gun: string): Promise<number> {
+  const kayitlar = await tumSayfalariGetir({ gun });
+  return kayitlar.reduce((t, k) => t + k.tutar_kurus, 0);
 }
 
-/** Ayın limit aşılan gün sayısı — imza kartının sayısı (`pano.limit_sorgu.baslik`). */
-export async function ayAsimSayisi(
-  db: SQLiteDatabase,
-  ay: string,
-  gunlukLimitKurus: number,
-): Promise<number> {
-  const r = await db.getFirstAsync<{ adet: number }>(
-    `SELECT COUNT(*) AS adet FROM (
-       SELECT gun, SUM(tutar_kurus) AS toplam FROM harcama
-       WHERE substr(gun, 1, 7) = ? GROUP BY gun HAVING toplam > ?
-     )`,
-    ay,
-    gunlukLimitKurus,
-  );
-  return r?.adet ?? 0;
+/** BE-6c — bir günün ham kayıt listesi (E-10 gün sayfasının satırları). `usePano.ts` kullanır. */
+export async function gununHarcamalari(_db: SQLiteDatabase, gun: string): Promise<Harcama[]> {
+  const kayitlar = await tumSayfalariGetir({ gun });
+  return kayitlar.map(cevir);
 }
 
 export type KategoriDurumu = {
@@ -136,60 +148,58 @@ export type KategoriDurumu = {
 };
 
 /**
- * Aylık kategori limitleri + o ayın kategori toplamı. Limiti olmayan kategori
- * listelenmez. `gun` verilirse (v4 E-10 Günlük kartı) o günün toplamı da
- * döner — K-056: kart satırının birincil ölçeği DAİMA aylık/aylık, günün
- * tutarı yalnız ikincil satırda görünür.
+ * BE-6c — `ayarlar.tsx` (E-19) "ilk kayıt günü" satırı ve silinecek kayıt
+ * sayısı diyaloğu. Sunucu ucu K-085 Madde 4/BE-4b ile açıldı.
  */
-export async function kategoriDurumlari(
-  db: SQLiteDatabase,
-  ay: string,
-  gun?: string,
-): Promise<KategoriDurumu[]> {
-  return db.getAllAsync<KategoriDurumu>(
-    `SELECT kl.kategori AS kategori,
-            kl.limit_kurus AS limitKurus,
-            COALESCE((SELECT SUM(h.tutar_kurus) FROM harcama h
-                      WHERE h.kategori = kl.kategori AND substr(h.gun, 1, 7) = ?), 0) AS harcananKurus,
-            COALESCE((SELECT SUM(h.tutar_kurus) FROM harcama h
-                      WHERE h.kategori = kl.kategori AND h.gun = ?), 0) AS bugunKurus
-     FROM kategori_limiti kl
-     ORDER BY kl.sira ASC`,
-    ay,
-    gun ?? '',
-  );
+export async function ilkKayitGunu(_db: SQLiteDatabase): Promise<string | null> {
+  return (await enEskiKayitGunuGetirIstegi()).gun;
 }
 
-/** v4 K-049 — ilk kaydın günü (tüm zamanlar MIN). Hiç kayıt yoksa `null`. */
-export async function ilkKayitGunu(db: SQLiteDatabase): Promise<string | null> {
-  const r = await db.getFirstAsync<{ gun: string | null }>('SELECT MIN(gun) AS gun FROM harcama');
-  return r?.gun ?? null;
+/**
+ * D-2c-1 · E-19 "Tüm verileri sil" onay diyaloğu — silinecek kayıt sayısı.
+ * BE-6b: gerçek sayfalanmış listeleme ucundan `toplam_kayit` okunur.
+ */
+export async function tumKayitSayisi(_db: SQLiteDatabase): Promise<number> {
+  const yanit = await harcamalariListeleIstegi({ sayfa: 1, sayfa_boyutu: 1 });
+  return yanit.toplam_kayit;
+}
+
+/**
+ * D-2c-1 · E-19 "Tüm verileri sil" — BE-6c ile `DELETE /harcama/ayar/tum-veriler`e
+ * taşındı (K-085 Madde 3): harcama/kategori limiti/gün durumu/limit geçmişi/
+ * ürün öğrenmeyi sunucuda siler; hesabı ve profili SİLMEZ. Yerel `ayar`
+ * bayrağı (`kullanici_verisi`) örnek-veri tazelemesiyle ilgiliydi, o akış bu
+ * turda kaldırıldığı için artık yazılmıyor (bkz. `db/semasi.ts`).
+ */
+export async function tumVeriyiSil(_db: SQLiteDatabase): Promise<void> {
+  await tumVerileriSilIstegi();
 }
 
 export type GunToplami = { gun: string; toplamKurus: number; kayitAdedi: number };
 
 /**
- * Bir tarih aralığındaki (dahil) günlük toplamlar — tek sorguda toplu okuma.
- * E-21 (son 4 hafta) ve E-24 (ay ızgarası) bu fonksiyonu paylaşır; gün başına
- * ayrı sorgu atmak yerine `GROUP BY gun` ile tek seferde okunur.
+ * BE-6c — bir aralıktaki gün başına toplam/kayıt adedi. Sunucuda bu aralık
+ * için hazır bir uç YOK (yalnız tekil gün `/ozet/pano`, dönem toplamı
+ * `/ozet/donem` var); `useGunSecici.ts`in ay ızgarası bu yüzden ham kayıt
+ * listesini (`/harcama/`) çekip İSTEMCİDE gruplar — `ayHarcamalari`/
+ * `ayOzeti`nin zaten yaptığı liste-gruplamasıyla AYNI desen, sunucunun
+ * seri/toplam hesabının tekrarı DEĞİL.
  */
 export async function gunAraligiToplamlari(
-  db: SQLiteDatabase,
+  _db: SQLiteDatabase,
   baslangicGun: string,
   bitisGun: string,
 ): Promise<Map<string, GunToplami>> {
-  const satirlar = await db.getAllAsync<{ gun: string; toplam: number; adet: number }>(
-    `SELECT gun, SUM(tutar_kurus) AS toplam, COUNT(*) AS adet FROM harcama
-     WHERE gun BETWEEN ? AND ? GROUP BY gun`,
-    baslangicGun,
-    bitisGun,
-  );
+  const kayitlar = await tumSayfalariGetir({ baslangic_gun: baslangicGun, bitis_gun: bitisGun });
   const harita = new Map<string, GunToplami>();
-  for (const s of satirlar) {
-    harita.set(s.gun, { gun: s.gun, toplamKurus: s.toplam, kayitAdedi: s.adet });
+  for (const k of kayitlar) {
+    const mevcut = harita.get(k.gun) ?? { gun: k.gun, toplamKurus: 0, kayitAdedi: 0 };
+    harita.set(k.gun, { gun: k.gun, toplamKurus: mevcut.toplamKurus + k.tutar_kurus, kayitAdedi: mevcut.kayitAdedi + 1 });
   }
   return harita;
 }
+
+/* ---------------------------------------------------------- ayar (yerel) */
 
 export async function ayarOku(db: SQLiteDatabase, anahtar: string): Promise<string | null> {
   const r = await db.getFirstAsync<{ deger: string }>(
@@ -203,92 +213,94 @@ export async function ayarYaz(db: SQLiteDatabase, anahtar: string, deger: string
   await db.runAsync('INSERT OR REPLACE INTO ayar (anahtar, deger) VALUES (?, ?)', anahtar, deger);
 }
 
-/** Günlük limit — kuruş integer. Tanımsızsa null (`HeroPlain` varyantı). */
-export async function gunlukLimit(db: SQLiteDatabase): Promise<number | null> {
-  const d = await ayarOku(db, 'gunluk_limit_kurus');
-  return d === null ? null : Number.parseInt(d, 10);
+/**
+ * Günlük limit — kuruş integer, tanımsızsa null (`HeroPlain` varyantı).
+ * BE-6d (K-087): TEK otorite `kullanici_profilleri.gunluk_limit_kurus`
+ * (`GET /kullanici/profil`) — `db/profil.ts#gunlukLimitKurusOku`ya devreder;
+ * `db: SQLiteDatabase` parametresi yalnız dışa verilen imzayı (kayitlar ·
+ * limitler · harcama-ekle · ozet · plan ekranlarını değiştirmemek için)
+ * korur.
+ */
+export async function gunlukLimit(_db: SQLiteDatabase): Promise<number | null> {
+  return gunlukLimitKurusOku();
 }
+
+/* ------------------------------------------------------------- harcama CRUD */
 
 /** Tek kayıt — E-12 detay ekranı. Bulunamazsa `null` (`detay.bulunamadi.*`). */
-export async function harcamaGetir(db: SQLiteDatabase, id: number): Promise<Harcama | null> {
-  const r = await db.getFirstAsync<HarcamaSatiri>(
-    `SELECT ${SATIR_SUTUNLARI} FROM harcama WHERE id = ?`,
-    id,
-  );
-  return r ? cevir(r) : null;
+export async function harcamaGetir(_db: SQLiteDatabase, id: string): Promise<Harcama | null> {
+  try {
+    return cevir(await harcamaGetirIstegi(id));
+  } catch {
+    return null;
+  }
 }
 
-/** Tek harcama yazma — tutar kuruş integer olarak gelir. */
+/**
+ * Tek harcama yazma — tutar kuruş integer olarak gelir. Ürün→kategori
+ * öğrenmesi ARTIK istemcide YAPILMIYOR — sunucu `urun_adi` verilince bunu
+ * otomatik günceller (README `harcama` uç nokta tablosu).
+ */
 export async function harcamaEkle(
-  db: SQLiteDatabase,
+  _db: SQLiteDatabase,
   h: Omit<Harcama, 'id'>,
-): Promise<number> {
-  const sonuc = await db.runAsync(
-    `INSERT INTO harcama
-       (tutar_kurus, kategori, urun_adi, zaman, gun, odeme, not_metni, taksit_id, taksit_no, taksit_toplam)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    Math.round(h.tutarKurus),
-    h.kategori,
-    h.urunAdi,
-    h.zaman,
-    h.gun,
-    h.odeme,
-    h.notMetni,
-    h.taksitId,
-    h.taksitNo,
-    h.taksitToplam,
-  );
-  return sonuc.lastInsertRowId;
+): Promise<string> {
+  const yanit = await harcamaEkleIstegi({
+    tutar_kurus: Math.round(h.tutarKurus),
+    kategori: h.kategori,
+    urun_adi: h.urunAdi,
+    zaman: h.zaman,
+    gun: h.gun,
+    odeme: h.odeme,
+    not_metni: h.notMetni,
+    taksit_id: h.taksitId,
+    taksit_no: h.taksitNo,
+    taksit_toplam: h.taksitToplam,
+  });
+  return yanit.id;
 }
 
 export type HarcamaGuncelleme = Partial<
   Pick<Harcama, 'tutarKurus' | 'kategori' | 'urunAdi' | 'odeme' | 'notMetni' | 'zaman' | 'gun'>
 >;
 
-/** E-12 "Kaydet" — yalnız verilen alanları günceller. Taksitli kayıtta tutar/tarih önerilmez (UI katmanında engellenir). */
+/** E-12 "Kaydet" — yalnız verilen alanları günceller. Taksitli kayıtta `tutarKurus` gönderilirse sunucu 422 döner. */
 export async function harcamaGuncelle(
-  db: SQLiteDatabase,
-  id: number,
+  _db: SQLiteDatabase,
+  id: string,
   degisiklik: HarcamaGuncelleme,
 ): Promise<void> {
-  const alanlar: string[] = [];
-  const degerler: SQLiteBindValue[] = [];
-  const eslesme: Record<string, SQLiteBindValue | undefined> = {
-    tutar_kurus: degisiklik.tutarKurus !== undefined ? Math.round(degisiklik.tutarKurus) : undefined,
-    kategori: degisiklik.kategori,
-    urun_adi: degisiklik.urunAdi,
-    odeme: degisiklik.odeme,
-    not_metni: degisiklik.notMetni,
-    zaman: degisiklik.zaman,
-    gun: degisiklik.gun,
-  };
-  for (const [sutun, deger] of Object.entries(eslesme)) {
-    if (deger !== undefined) {
-      alanlar.push(`${sutun} = ?`);
-      degerler.push(deger);
-    }
-  }
-  if (alanlar.length === 0) return;
-  await db.runAsync(`UPDATE harcama SET ${alanlar.join(', ')} WHERE id = ?`, ...degerler, id);
+  const govde: HarcamaGuncellemeGovdesi = {};
+  if (degisiklik.tutarKurus !== undefined) govde.tutar_kurus = Math.round(degisiklik.tutarKurus);
+  if (degisiklik.kategori !== undefined) govde.kategori = degisiklik.kategori;
+  if (degisiklik.urunAdi !== undefined) govde.urun_adi = degisiklik.urunAdi;
+  if (degisiklik.odeme !== undefined) govde.odeme = degisiklik.odeme;
+  if (degisiklik.notMetni !== undefined) govde.not_metni = degisiklik.notMetni;
+  if (degisiklik.zaman !== undefined) govde.zaman = degisiklik.zaman;
+  if (degisiklik.gun !== undefined) govde.gun = degisiklik.gun;
+  if (Object.keys(govde).length === 0) return;
+  await harcamaGuncelleIstegi(id, govde);
 }
 
-/** K-029 — tek harcama silme: onaysız, anında. Geri alma çağıranın sorumluluğunda (6 sn toast). */
-export async function harcamaSil(db: SQLiteDatabase, id: number): Promise<void> {
-  await db.runAsync('DELETE FROM harcama WHERE id = ?', id);
+/** K-029 — tek harcama silme: onaysız, anında. Geri alma çağıranın sorumluluğunda (6 sn toast).
+ * Sunucuda yumuşak silme YOK: "geri al" basılırsa kayıt YENİDEN OLUŞTURULUR ve
+ * YENİ bir id alır (bkz. `src/lib/harcamaEylemleri.ts`) — çağıran ekranlar eski
+ * id'yi saklamıyor (detay ekranı hemen `router.back()` yapıyor, liste ekranları
+ * `veriDegisti()` ile yeniden okuyor), bu yüzden id değişimi görünür bir soruna
+ * yol açmıyor. */
+export async function harcamaSil(_db: SQLiteDatabase, id: string): Promise<void> {
+  await harcamaSilIstegi(id);
 }
 
 /** Aynı `taksitId`'ye sahip TÜM satırlar — E-12 taksit bilgi şeridi + E-13 özet satırı. */
-export async function taksitSerisi(db: SQLiteDatabase, taksitId: string): Promise<Harcama[]> {
-  const satirlar = await db.getAllAsync<HarcamaSatiri>(
-    `SELECT ${SATIR_SUTUNLARI} FROM harcama WHERE taksit_id = ? ORDER BY taksit_no ASC`,
-    taksitId,
-  );
-  return satirlar.map(cevir);
+export async function taksitSerisi(_db: SQLiteDatabase, taksitId: string): Promise<Harcama[]> {
+  const kayitlar = await tumSayfalariGetir({});
+  return kayitlar.filter((k) => k.taksit_id === taksitId).sort((a, b) => (a.taksit_no ?? 0) - (b.taksit_no ?? 0)).map(cevir);
 }
 
 /** E-13 — taksit serisini TAMAMEN siler (K-029: onaylıdır, geri alma yoktur). */
-export async function taksitSerisiSil(db: SQLiteDatabase, taksitId: string): Promise<void> {
-  await db.runAsync('DELETE FROM harcama WHERE taksit_id = ?', taksitId);
+export async function taksitSerisiSil(_db: SQLiteDatabase, taksitId: string): Promise<void> {
+  await taksitSerisiSilIstegi(taksitId);
 }
 
 type TaksitSerisiGirdi = {
@@ -305,33 +317,53 @@ type TaksitSerisiGirdi = {
  * K-023 taksit serisi — her ay için ayrı satır (E-18 "ay yükü" bunlardan
  * kurulur). Tutar kuruş-hassas dağıtılır: kalan kuruşlar İLK taksitlere
  * eklenir (12 × 833,33 gibi bölünemeyen tutarlarda kuruş kaybolmasın diye).
+ *
+ * Sunucuda "seri oluştur" ucu YOK (README) — istemci aynı `taksitId` ile
+ * taksit sayısı kadar `POST /harcama/` çağırır. KISMİ BAŞARISIZLIK: bir
+ * taksit yazılırken ağ koparsa, o ana kadar sunucuya yazılmış taksitler
+ * `DELETE /harcama/taksit/{taksitId}` ile GERİ ALINIR ve hata yukarı
+ * fırlatılır — kullanıcı yarım bir seriyle KALMAZ, `app/harcama-ekle.tsx`
+ * mevcut `catch` bloğuyla "yazılamadı" hatasını gösterir ve baştan dener.
  */
 export async function taksitSerisiOlustur(
   db: SQLiteDatabase,
   girdi: TaksitSerisiGirdi,
-): Promise<{ taksitId: string; ilkId: number }> {
+): Promise<{ taksitId: string; ilkId: string }> {
   const { tutarKurusToplam, taksitSayisi, kategori, urunAdi, odeme, notMetni, ilkZaman } = girdi;
   const taksitId = `t${Date.now()}${Math.random().toString(36).slice(2, 8)}`;
   const taban = Math.floor(tutarKurusToplam / taksitSayisi);
   const kalan = tutarKurusToplam - taban * taksitSayisi;
 
-  let ilkId = -1;
-  for (let i = 0; i < taksitSayisi; i += 1) {
-    const tutar = taban + (i < kalan ? 1 : 0);
-    const zaman = ayEkle(ilkZaman, i);
-    const id = await harcamaEkle(db, {
-      tutarKurus: tutar,
-      kategori,
-      urunAdi,
-      zaman: zaman.toISOString(),
-      gun: gunAnahtari(zaman),
-      odeme,
-      notMetni,
-      taksitId,
-      taksitNo: i + 1,
-      taksitToplam: taksitSayisi,
-    });
-    if (i === 0) ilkId = id;
+  let ilkId = '';
+  try {
+    for (let i = 0; i < taksitSayisi; i += 1) {
+      const tutar = taban + (i < kalan ? 1 : 0);
+      const zaman = ayEkle(ilkZaman, i);
+      const id = await harcamaEkle(db, {
+        tutarKurus: tutar,
+        kategori,
+        urunAdi,
+        zaman: zaman.toISOString(),
+        gun: gunAnahtari(zaman),
+        odeme,
+        notMetni,
+        taksitId,
+        taksitNo: i + 1,
+        taksitToplam: taksitSayisi,
+      });
+      if (i === 0) ilkId = id;
+    }
+  } catch (hata) {
+    // Kısmi seri geride kalmasın — o ana kadar yazılanları geri al.
+    try {
+      await taksitSerisiSilIstegi(taksitId);
+    } catch {
+      // Geri alma da başarısız olursa (ör. ağ hâlâ kopuk) elimizden bir şey
+      // gelmez — orijinal hata zaten yukarı fırlatılıyor, kullanıcı "Yeniden
+      // dene" ile karşılaşır; bir sonraki başarılı denemede AYNI taksitId
+      // kullanılmadığı için (her çağrıda yeni üretiliyor) çakışma olmaz.
+    }
+    throw hata;
   }
   return { taksitId, ilkId };
 }
@@ -343,113 +375,117 @@ export type SikAlinan = {
   sonZaman: string;
 };
 
+/** Sunucudan taze çekilecek son kayıt sayısı — sık alınanlar/ürün arama için "yeterince geniş" bir pencere. */
+const SIK_ALINAN_PENCERE = 200;
+
+async function urunGecmisiPenceresi(): Promise<HarcamaYaniti[]> {
+  return tumSayfalariGetir({ sayfa_boyutu: SIK_ALINAN_PENCERE }).then((kayitlar) => kayitlar.slice(0, SIK_ALINAN_PENCERE));
+}
+
 /**
  * E-11 "Sık alınanlar" — kullanıcının kendi geçmişinden gelir, tahminden
  * değil: her satır gerçekten yazılmış bir kayıttır (prototip notu).
- * Ürün adı olmayan kayıtlar (yalnız kategoriyle girilenler) burada geçmez.
+ *
+ * BE-6b notu: sunucuda bu dedup'ı yapan bir uç yok (README'de "arama
+ * istemcide kalır" yalnız katalog için söylenmiş, kullanıcı geçmişi için
+ * DEĞİL — burada gerçek bir sözleşme eksiği var, PM'e bildirildi). Geçici
+ * çözüm: en yeni `SIK_ALINAN_PENCERE` (200) kayıt çekilir, ürün adına göre
+ * son kullanım tarihiyle deduplike edilir. Kullanıcının 200 kayıt önce
+ * kullandığı bir ürün bu pencereden düşebilir — tam geçmiş taraması sunucu
+ * tarafında bir "distinct" uç noktası gerektirir.
  */
-export async function sikAlinanlar(db: SQLiteDatabase, limit = 3): Promise<SikAlinan[]> {
-  const satirlar = await db.getAllAsync<{
-    urun_adi: string;
-    kategori: string;
-    tutar_kurus: number;
-    zaman: string;
-  }>(
-    `SELECT urun_adi, kategori, tutar_kurus, zaman FROM (
-       SELECT urun_adi, kategori, tutar_kurus, zaman,
-              ROW_NUMBER() OVER (PARTITION BY urun_adi ORDER BY zaman DESC) AS rn
-       FROM harcama WHERE urun_adi IS NOT NULL AND urun_adi <> ''
-     ) WHERE rn = 1 ORDER BY zaman DESC LIMIT ?`,
-    limit,
-  );
-  return satirlar.map((r) => ({
-    urunAdi: r.urun_adi,
-    kategori: r.kategori,
-    tutarKurus: r.tutar_kurus,
-    sonZaman: r.zaman,
-  }));
+export async function sikAlinanlar(_db: SQLiteDatabase, limit = 3): Promise<SikAlinan[]> {
+  const kayitlar = await urunGecmisiPenceresi();
+  const enSonPerUrun = new Map<string, HarcamaYaniti>();
+  for (const k of kayitlar) {
+    if (!k.urun_adi) continue;
+    const mevcut = enSonPerUrun.get(k.urun_adi);
+    if (!mevcut || k.zaman > mevcut.zaman) enSonPerUrun.set(k.urun_adi, k);
+  }
+  return Array.from(enSonPerUrun.values())
+    .sort((a, b) => b.zaman.localeCompare(a.zaman))
+    .slice(0, limit)
+    .map((k) => ({ urunAdi: k.urun_adi as string, kategori: k.kategori, tutarKurus: k.tutar_kurus, sonZaman: k.zaman }));
 }
 
-/** Ürün adına göre serbest arama (E-11 "Ne aldın" alanı) — Türkçe küçük harfe göre `includes`. */
-export async function urunAra(db: SQLiteDatabase, sorgu: string, limit = 5): Promise<SikAlinan[]> {
-  const hepsi = await sikAlinanlar(db, 200);
-  const anahtar = sorgu.toLocaleLowerCase('tr');
-  return hepsi.filter((s) => s.urunAdi.toLocaleLowerCase('tr').includes(anahtar)).slice(0, limit);
+/**
+ * Ürün adına göre kullanıcının KENDİ geçmişinde arama (E-11 arama sonuçları
+ * · "Son kullandıkların" grubu). Türkçe normalizasyon iki tarafa da
+ * uygulanır. Aynı pencere sınırı `sikAlinanlar`'daki gibi geçerlidir.
+ */
+export async function urunAra(_db: SQLiteDatabase, sorgu: string, limit = 20): Promise<SikAlinan[]> {
+  const hepsi = await sikAlinanlar(_db, SIK_ALINAN_PENCERE);
+  const anahtar = turkceNormalize(sorgu);
+  return hepsi.filter((s) => turkceNormalize(s.urunAdi).includes(anahtar)).slice(0, limit);
 }
 
 /* --------------------------------------------------------- E-15 kategori */
 
-/** Bir kategorinin bir aydaki TÜM kayıtları, en yeni önce (prototip sırası). */
+/** Bir kategorinin bir aydaki TÜM kayıtları, en yeni önce (sunucu varsayılan sıralaması). */
 export async function kategoriAyHarcamalari(
-  db: SQLiteDatabase,
+  _db: SQLiteDatabase,
   kategoriKodu: string,
   ay: string,
 ): Promise<Harcama[]> {
-  const satirlar = await db.getAllAsync<HarcamaSatiri>(
-    `SELECT ${SATIR_SUTUNLARI} FROM harcama WHERE kategori = ? AND substr(gun, 1, 7) = ? ORDER BY zaman DESC`,
-    kategoriKodu,
-    ay,
-  );
-  return satirlar.map(cevir);
+  const kayitlar = await tumSayfalariGetir({
+    kategori: kategoriKodu,
+    baslangic_gun: `${ay}-01`,
+    bitis_gun: `${ay}-31`,
+  });
+  return kayitlar.map(cevir);
 }
 
 /** Bir kategorinin bir aydaki toplamı + kayıt adedi. */
 export async function kategoriAyOzeti(
-  db: SQLiteDatabase,
+  _db: SQLiteDatabase,
   kategoriKodu: string,
   ay: string,
 ): Promise<AySpecifiOzeti> {
-  const r = await db.getFirstAsync<{ adet: number; toplam: number | null }>(
-    'SELECT COUNT(*) AS adet, SUM(tutar_kurus) AS toplam FROM harcama WHERE kategori = ? AND substr(gun, 1, 7) = ?',
-    kategoriKodu,
-    ay,
-  );
-  return { adet: r?.adet ?? 0, toplamKurus: r?.toplam ?? 0 };
+  const kayitlar = await tumSayfalariGetir({
+    kategori: kategoriKodu,
+    baslangic_gun: `${ay}-01`,
+    bitis_gun: `${ay}-31`,
+  });
+  return { adet: kayitlar.length, toplamKurus: kayitlar.reduce((t, k) => t + k.tutar_kurus, 0) };
 }
 
 /* -------------------------------------------------------- E-18 taksitler */
 
 export type TaksitAySatiri = { ay: string; toplamKurus: number };
 
-/** Bugünden başlayarak `aySayisi` ayın taksit toplamı (§7.12 `LoadBar`). */
-export async function taksitAylikYuk(db: SQLiteDatabase, aySayisiler: string[]): Promise<TaksitAySatiri[]> {
+/** Bugünden başlayarak `aySayisiler` ayının taksit toplamı (§7.12 `LoadBar`). */
+export async function taksitAylikYuk(_db: SQLiteDatabase, aySayisiler: string[]): Promise<TaksitAySatiri[]> {
   if (aySayisiler.length === 0) return [];
-  const yerTutucular = aySayisiler.map(() => '?').join(', ');
-  const satirlar = await db.getAllAsync<{ ay: string; toplam: number }>(
-    `SELECT substr(gun, 1, 7) AS ay, SUM(tutar_kurus) AS toplam FROM harcama
-     WHERE taksit_id IS NOT NULL AND substr(gun, 1, 7) IN (${yerTutucular})
-     GROUP BY ay`,
-    ...aySayisiler,
-  );
-  const eslesme = new Map(satirlar.map((s) => [s.ay, s.toplam]));
+  const ilkAy = [...aySayisiler].sort()[0];
+  const sonAy = [...aySayisiler].sort().at(-1) as string;
+  const kayitlar = await tumSayfalariGetir({ baslangic_gun: `${ilkAy}-01`, bitis_gun: `${sonAy}-31` });
+  const eslesme = new Map<string, number>();
+  for (const k of kayitlar) {
+    if (!k.taksit_id) continue;
+    const ay = k.gun.slice(0, 7);
+    eslesme.set(ay, (eslesme.get(ay) ?? 0) + k.tutar_kurus);
+  }
   return aySayisiler.map((ay) => ({ ay, toplamKurus: eslesme.get(ay) ?? 0 }));
 }
 
 /** Bu ayın taksit toplamı (E-18 kahraman kartı). */
-export async function taksitBuAyToplam(db: SQLiteDatabase, buAy: string): Promise<number> {
-  const r = await db.getFirstAsync<{ toplam: number | null }>(
-    "SELECT SUM(tutar_kurus) AS toplam FROM harcama WHERE taksit_id IS NOT NULL AND substr(gun, 1, 7) = ?",
-    buAy,
-  );
-  return r?.toplam ?? 0;
+export async function taksitBuAyToplam(_db: SQLiteDatabase, buAy: string): Promise<number> {
+  const kayitlar = await tumSayfalariGetir({ baslangic_gun: `${buAy}-01`, bitis_gun: `${buAy}-31` });
+  return kayitlar.filter((k) => k.taksit_id).reduce((t, k) => t + k.tutar_kurus, 0);
 }
 
 /** Bu ay dahil kalan TÜM taksit yükü — "Kalan toplam" (6 aylık pencereyle sınırlı değil). */
-export async function taksitKalanToplamKurus(db: SQLiteDatabase, buAyBaslangicGunu: string): Promise<number> {
-  const r = await db.getFirstAsync<{ toplam: number | null }>(
-    'SELECT SUM(tutar_kurus) AS toplam FROM harcama WHERE taksit_id IS NOT NULL AND gun >= ?',
-    buAyBaslangicGunu,
-  );
-  return r?.toplam ?? 0;
+export async function taksitKalanToplamKurus(_db: SQLiteDatabase, buAyBaslangicGunu: string): Promise<number> {
+  const kayitlar = await tumSayfalariGetir({ baslangic_gun: buAyBaslangicGunu });
+  return kayitlar.filter((k) => k.taksit_id).reduce((t, k) => t + k.tutar_kurus, 0);
 }
 
 /** En geç biten serinin son ay anahtarı ("2027-05") — yoksa null. */
-export async function taksitSonAy(db: SQLiteDatabase, buAyBaslangicGunu: string): Promise<string | null> {
-  const r = await db.getFirstAsync<{ sonGun: string | null }>(
-    'SELECT MAX(gun) AS sonGun FROM harcama WHERE taksit_id IS NOT NULL AND gun >= ?',
-    buAyBaslangicGunu,
-  );
-  return r?.sonGun ? r.sonGun.slice(0, 7) : null;
+export async function taksitSonAy(_db: SQLiteDatabase, buAyBaslangicGunu: string): Promise<string | null> {
+  const kayitlar = await tumSayfalariGetir({ baslangic_gun: buAyBaslangicGunu });
+  const gunler = kayitlar.filter((k) => k.taksit_id).map((k) => k.gun);
+  if (gunler.length === 0) return null;
+  return gunler.reduce((a, b) => (b > a ? b : a)).slice(0, 7);
 }
 
 export type SurenSeri = {
@@ -463,46 +499,37 @@ export type SurenSeri = {
 };
 
 /** Bu ayda ödemesi düşen (hâlâ süren) taksit serileri — E-18 "Süren seriler". */
-export async function surenSeriler(db: SQLiteDatabase, buAy: string): Promise<SurenSeri[]> {
-  const satirlar = await db.getAllAsync<{
-    taksit_id: string;
-    kategori: string;
-    taksit_no: number;
-    taksit_toplam: number;
-    tutar_kurus: number;
-  }>(
-    `SELECT taksit_id, kategori, taksit_no, taksit_toplam, tutar_kurus FROM harcama
-     WHERE taksit_id IS NOT NULL AND substr(gun, 1, 7) = ? ORDER BY tutar_kurus DESC`,
-    buAy,
+export async function surenSeriler(_db: SQLiteDatabase, buAy: string): Promise<SurenSeri[]> {
+  const buAyKayitlari = (await tumSayfalariGetir({ baslangic_gun: `${buAy}-01`, bitis_gun: `${buAy}-31` })).filter(
+    (k) => k.taksit_id,
   );
-  if (satirlar.length === 0) return [];
-  const idler = satirlar.map((s) => s.taksit_id);
-  const yerTutucular = idler.map(() => '?').join(', ');
-  const sonlar = await db.getAllAsync<{ taksit_id: string; sonGun: string }>(
-    `SELECT taksit_id, MAX(gun) AS sonGun FROM harcama WHERE taksit_id IN (${yerTutucular}) GROUP BY taksit_id`,
-    ...idler,
-  );
-  const sonEslesme = new Map(sonlar.map((s) => [s.taksit_id, s.sonGun.slice(0, 7)]));
-  return satirlar.map((s) => ({
-    taksitId: s.taksit_id,
-    kategori: s.kategori,
-    taksitNo: s.taksit_no,
-    taksitToplam: s.taksit_toplam,
-    tutarKurus: s.tutar_kurus,
-    sonAy: sonEslesme.get(s.taksit_id) ?? buAy,
-  }));
+  if (buAyKayitlari.length === 0) return [];
+  // Serinin son ayını bulmak için taksit_id başına TÜM geçmiş gerekir.
+  const tumKayitlar = await tumSayfalariGetir({});
+  const sonGunEslesme = new Map<string, string>();
+  for (const k of tumKayitlar) {
+    if (!k.taksit_id) continue;
+    const mevcut = sonGunEslesme.get(k.taksit_id);
+    if (!mevcut || k.gun > mevcut) sonGunEslesme.set(k.taksit_id, k.gun);
+  }
+  return [...buAyKayitlari]
+    .sort((a, b) => b.tutar_kurus - a.tutar_kurus)
+    .map((k) => ({
+      taksitId: k.taksit_id as string,
+      kategori: k.kategori,
+      taksitNo: k.taksit_no as number,
+      taksitToplam: k.taksit_toplam as number,
+      tutarKurus: k.tutar_kurus,
+      sonAy: (sonGunEslesme.get(k.taksit_id as string) ?? `${buAy}-01`).slice(0, 7),
+    }));
 }
 
 /** Geçen ay biten (bu ay artık görünmeyen) tek bir seri — "seri bitti" bilgi şeridi. */
 export async function gecenAyBitenSeri(
-  db: SQLiteDatabase,
+  _db: SQLiteDatabase,
   gecenAy: string,
 ): Promise<{ kategori: string; tutarKurus: number } | null> {
-  const r = await db.getFirstAsync<{ kategori: string; tutar_kurus: number }>(
-    `SELECT kategori, tutar_kurus FROM harcama
-     WHERE taksit_id IS NOT NULL AND taksit_no = taksit_toplam AND substr(gun, 1, 7) = ?
-     LIMIT 1`,
-    gecenAy,
-  );
-  return r ? { kategori: r.kategori, tutarKurus: r.tutar_kurus } : null;
+  const kayitlar = await tumSayfalariGetir({ baslangic_gun: `${gecenAy}-01`, bitis_gun: `${gecenAy}-31` });
+  const biten = kayitlar.find((k) => k.taksit_id && k.taksit_no === k.taksit_toplam);
+  return biten ? { kategori: biten.kategori, tutarKurus: biten.tutar_kurus } : null;
 }

@@ -6,8 +6,16 @@ import { IconButton } from '@/components/IconButton';
 import { LimitGauge } from '@/components/LimitGauge';
 import { Txt } from '@/components/Txt';
 import { gunlukLimitEtiketi, gunlukOGunLimiti, t } from '@/content/metinler';
+import type { Niyet } from '@/db/profil';
 import { paraYaz, sayiyaCevir, SIMGE } from '@/lib/para';
 import { color, gauge, radius, rhythm } from '@/theme/tokens';
+
+/** F-11 — kip çipi ve hero etiketi profildeki niyete bağlanır (K-053). */
+const KIP_ETIKET: Record<Niyet, string> = {
+  takip: t['pano.kip.takip'],
+  tasarruf: t['pano.kip.tasarruf'],
+  borc: t['pano.kip.borc'],
+};
 
 /**
  * E-10 kahraman kart (v4 — K-049 sayfalama). Tek ağırlık merkezi korunur:
@@ -19,6 +27,8 @@ import { color, gauge, radius, rhythm } from '@/theme/tokens';
  */
 type Props = {
   gunFarki: number;
+  /** F-11 — Katman 1'in niyet cevabı (K-053). Varsayılan 'takip'. */
+  niyet: Niyet;
   harcananKurus: number;
   limitKurus: number | null;
   /** §7.8 — bu günün hiç kaydı yok (gauge dolgu/topuz/taşma yok) */
@@ -33,6 +43,7 @@ type Props = {
 
 export function HeroCard({
   gunFarki,
+  niyet,
   harcananKurus,
   limitKurus,
   bos,
@@ -52,11 +63,19 @@ export function HeroCard({
       background={color.primarySoft}
       style={stil.kart}>
       <View style={stil.ustSatir}>
-        <Chip ad={t['pano.kip.takip']} selected dotColor={color.primary} accessibilityLabel="Kip: Takip" />
+        <Chip ad={KIP_ETIKET[niyet]} selected dotColor={color.primary} accessibilityLabel={`Kip: ${KIP_ETIKET[niyet]}`} />
         {limitKurus === null ? (
-          <Txt role="label" tone={color.text2}>
-            {t['pano.limitsiz.deger']}
-          </Txt>
+          bugunMu ? (
+            <Chip
+              ad={t['kategori.limit_ekle']}
+              onPress={onLimitPress}
+              accessibilityLabel={t['kategori.limit_ekle']}
+            />
+          ) : (
+            <Txt role="label" tone={color.text2}>
+              {t['pano.limitsiz.deger']}
+            </Txt>
+          )
         ) : bugunMu ? (
           <Chip
             ad={gunlukLimitEtiketi(paraYaz(limitKurus))}

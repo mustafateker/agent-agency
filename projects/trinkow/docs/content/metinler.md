@@ -36,7 +36,7 @@
 | Buton — **tek istisna** | Üçüncü taraf oturum açma etiketleri (K-057/5): "Apple ile Devam Et" · "Google ile devam et". Sağlayıcının yerelleştirmesidir; kısaltılmaz, yeniden yazılmaz |
 | Soru işareti | Yasak değildir (ünlem yasaktır). Soru cümlesi `?` ile biter |
 | Yüzde | `%59` — **işaret önce, boşluk yok** (K-053 · K-059/1) |
-| Mahremiyet cümlesi | **Kullanıcı faydası dili izinli** ("Harcamaların sende kalır."), **mimari sözcükleri yasak** (SQLite, sunucu, senkron, şifreleme, token) — K-057/1 |
+| Mahremiyet cümlesi | **Kullanıcı faydası dili izinli** ("Harcamaların hesabında kalır."), **mimari sözcükleri yasak** (SQLite, sunucu, senkron, şifreleme, token) — K-057/1, K-068 sonrası güncellendi |
 | Para | `1.250,50 ₺` · liste ve kahraman sayıda kuruş yok |
 | Negatif | `-60 ₺` yazılmaz → **"60 ₺ limit dışı"** |
 | Marka adı | Yalnız `Trinkow`, ek daima kesme işaretiyle |
@@ -122,7 +122,7 @@
 | `ob.gelir.etiket` | Aylık net gelir |
 | `ob.gelir.net` | Eline geçen tutar. Kesintiden sonrası. |
 | `ob.gelir.bos` | Kesin olması gerekmiyor. Yaklaşık yeter. |
-| `ob.gelir.mahremiyet` | Gelirin telefonunda kalır. |
+| `ob.gelir.mahremiyet` | Gelirin hesabında kalır. |
 | `ob.gelir.atlarsan` | Atlarsan günlük limiti sen yazarsın. |
 | `ob.gelir.atla` | Atla |
 
@@ -385,7 +385,7 @@ Dolu hâli: "Bugün 3 kayıt yazdın. Limit koymadığın için kalan gösterilm
 | `ayar.kip` | Kip |
 | `ayar.kip_aciklama` | Panodaki büyük sayıyı belirler. |
 | `ayar.veri` | Veri |
-| `ayar.veri_aciklama` | Kayıtların sende kalır. İstediğin an hepsini silebilirsin. |
+| `ayar.veri_aciklama` | Kayıtların hesabında kalır. İstediğin an hepsini silebilirsin. |
 | `ayar.veri_sil` | Tüm verileri sil |
 | `ayar.veri_sil_onay` | Tüm kayıtların silinecek. Geri alınamaz. |
 | `ayar.surum` | Sürüm {surum} |
@@ -895,7 +895,7 @@ prototip `06-harcama-detay.html` · `ekran-envanteri.md` E-13.
 
 | Anahtar | Metin |
 |---|---|
-| `hesap.mahremiyet` | Harcamaların sende kalır. Hesap yalnız seni tanır. |
+| `hesap.mahremiyet` | Harcamaların hesabında kalır. Hesap yalnız seni tanır. |
 | `hesap.mahremiyet.ek` | Yedekleme sonraki sürümlerde. |
 | `giris.ayirac` | ya da |
 | `giris.hesapsiz` | Hesapsız devam et |
@@ -919,7 +919,7 @@ prototip `06-harcama-detay.html` · `ekran-envanteri.md` E-13.
 | `hata.eposta_bicim` | Geçerli bir e-posta yaz. |
 | `hata.kimlik` | E-posta ya da şifre yanlış. Yeniden dene. |
 | `hata.eposta_bos` | Önce e-postanı yaz. |
-| `hata.baglanti.giris` | Oturum açmak için bağlantı gerekir. Kayıtların bağlantısız çalışır. |
+| `hata.baglanti.giris` | Oturum açmak için bağlantı gerekir. |
 | `sifirla.baslik` / `.govde` / `.ipucu` | Bağlantıyı gönderdik · {eposta} adresine şifre bağlantısı gitti. · Gelmediyse istenmeyen klasörüne bak. |
 | `sifirla.yeniden` / `.bekle` | Yeniden gönder · 60 saniye sonra yeniden gönderebilirsin. |
 | `sifirla.geri` | Oturum açmaya dön |
@@ -937,7 +937,7 @@ prototip `06-harcama-detay.html` · `ekran-envanteri.md` E-13.
 | `kayit.yasal` | Hesap oluşturarak **Kullanım şartları** ve **Gizlilik politikasını** kabul ediyorsun. |
 | `kayit.giris_kapisi` | Hesabın var mı · Oturum aç |
 | `hata.eposta_kayitli` | Bu e-posta ile hesap var. Oturum aç. |
-| `hata.baglanti.kayit` | Hesap açmak için bağlantı gerekir. Kayıtların bağlantısız çalışır. |
+| `hata.baglanti.kayit` | Hesap açmak için bağlantı gerekir. |
 
 > ⏸️ `kayit.yasal`'ın iki bağlantısı **yer tutucudur**: gizlilik politikası
 > ve kullanım şartları metinleri henüz yazılmadı (K-057/7 · yayın
@@ -951,11 +951,11 @@ prototip `06-harcama-detay.html` · `ekran-envanteri.md` E-13.
 | `ayar.hesap.aciklama` | Hesap yalnız seni tanımak için. |
 | `ayar.hesap.eposta` | E-posta |
 | `ayar.hesap.saglayici` | Google ile bağlı. *(varyant: Apple ile bağlı. · Şifre ile bağlı.)* |
-| `ayar.hesap.cikis` / `.cikis_not` | Çıkış yap · Çıkınca kayıtların sende kalır. |
+| `ayar.hesap.cikis` / `.cikis_not` | Çıkış yap · Çıkınca kayıtların hesabında kalır. |
 | `ayar.hesap.sil` | Hesabı sil |
-| `ayar.hesap.kapali` / `.kapali_kapi` | Hesap isteğe bağlı. Kayıtların sende kalır. · Oturum aç ya da hesap oluştur |
+| `ayar.hesap.kapali` / `.kapali_kapi` | Hesap zorunlu. Kayıtların hesabında kalır. · Oturum aç ya da hesap oluştur |
 | `hesapsil.baslik` / `.govde` | Hesabın silinecek · Geri alınamaz. Bu e-posta ile bir daha oturum açamazsın. |
-| `hesapsil.veri` | {n} kayıt sende kalır. Silmek istersen Veri bölümünü kullan. |
+| `hesapsil.veri` | {n} kayıt dahil tüm verilerin silinir. |
 | `hesapsil.eylem` | Hesabı sil |
 
 > Çıkış için onay diyaloğu **yok**, hesap silme için **var** (K-029 ölçütü:

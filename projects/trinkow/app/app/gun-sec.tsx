@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,15 +13,18 @@ import { Legend } from '@/components/streak/Legend';
 import { MonthGrid } from '@/components/streak/MonthGrid';
 import { MonthNav } from '@/components/streak/MonthNav';
 import { Txt } from '@/components/Txt';
-import { gunsecAltKayitli, gunsecOzetBasligi, gunsecSinirBaslangic, t } from '@/content/metinler';
+import { gunsecAltAcikGun, gunsecAltKayitli, gunsecOzetBasligi, gunsecSinirBaslangic, t } from '@/content/metinler';
 import { useGunSecici, type GunSeciciGunu } from '@/db/useGunSecici';
+import { gunSecildi } from '@/lib/gunSeciciBus';
 import { paraYaz } from '@/lib/para';
 import {
   ayAdiTek,
   ayAnahtari,
   ayBasligi,
   ayAnahtariFarkli,
+  gunEkle,
   gunFarkiHesapla,
+  kisaTarih,
   uzunTarih,
 } from '@/lib/tarih';
 import { color, layout, radius, rhythm, size } from '@/theme/tokens';
@@ -29,17 +32,46 @@ import { color, layout, radius, rhythm, size } from '@/theme/tokens';
 /**
  * E-24 · Gün seçici. Referans: prototip-v4/14-gun-secici.html (5 durum).
  * Ay ızgarası; gün seçilince Günlük o güne gider (`?gun=<fark>`).
+ *
+ * K-064/2 — Günlük'ten bugün olmayan bir günde açılırsa `acikGun` (fark)
+ * parametresi gelir. Seçim halkası kaldırıldığı için (K-061) o gün ızgarada
+ * görsel olarak işaretlenmez; bunun yerine ay başlığının altında
+ * "Açık gün {g} {Ay}" yazılı olarak söylenir (`gunsec.alt.acik_gun`,
+ * metinler.md §24). Açık gün bugünse ya da görüntülenen aydan farklıysa bu
+ * cümle anlamsızdır, o durumda normal "{n} gün kayıtlı" özetine dönülür.
+ *
+ * D-2d-2 düzeltmesi — `kip=sec` (F-18 `gun-btn`, E-11 harcama ekle): bir güne
+ * dokunmak Günlük'e GİTMEZ, seçilen gün `gunSeciciBus` ile çağıran ekrana
+ * bildirilip `router.back()` ile geri dönülür. Parametre yoksa (Günlük'ten
+ * açılan orijinal akış) davranış AYNEN korunur.
  */
 export default function GunSeciciEkrani() {
   const insets = useSafeAreaInsets();
-  const [ay, setAy] = useState(() => ayAnahtari(new Date()));
-  const veri = useGunSecici(ay);
+  const params = useLocalSearchParams<{ acikGun?: string; kip?: string }>();
+  const secimKipiMi = params.kip === 'sec';
+  const acikGunFarki = params.acikGun !== undefined ? Number.parseInt(params.acikGun, 10) : null;
   const bugun = new Date();
+  const acikGunTarihi =
+    acikGunFarki !== null && Number.isFinite(acikGunFarki) && acikGunFarki !== 0
+      ? gunEkle(bugun, acikGunFarki)
+      : null;
+
+  const [ay, setAy] = useState(() => ayAnahtari(acikGunTarihi ?? new Date()));
+  const veri = useGunSecici(ay);
   const enSonAyMi = ay >= veri.enSonAy;
   const ilkAyMi = ay <= veri.ilkAy;
 
+  const acikGunAltMetin =
+    acikGunTarihi && ayAnahtari(acikGunTarihi) === ay ? gunsecAltAcikGun(kisaTarih(acikGunTarihi)) : null;
+
   function gunSec(gun: GunSeciciGunu) {
-    router.replace(`/?gun=${gunFarkiHesapla(gun.tarih, bugun)}` as never);
+    const fark = gunFarkiHesapla(gun.tarih, bugun);
+    if (secimKipiMi) {
+      gunSecildi(fark);
+      router.back();
+      return;
+    }
+    router.replace(`/?gun=${fark}` as never);
   }
 
   return (
@@ -63,7 +95,10 @@ export default function GunSeciciEkrani() {
         <View style={stil.pad}>
           <MonthNav
             baslik={ayBasligi(ay)}
-            altMetin={veri.ozet.kayitliGun > 0 ? gunsecAltKayitli(veri.ozet.kayitliGun) : t['gunsec.alt.kayit_yok']}
+            altMetin={
+              acikGunAltMetin ??
+              (veri.ozet.kayitliGun > 0 ? gunsecAltKayitli(veri.ozet.kayitliGun) : t['gunsec.alt.kayit_yok'])
+            }
             oncekiPasif={ilkAyMi}
             sonrakiPasif={enSonAyMi}
             onOnceki={() => setAy((a) => ayAnahtariFarkli(a, -1))}

@@ -27,11 +27,31 @@ export function uzunTarih(d: Date): string {
   return `${d.getDate()} ${AYLAR[d.getMonth()]} ${GUNLER[d.getDay()]}`;
 }
 
-/** Yerel gün anahtarı: "2026-09-12" (SQLite'ta gün bazlı sorgu için) */
+/**
+ * F-15 gün sınırı — "bugün" kaçta biter. Ayarlar'daki tercih (D-2c-1b);
+ * `gunAnahtari` senkron çalıştığı için db'den okunan değer burada
+ * ÖNBELLEKLENİR. Uygulama açılışında ve Ayarlar'da değiştiği anda
+ * `gunSiniriSaatiniAyarla` ile güncellenir (bkz. `app/_layout.tsx`,
+ * `db/ayarTercihleri.ts#gunSiniriKaydet`). Varsayılan 0 = gece yarısı,
+ * yani tercih hiç yüklenmemişse eski (değişmeyen) davranış korunur.
+ */
+let gunSiniriSaatiOnbellek: 0 | 3 | 6 = 0;
+
+export function gunSiniriSaatiniAyarla(saat: 0 | 3 | 6): void {
+  gunSiniriSaatiOnbellek = saat;
+}
+
+/**
+ * Yerel gün anahtarı: "2026-09-12" (SQLite'ta gün bazlı sorgu için).
+ * Gün sınırı 0'dan büyükse ve saat henüz sınıra ulaşmadıysa (örn. 01.00,
+ * sınır 03.00) gün bir önceki takvim gününe sayılır — TEK hesaplama yeri
+ * burası; çağıranlar değişmedi (bkz. D-2c-1b raporu).
+ */
 export function gunAnahtari(d: Date): string {
-  const ay = String(d.getMonth() + 1).padStart(2, '0');
-  const gun = String(d.getDate()).padStart(2, '0');
-  return `${d.getFullYear()}-${ay}-${gun}`;
+  const efektif = gunSiniriSaatiOnbellek > 0 && d.getHours() < gunSiniriSaatiOnbellek ? gunEkle(d, -1) : d;
+  const ay = String(efektif.getMonth() + 1).padStart(2, '0');
+  const gun = String(efektif.getDate()).padStart(2, '0');
+  return `${efektif.getFullYear()}-${ay}-${gun}`;
 }
 
 /** Yerel ay anahtarı: "2026-09" */
@@ -153,4 +173,42 @@ export function ayIlkGununHaftaIndeksi(ayAnahtariDeger: string): number {
 export function ayAnahtariFarkli(ayAnahtariDeger: string, fark: number): string {
   const [yil, ay] = ayAnahtariDeger.split('-').map(Number);
   return ayAnahtari(ayEkle(new Date(yil, ay - 1, 1), fark));
+}
+
+/* ---------------------------------------------- D-2d-3a · E-03 maaş günü */
+
+/**
+ * Türkçe ünlü uyumlu ek tabloları — ones basamağına göre (bkz. `gunEki`).
+ * index 0 kullanılmaz; 10/20/30 kendi sözcüğünün (on/yirmi/otuz) ekini alır,
+ * onun dışındaki her sayı SON basamağın (birler) ekini alır ("on beş" →
+ * "beş" ekini, "yirmi altı" → "altı" ekini vb.) — TDK'nin bilinen tarih
+ * yazım kuralı, algoritma değil sabit tablo (yalnız 1-31 aralığı var).
+ */
+const EK_BULUNMA = ['', 'inde', 'sinde', 'ünde', 'ünde', 'inde', 'sında', 'sinde', 'inde', 'unda'];
+const EK_IYELIK = ['', 'i', 'si', 'ü', 'ü', 'i', 'sı', 'si', 'i', 'u'];
+
+/** 1-9 birler ekinden farklı özel onluklar: on/yirmi/otuz kendi ekini taşır. */
+function ozelOnlukEki(gun: number, tablo: 'bulunma' | 'iyelik'): string | null {
+  if (gun === 10) return tablo === 'bulunma' ? 'unda' : 'u';
+  if (gun === 20) return tablo === 'bulunma' ? 'sinde' : 'si';
+  if (gun === 30) return tablo === 'bulunma' ? 'unda' : 'u';
+  return null;
+}
+
+/**
+ * Ayın günü + bulunma hâli eki: 15 → "15'inde" (`ob.maas.donem` cümlesi).
+ * metinler.md'nin şablonu ekini örnek gün (15) için sabit yazmıştı; bu
+ * yalnız birler basamağı {1,5,8}'de doğrudur, diğer 21 günde yanlış çıkardı
+ * (K-040'ın uyardığı "yazılı olmayan sayı iki kez kodlanır" tuzağının metin
+ * tarafı) — PM'e bildirildi, ek burada TEK yerden hesaplanır.
+ */
+export function gunBulunmaEki(gun: number): string {
+  const ozel = ozelOnlukEki(gun, 'bulunma');
+  return `${gun}'${ozel ?? EK_BULUNMA[gun % 10]}`;
+}
+
+/** Ayın günü + iyelik eki: 15 → "15'i" (E-03 kurulum özeti değeri). */
+export function gunIyelikEki(gun: number): string {
+  const ozel = ozelOnlukEki(gun, 'iyelik');
+  return `${gun}'${ozel ?? EK_IYELIK[gun % 10]}`;
 }

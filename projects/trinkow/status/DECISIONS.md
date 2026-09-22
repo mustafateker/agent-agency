@@ -2331,3 +2331,748 @@ olur; auth en sonda çünkü ürün değeri üretmiyor, yalnız kapı açıyor.
 kapatma bayrağı olması · hata durumunun paylaşılan `ErrorState` ile verilmesi ·
 FAB gizleme kuralının tüm boş-bugün durumlarına genellenmesi.
 **QA'ya not:** 300+ günlük geçmişte `FlatList` pencereleme senaryosu denenecek.
+
+## K-065 — D-2d-2 (ürün arama) sonrası PM hükümleri
+- Tarih: 2026-09-19 · Durum: ✅ Karar
+
+Tur kabul edildi: 80 kalemlik yerel katalog · Türkçe normalizasyonlu arama ·
+ürün→kategori öğrenme tablosu · `limit_gecmisi` (K-064/1) · "Açık gün" metni
+(K-064/2) · K-062 gradyan/metin düzeltmesi. `tsc` 0 hata, iOS export temiz,
+**yeni bağımlılık yok.** Şema 1→2, göç idempotent.
+
+1. 🔴 **`gun-btn` sapması geri gönderildi.** Onaylı tasarımda (`_uret/s02_harcama_ekle.py`
+   satır 81: "Dokununca E-24 Gün seçici açılır") gün düğmesi takvimi açar; kod
+   Bugün/Dün ikili anahtarıyla yetinmişti. Sonuç: kullanıcı FAB'dan yalnız iki güne
+   kayıt girebiliyordu. Düzeltme turu açıldı (gün seçiciye "seçim kipi").
+   **Not:** geliştirici sapmayı raporladı — sessiz sapma değil; süreç çalıştı.
+2. ✅ **Prototip iç çelişkisi kabul edildi.** "G" ve "M" yüzeylerinde HTML'de Kaydet
+   `disabled` değil ama not kutusu "Kaydet pasif" diyor. Geliştirici not kutusunu
+   (niyeti) izledi — doğru karar. Kaydet `tutar<=0` iken pasif. HTML düzeltmesi
+   T-5 doküman senkronuna eklendi.
+3. ✅ **Tırnak farkı:** `metinler.md` düz tırnak, prototip tipografik tırnak.
+   `metinler.md` otorite (P-4 kuralı), düz tırnak kaldı. Tipografik tırnağa geçiş
+   istenirse **metinler.md'den** başlar — koddan değil.
+4. ✅ **Ölü metin anahtarları** (`hata.kategori_yok` · `ekle.urun.placeholder` ·
+   `ekle.sik_alinanlar`) silinmedi, doğru karar: silme geri dönüşsüz ve T-5
+   birleştirmesi bu anahtarların kaderini zaten belirleyecek.
+5. **QA'ya devir:** (a) E-11'in 5 dalı elle gezilmeli (varsayılan · son-kullanılan ·
+   arama-geçmiş · arama-katalog · eşleşme-yok); (b) taksit serisinde öğrenme tablosuna
+   N kez aynı anahtar yazılıyor — zararsız, gözlemlenecek; (c) 300+ günlük geçmişte
+   `FlatList` pencereleme (K-064).
+
+## K-066 — `share.birikim` = `success` (tasarımcının PM'e bıraktığı açık madde)
+- Tarih: 2026-09-19 · Durum: ✅ Karar (PM)
+
+`delta-v4.md` T-3, plan ekranındaki pay çubuğu için `share.birikim = success #16A34A`
+öneriyor ve bunu 🔴 PM onayına bırakıyor: `tokens.md` §1.3 `success`'i "onay ikonu
+dolgusu + limit altı mini gösterge" ile sınırlıyor, pay çubuğu **yeni bir grafik
+bağlam**.
+
+**Karar: ONAYLANDI**, iki sınırla:
+1. Yalnız **plan payı çubuğu** ve onun açıklama noktalarında kullanılır; yeni
+   bağlamlara kendiliğinden yayılmaz.
+2. **Metin taşımaz** (K-062 ile aynı fizik). Pay adları çubuğun dışında yazılır.
+
+Gerekçe: alternatif kategori renklerini ödünç almaktı; o §1.4'ü ("aile rengi
+yalnız kategori bilgisi taşır") kırar ve kullanıcıya olmayan bir kategori ilişkisi
+ima ederdi. Birikim payının yeşil olması ayrıca "limit altı = yeşil" zincirini
+güçlendiriyor. `tokens.md` §1.3'e bu istisna T-5 birleştirmesinde yazılacak.
+
+## K-067 — 🔵 BACKEND: Mustafa'nın direktifi + karara bağlanması gereken 4 madde
+- Tarih: 2026-09-19 · Durum: 🔵 **AÇIK — Mustafa'da**
+
+**Direktif (Mustafa):** Ayrı klasörde, **Python** ile, **modüler** backend.
+Her modül kendi klasöründe `dto` + `service` + `controller` barındırır; bu yapı
+her backend sistemi için tekrarlanır. Veritabanı **MongoDB**, şimdilik yerel
+(Compass ile). Bildirim sisteminin acelesi yok. **Arayüz geliştirmesi bitince
+backend yazılır ve bağlanmaya başlanır.**
+
+**Yapıldı:** `projects/trinkow/backend/` kuruldu, `README.md`'de klasör yapısı
+ve kurallar yazıldı. **Kod yazılmadı** (direktif gereği sıra arayüzde).
+
+### ⚠️ Çözülmesi gereken çelişki
+Bu direktif, `CONTEXT.md` / F-13 ve K-052'deki temelle çelişiyor:
+"sunucu yok · harcama verisi cihazda kalır · kimlik için Supabase Auth".
+Bir Python backend'imiz olacaksa bu üç cümlenin de yeniden yazılması gerekiyor —
+brandbook'un mahremiyet dili ve yazılacak gizlilik politikası buna bağlı.
+
+### Soru 1 — Backend ne kadarını taşıyacak? (en önemlisi)
+- **(A) Yalnız kimlik + profil/plan + bildirim.** Harcama verisi cihazda kalır.
+  Mahremiyet vaadi ve offline-first mimari aynen korunur.
+- **(B) A + harcama senkronu/yedekleme** (çok cihaz, cihaz kaybında kurtarma).
+  Bedeli: çakışma çözümü mantığı, gizlilik politikasının genişlemesi,
+  brandbook mahremiyet dilinin değişmesi, barındırma maliyeti.
+- **PM önerisi: (A) şimdi, (B)'ye kapı açık.** Gerekçe: senkron, ürünün
+  davranışsal değerine hiçbir şey eklemiyor ama en pahalı ve en riskli parça.
+  Yine de veri modeli B'ye hazır tutulur (her kayıtta `id` + `guncelleme_zamani`),
+  böylece sonra eklemek göç gerektirmez.
+
+### Soru 2 — Kimlik: Supabase mi, kendi backend'imiz mi?
+K-052'de kimlik için Supabase Auth onaylanmıştı. Artık kendi backend'imiz olacağına
+göre iki sistemi birden taşımak gereksiz.
+- **(A) Supabase düşer, kimlik kendi `auth` modülümüzde.** Google/Apple giriş,
+  sağlayıcıdan gelen token'ın sunucuda doğrulanmasıyla yapılır (ücretsiz kütüphaneler).
+- **(B) Supabase kalır**, backend yalnız ona güvenir.
+- **PM önerisi: (A).** Tek sistem, dış servise bağımlılık yok, hesap silme
+  (App Store şartı) kendi elimizde. Bedeli: token doğrulama ve şifre sıfırlama
+  akışlarını biz yazarız — `auth` modülünün zaten işi bu.
+
+### Soru 3 — "Her modül ayrı ayrı çalışacak" ne demek?
+- **(A) Tek uygulama, bağımsız modüller.** Modüller birbirinin içine girmez,
+  tek komutla ayağa kalkar; gerektiğinde bir modül ayrı servise çıkarılabilir.
+- **(B) Gerçek mikroservis:** her modül kendi süreci, kendi portu, kendi dağıtımı.
+- **PM önerisi: (A).** Yapı B'ye hazır olur ama Faz 1'de B'nin işletme maliyeti
+  (ayrı dağıtım, servisler arası çağrı, hata ayıklama) tek geliştiricili bir ürüne
+  ağır gelir. Kodun biçimi aynı; değişen yalnız kaç süreç çalıştığı.
+
+### Soru 4 — Bağımlılık onayı (hepsi ücretsiz / açık kaynak)
+Önerilen: **FastAPI** (router'lar modül yapısına birebir oturur) · **Uvicorn** ·
+**Pydantic v2** (DTO'lar) · **Motor** (async MongoDB sürücüsü) · **pytest**.
+Şifreleme/token için `passlib[bcrypt]` + `pyjwt`.
+Ücretli servis yok. **MongoDB barındırma** ileride ücretli olabilir — o ayrı karar.
+
+### Kendi başıma eklediğim iki dosya (bildiriyorum, itirazın olursa değiştiririm)
+Modül klasörüne `dto/service/controller`'a ek olarak **`model.py`** (Mongo belgesi)
+ve **`repository.py`** (Mongo erişimi) koydum. Gerekçe: DTO dışarıya açılan
+sözleşme, model içeride saklanan belge — ikisini aynı dosyada tutmak ilk şema
+değişikliğinde API'yi kazara kırar. Repository ise servisi veritabanından ayırıp
+testi mümkün kılar.
+
+### Bildirim sistemi (acele yok — düşünülecek, karar sonra)
+Ön not: Expo ile kurulu olduğumuz için en düşük sürtünmeli yol **Expo Push
+Notifications** (ücretsiz, APNs/FCM'i o yönetir). Alternatif, doğrudan APNs+FCM
+entegrasyonu — daha fazla kontrol, daha fazla iş. Bildirimin **ne söyleyeceği**
+teknolojiden daha önemli: "limitini aştın" bildirimi suçlayıcı dile kayarsa
+markanın seri/kutlama dilini bozar. Tasarım turu geldiğinde ayrı karar açılacak.
+
+## K-068 — BACKEND: Mustafa'nın cevapları (K-067 kapandı)
+- Tarih: 2026-09-19 · Durum: ✅ KARAR — bağlayıcı
+
+1. **Veri sunucuda.** "Cihazda bilgi tutma muhabbeti olmasın." Offline-first
+   temeli ve F-13 **geçersiz**. Tek gerçek kaynak backend'dir.
+2. **Kimlik kendi backend'imizde**, **JWT** ile. Supabase **düştü** → K-052'nin
+   kimlik sağlayıcı hükmü geçersiz; kalan hükümleri (Google/Apple giriş, iOS'ta
+   ikisi birden) geçerli ama artık bizim `auth` modülümüzün içinde doğrulanır.
+3. **Klasörleme aynen tarif edildiği gibi**: `app/modules/<ad>/` içinde
+   `controller` · `service` · `dto` · `model`. **`repository.py` önerimi geri
+   çektim** — Mongo erişimi service'te, bağlantı `core`'dan gelir. `model.py`
+   kalıyor (Mongo belge şeması; DTO dışarıya açılan sözleşme, model içeride
+   saklanan belge — ikisi aynı dosyada olursa ilk şema değişikliği API'yi kırar).
+4. **Prod barındırma yok.** Yerel MongoDB + Compass ile çalışılır, dağıtım
+   kararı ertelendi. Bağımlılıklar onaylandı: FastAPI · Uvicorn · Pydantic v2 ·
+   Motor · pytest · passlib[bcrypt] · pyjwt (hepsi ücretsiz/açık kaynak).
+
+### PM yorumu — "cihazda bilgi yok"un tek istisnası (itiraz gelirse geri alırım)
+Cihazda **oturum token'ı** ve **görüntülenen verinin geçici önbelleği** tutulur.
+Gerekçe: token tutulmazsa kullanıcı her açılışta yeniden giriş yapar; önbellek
+olmazsa metroda/asansörde uygulama boş ekran gösterir. İkisi de "veri sahipliği
+cihazda" anlamına gelmez — sunucu her zaman üstün kabul edilir, önbellek
+çıkışta silinir. **Yerel SQLite bir "ikinci gerçek" olarak kullanılmaz.**
+
+### Bu kararın bedeli (şeffaflık — kapsam değişmiyor, sıra değişiyor)
+- İstemcideki `src/db/*` modülleri SQLite'a konuşuyor. İyi haber: **veri erişimi
+  zaten tek dikişte toplanmış** — ekranlar değişmeyecek, yalnız o modüllerin içi
+  API çağrılarıyla değişecek (BE-6).
+- **D-2c (oturum aç / hesap oluştur) artık `auth` modülünden SONRA kodlanır.**
+  Aksi hâlde Supabase'e göre yazılmış ve hemen atılacak kod üretirdik.
+- Gizlilik politikası (K-057/7) artık **daha geniş**: sunucuda kişisel harcama
+  verisi tutuyoruz. Brandbook'un "verin cihazında kalır" mahremiyet dili de
+  geçersiz → brand-strategist turu gerekiyor (BE-8).
+
+## K-069 — BE-2 (`auth` modülü) kabul + 3 PM hükmü + 1 soru
+- Tarih: 2026-09-19 · Durum: ✅ Kabul · 🔵 bir madde Mustafa'da
+
+`backend/` iskeleti ve `auth` modülü kuruldu. Klasör yapısı Mustafa'nın
+direktifine **birebir** uyuyor: `app/modules/auth/{controller,service,dto,model}`.
+Uç noktalar: kayıt · giriş · token yenile · çıkış · ben · hesap sil.
+Mongo: `kullanicilar` (unique `email`) · `yenileme_tokenlari` (unique `jti` + TTL).
+
+### 🔵 Soru — yerel MongoDB yok (Mustafa'da)
+Makinede **MongoDB Compass var ama sunucu yok** (`mongod`/`mongosh` kurulu değil).
+Bu yüzden `pytest` gerçek veritabanına karşı **fiilen çalıştırılamadı**; geliştirici
+iş mantığını geçici bir sahte sürücüyle uçtan uca doğruladı (10/10 senaryo geçti,
+sahte sürücü projeye eklenmedi) ama bu gerçek doğrulamanın yerini tutmaz.
+- **(A)** Homebrew ile MongoDB Community kurulur (`brew tap mongodb/brew` +
+  `brew install mongodb-community`), ücretsiz, yerelde servis olarak çalışır.
+- **(B)** Docker ile tek komutta Mongo kabı.
+- **(C)** Compass zaten bir yere (Atlas vb.) bağlıysa o bağlantı dizesi kullanılır.
+- **PM önerisi: (A)** — Compass'ın beklediği kurulum bu, Docker bağımlılığı
+  getirmez. **Kurulum Mustafa'nın makinesine yazılım eklemek demek olduğu için
+  onay kapısıdır; kendi başıma kurmuyorum.**
+
+### PM hükümleri
+1. 🟡 **Yenileme token'ı döndürülmüyor (rotation yok).** Çıkış tek token'ı iptal
+   ediyor ama yenileme sırasında aynı token yeniden kullanılabiliyor. Çalınan bir
+   yenileme token'ı süresi dolana kadar geçerli kalır. **Karar: rotation eklenecek**
+   (BE-2b) — her yenilemede eski `jti` iptal, yeni çift üretilir. Şimdi bloklayıcı
+   değil çünkü ürün henüz yayında değil.
+2. ✅ **Şifre sıfırlama kapsam dışıydı, doğru.** E-posta gönderimi gerektiriyor →
+   dış servis → onay kapısı. Ayrı tur (BE-2c). K-058 (Apple hesabının Android'de
+   kurtarılması) bu akışa bağlı, yayın öncesi gerekli.
+3. ✅ **İki küçük bağımlılık sapması kabul:** `pydantic[email]` (EmailStr için) ve
+   `bcrypt<4.1` pini (passlib 1.7.4 ile bilinen uyumsuzluk). İkisi de onaylı
+   kümenin doğal uzantısı, ücretsiz.
+4. Repo hijyeni: `.pytest_cache/`, `*.egg-info/`, `dist/` `.gitignore`'a eklendi.
+
+## K-070 — D-2d-3a (onboarding Katman 1) kabul + doküman devirleri
+- Tarih: 2026-09-19 · Durum: ✅ Kabul
+
+E-01…E-03 + limit önerisi sheet'i + `profil` tablosu (şema 2→3) + `src/lib/plan.ts`
+(kalan gün / günlük limit / öneri — **tek tanım**) kodlandı. tsc 0 hata, iOS export
+temiz, yeni bağımlılık yok.
+
+**Kabul edilen sapmalar:**
+1. Header "Şimdi değil" hiçbir dokümanda tanımlı değildi → Katman 1'den çıkış olarak
+   yorumlandı, cevaplanan alanlar korunuyor. Doğru yorum.
+2. 🟢 **Gerçek hata yakalandı:** `ob.maas.donem` metni "'inde" ekini sabit yazıyordu,
+   yalnız 15 için doğruydu ("ayın 21'inde" yanlış). Ek artık `lib/tarih.ts`'te ünlü
+   uyumuyla hesaplanıyor. **`metinler.md` düzeltilecek** (T-5).
+3. Kurulum özeti etiketleri ve denklem mikro etiketleri `metinler.md`'de anahtarsız,
+   prototipten alındı → T-5'te anahtarlanacak.
+4. `SuggestionTag` tipografisi (12/600) tokens'taki 10 rolden hiçbirine tam uymuyor;
+   `label` kullanıldı. **Karar: `label` kalsın**, yeni rol açılmaz — tip ölçeğini
+   tek bir rozet için büyütmek paletin disiplinini bozar. T-5'te `tokens.md`'ye not.
+5. `bilesen-envanteri.md`'deki "2pt iç çizgi" cümlesi K-061/2 ile geçersiz olmuştu;
+   geliştirici halkasız sürümü izledi — doğru. T-5'te envanter düzeltilecek.
+
+**Devredilen eksik:** E-10 `HeroCard` kipi "Takip"te sabitti (F-11 "niyete göre
+anında kişiselleşen pano" vaadi karşılanmıyordu) → **D-2d-3b kapsamına alındı.**
+
+## K-071 — D-2d-3b (Katman 2 + "Planın hazır") kabul + 3 hüküm
+- Tarih: 2026-09-19 · Durum: ✅ Kabul
+
+E-25 (8 kart) · E-26 (5 durum + "Nasıl hesaplandı") · 7 yeni bileşen · kategori
+limiti tohumlama · F-11 kip çipi · şema 3→4 (additive ALTER). tsc 0 hata, iOS
+export temiz, **yeni bağımlılık yok**. **Profilleme akışı tamamlandı.**
+
+**Kabul edilen varsayımlar** (hiçbiri belgede tanımlı değildi, T-5'te yazıya geçecek):
+1. "Haftada 2-3" → 2,5/hafta · "Ayda 1-2" → 1,5/ay. Orta nokta; alışkanlık maliyeti
+   bir tahmindir, kullanıcı fiyatı kendi girdiği için sapma sınırlı.
+2. Yatırım payı: Yapıyorum %40 · Düşünüyorum %20 · İlgilenmiyorum %0. %40
+   prototipin örnek verisiyle tutarlı; %20 varsayım. **Yalnız etiket, tavsiye değil** (SPK).
+3. Kategori tohumlama eşlemesi (kafe←kahve · restoran←yemek · abonelik←abonelikler ·
+   alışkanlıklar←sigara+alkol). **Sabit giderler tohumlanmıyor** — doğru karar,
+   onlar zaten zorunlu payın kendisi, günlük limite girmiyorlar.
+
+**🟡 Açık ürün boşluğu — F-11 yarım kaldı.**
+Kip çipi `profil.niyet`e bağlandı ama "kalan borç" gibi gerçek sayılar gösterilemiyor:
+**borç tutarı hiçbir yerde toplanmıyor.** E-01'de "Borç" bir niyet olarak sunuluyor,
+karşılığında kullanıcı yalnız etiket görüyor. İki yol var, D-2c sonrası karara bağlanacak:
+(A) Katman 2'ye tek bir "toplam borç" kartı eklenir — kip gerçek sayı gösterir ·
+(B) "Borç Avcısı" vaadi dile göre daraltılır. PM eğilimi: **(A)**, tek kart maliyeti düşük.
+
+## K-072 — D-2c-1 kabul + Ayarlar'a giriş noktası kararı + 1 onay talebi
+- Tarih: 2026-09-19 · Durum: ✅ Kabul · 🔵 bir madde Mustafa'da
+
+E-19 Ayarlar + E-20 bağlamsal profilleme sheet'i kodlandı (şema 4→5).
+tsc 0 hata, iOS export temiz, yeni bağımlılık yok.
+
+### 🔴 Tasarımda bulunan gerçek boşluk (PM kararı)
+**Hiçbir ekrandan `/ayarlar`'a gidilemiyordu.** Prototipte Ayarlar'a yalnız
+`index.html` (prototip gezinme sayfası) bağlanıyor; `ekran-envanteri.md` E-19'u
+"Push" diye işaretliyor ama **nereden itildiğini söylemiyor**. Üstelik E-22/E-23
+(oturum aç / hesap oluştur) "E-19 Hesap satırından" geliniyor ve
+`ekran-envanteri.md` satır 92 "hesap için tek davet E-19'daki tek satırdır" diyor
+→ **kapısı olmayan bir odanın içindeki tek davet.**
+
+**Karar: giriş noktası Özet (E-16) ekranının başlığında sağ üstte dişli ikonu.**
+Gerekçe: sekme sayısı 3'te sabit (K-049), Profil sekmesi tasarlanmadı (K-051);
+Özet zaten "arka oda"ya en yakın sekme, Günlük'ün başlığı ise gün seçici ve seri
+ile dolu. D-2c-1b turunda kodlandı.
+
+**Süreç notu:** bu boşluğu `design-reviewer` PASS'i yakalamadı — denetim yüzey ve
+token tutarlılığına bakıyor, **erişilebilirlik grafiğine** (her ekrana bir yoldan
+gidilebiliyor mu?) bakmıyor. Denetim listesine eklenecek (S-013).
+
+### 🔵 Onay gerekiyor — `expo-notifications`
+Ayarlar'daki bildirim izni satırı **gerçek OS iznini soramıyor**; şu an izin hep
+"var" varsayılıyor, "izin kapalı" dalı kodlu ama tetiklenemiyor. Gerçek davranış
+için `expo-notifications` gerekiyor: **ücretsiz**, Expo'nun kendi paketi, ileride
+bildirim modülünde zaten kullanılacak. Kural gereği yeni bağımlılık onaya tabi.
+PM önerisi: **eklensin**.
+
+### Kabul edilen sapmalar
+1. E-20 soruları: brief "E-25'in cevaplanmamış kartlarından" diyordu, `metinler.md`
+   §12/§22.5 ise 3 sabit soru tanımlıyor (gün 2 Yatırım · gün 3 Taksit · gün 4
+   Bildirim). **İçerik otoritesi `metinler.md` esas alındı** — doğru karar.
+2. Prototipte Ayarlar'ın "Kip" değeri "Bütçe", panoda "Tasarruf" → "Tasarruf"
+   kullanıldı. **T-5'te doküman düzeltilecek** (niyet adları: Takip/Tasarruf/Borç).
+3. `prof.degisti` sonrası "Taksit yükü" kartının panoya eklenmesi yapılmadı
+   (Günlük'e dokunmak yasaktı), yerine toast. Küçük; backlog'a alındı.
+
+## K-073 — 🔵 "Hesapsız devam et" K-068 ile çelişiyor (Mustafa'da)
+- Tarih: 2026-09-19 · Durum: 🔵 AÇIK — cevap gelene kadar tasarımdaki hâliyle kodlanıyor
+
+Onaylı tasarımda E-22/E-23'te **"Hesapsız devam et"** var ve K-047/K-052 açıkça
+"giriş duvarı YOK" diyor. Ama **K-068 ile veri artık sunucuda** — hesabı olmayan
+kullanıcının verisini koyacak yer yok. İki hüküm aynı anda doğru olamaz.
+
+- **(A) "Hesapsız devam et" kalkar, hesap zorunlu olur.** K-068'in doğal sonucu;
+  en basit ve tutarlı. Bedeli: ilk açılışta giriş duvarı — kendi verdiğin
+  "giriş duvarı yok" kararının tersi.
+- **(B) Misafir hesabı:** sunucuda anonim bir hesap açılır, kullanıcı isterse
+  sonradan e-posta ile sahiplenir. Giriş duvarı yok, veri yine sunucuda.
+  Bedeli: `auth` modülünde anonim hesap + sahiplenme akışı (ek tur).
+- **PM önerisi: (B)**, ama **senin kararın** — "giriş duvarı yok"u sen koymuştun,
+  onu ben kaldıramam. (A) hızlı, (B) ürünü ilk açılışta daha düşük sürtünmeli
+  tutuyor; ikisinin arasındaki fark yaklaşık bir turluk iş.
+
+**Bu arada ne yapıyorum:** D-2c-2'de ekranlar **onaylı tasarımdaki hâliyle**
+kodlanıyor ("Hesapsız devam et" düğmesi duruyor, eylemi tek bir dikişin arkasında).
+(A) seçilirse düğmeyi kaldırmak küçük bir iş; (B) seçilirse dikişe anonim hesap
+çağrısı bağlanır. Her iki yolda da atılacak kod üretmiyoruz.
+
+## K-074 — D-2c-2 kabul: arayüz TAMAMLANDI + 3 açık uç
+- Tarih: 2026-09-19 · Durum: ✅ Kabul
+
+E-22 Oturum aç · E-23 Hesap oluştur · `lib/api.ts` (token yenileme + tek seferlik
+tekrar deneme) · `lib/oturumDeposu.ts` · Ayarlar hesap eylemlerinin gerçek uçlara
+bağlanması. tsc 0 hata, iOS export temiz, **yeni bağımlılık yok**.
+
+1. 🟢 **Geliştirici benim brief'imdeki hatayı yakaladı ve uymadı — doğru davranış.**
+   Brief'e "açılış → (oturum yoksa) kimlik ekranı → onboarding" yazmıştım; bu,
+   K-052'nin "giriş duvarı YOK" kararıyla çelişiyordu. Duvar kurmadı, sessizce de
+   çözmedi, PM'e getirdi. **K-073 cevaplanana kadar duvar yok** — doğru hâl budur.
+   Ders: PM brief'i de bir çelişki kaynağı olabilir; ajanın itiraz hakkı işliyor.
+2. ⏸️ **E-00 açılış ekranı (marka + topuz animasyonu) yapılmadı.** Native splash
+   zaten marka renginde; JS açılış ekranı zamanlama riski taşıyan ayrı bir iş.
+   Kabul — backlog'a alındı, yayın öncesi yapılır.
+3. 🔴 **"Şifremi unuttum" şu an SAHTE.** Backend'de sıfırlama ucu yok (BE-2c
+   yazılmadı); ekran "bağlantı gönderildi" kartı gösteriyor ama e-posta gitmiyor.
+   **Yayın bloklayıcısı:** ya BE-2c yazılır ya da bağlantı gizlenir. Kullanıcıya
+   olmayan bir şeyi vaat eden ekran kalamaz.
+
+## K-075 — Plan formülleri iki yerde: kural
+- Tarih: 2026-09-19 · Durum: ✅ Karar (PM)
+
+Veri sunucuya taşınınca plan hesabı hem istemcide (`src/lib/plan.ts`) hem
+sunucuda gerekiyor: istemcide **anlık etkileşim** için (kaydırıcı oynarken
+sayılar canlı değişiyor), sunucuda **otorite** için (raporlama, doğrulama,
+ileride bildirim).
+
+**Kural:** İki uygulama da `docs/design/delta-v4.md` **satır 764–792'deki formül
+tablosunu** uygular; **tek otorite o tablodur**, birbirlerinin kodu değil.
+Sunucu, istemciden gelen türetilmiş değerlere **güvenmez** — girdileri alır,
+kendi hesaplar, kaydeder ve **hesapladığını geri döndürür**. İstemci ekranda
+sunucunun döndürdüğünü gösterir. Böylece sapma olursa sessizce birikmez,
+ilk kayıtta görünür.
+
+Gerekçe: aynı formülü iki dilde tutmak ideal değil ama alternatifler daha kötü —
+her kaydırıcı hareketinde ağ çağrısı (kullanılamaz) ya da sunucunun istemci
+hesabına güvenmesi (veri bütünlüğü yok).
+
+## K-076 — BE-4 (`harcama` modülü) kabul + `ozet` modülü kararı
+- Tarih: 2026-09-19 · Durum: ✅ Kabul / Karar
+
+`harcama` modülü yazıldı (harcama · taksit serisi · kategori limiti · gün durumu ·
+limit geçmişi · ürün öğrenme), `kullanici`ya tercihler + iki eksik alan eklendi,
+test altyapısı düzeltildi. **61 testin 15'i Mongo'suz geçiyor**, 46'sı Mongo bekliyor.
+Yeni bağımlılık yok. **Backend artık 3 modül: `auth` · `kullanici` · `harcama`.**
+
+1. ✅ `limit_gecmisi` okuma ucunun HTTP'ye açılmaması kabul — mantık servis metodu
+   olarak var ve testli; istemci bağlanırken gerekirse tek satırla açılır.
+2. ✅ İstemcideki `urunKategori.ts` yorumu ("yerel, sunucuya gitmez — K-052") **bayat**;
+   K-068 onu geçersiz kıldı. Geliştirici doğru davrandı, yorum BE-6'da düzeltilecek.
+3. **Karar: `ozet` modülü gerekiyor (BE-5).** İstemci artık SQLite'tan okumayacağına
+   göre, pano/özet/kategori dağılımı/seri hesabı sunucuda üretilmeli. Aksi hâlde
+   uygulama her ekranda **tüm kayıtları çekip kendi toplamak** zorunda kalır —
+   300+ günlük geçmişte bu hem yavaş hem pahalı. Toplama sunucuda, gösterim istemcide.
+
+## K-077 — BE-5 (`ozet`) kabul + 3 madde düzeltme turuna
+- Tarih: 2026-09-19 · Durum: ✅ Kabul · düzeltme turu açıldı (BE-5b)
+
+`ozet` modülü yazıldı: pano (E-10) · dönem özeti (E-16) · kategori detayı (E-15) ·
+seri (E-21). Modüller arası kural korundu — kendi koleksiyonu yok, `harcama` ve
+`kullanici` **servis arayüzlerini** çağırıyor. Testler: **37 geçti (Mongo'suz)**,
+47'si Mongo bekliyor. Yeni bağımlılık yok.
+
+Geliştiricinin bildirdiği üç madde **kabul edilmedi, düzeltme turuna alındı** —
+üçü de ürünün güven vaadine dokunuyor:
+
+1. 🔴 **"En uzun seri" sunucuda saklanmıyor**, her istekte yeniden hesaplanıyor;
+   limitsiz kipte **0 dönüyor**. K-048/F-16f "seri kırılsa da en uzun seri saklanır"
+   diyor. Kullanıcının 40 günlük rekoru limitsiz kipe geçince kaybolamaz.
+   **Düzeltme:** en uzun seri kalıcı olarak saklanır (ratchet — yalnız büyür).
+2. 🟡 **Seri sınır günü yalnız `kurulum_gunu`'ndan alınıyor**, "ilk kayıt günü"
+   karşılaştırması yapılmıyor (`harcama` arayüzünde "en eski kayıt" ucu yok).
+   Yanlış sınır = yanlış seri. **Düzeltme:** `harcama`'ya en eski kayıt ucu eklenir.
+3. 🟡 **Her günün limiti tek tek sorgulanıyor** → 300 günlük geçmişte O(gün) Mongo
+   sorgusu. **Düzeltme:** `harcama`'ya toplu limit-geçmişi ucu eklenir, `ozet` bir
+   kez çeker.
+
+Not: üçü de geliştiricinin **kendi bildirdiği** maddeler — sessiz sapma yok, süreç
+çalışıyor. Kabul etmeyişimin sebebi kalite, davranış değil.
+
+## K-078 — Bildirim sistemi: düşünülmüş taslak (Mustafa "bir şeyler düşün" dedi)
+- Tarih: 2026-09-19 · Durum: 🔵 Tartışmaya hazır, kod yazılmadı
+
+**Önce teknoloji değil, dil.** Bu üründe bildirim, markanın en riskli yüzeyi:
+Trinkow'un tezi "ödeme acısını geri getirmek" ama **suçlama değil**. Kullanıcıyı
+azarlayan bir bildirim, seri/kutlama diliyle kurduğumuz her şeyi bozar ve
+uygulamanın silinme sebebi olur. Bu yüzden önce **ne söyleyeceğimize** karar
+verilmeli, sonra hangi servisle göndereceğimize.
+
+### Önerilen bildirim kümesi (az ve hak edilmiş)
+| # | Ne zaman | Ne der | Neden |
+|---|---|---|---|
+| B1 | Akşam, kayıt yoksa | "Bugünü kapatmadın" | Seri **kayıt** ister (K-048 hile kapısı); sessiz kalırsa seri kırılır ve kullanıcı sebebini bilmez |
+| B2 | Milestone (3/7/14/30…) | "7 gün" | Kutlama zaten üründe var; bildirim onu dışarı taşır |
+| B3 | Seri kırılmak üzereyken | "Limitin altındasın, günü kapat" | **Yardım**, uyarı değil |
+| B4 | Maaş günü | "Yeni dönem başladı, planın hazır" | Dönem mantığı zaten kurulu |
+
+**Kasıtla YOK:** "limitini aştın" bildirimi. Kullanıcı zaten biliyor; para
+harcandıktan sonra gelen uyarı yalnız utanç üretir, davranış değiştirmez.
+Aşım bilgisi **uygulama içinde** kalır.
+
+### Kurallar
+- **Günde en fazla 1 bildirim.** (E-20 sheet'i için koyduğumuz kuralın aynısı.)
+- Saat kullanıcının **gün sınırı tercihine** bağlı (Ayarlar'da zaten var).
+- Her bildirim kapatılabilir; kapatma **türü bazında**, hepsi ya da hiçbiri değil.
+- Bildirim metinlerinde **rakam varsa doğru olmalı** — yanlış tutar gösteren bir
+  bildirim, uygulamanın tamamına duyulan güveni götürür.
+
+### Teknoloji (karar sonra)
+- **(A) Expo Push** — Expo ile kuruluyuz, APNs/FCM'i o yönetir, ücretsiz. Sunucu
+  tarafında bir `bildirim` modülü cihaz jetonlarını tutar ve zamanlar.
+- **(B) Doğrudan APNs + FCM** — daha fazla kontrol, belirgin biçimde daha fazla iş.
+- **(C) Yerel bildirim (cihazda zamanlanmış)** — sunucu gerekmez, B1/B3 için yeterli;
+  ama veri sunucuda olduğu için hesap **sunucu tarafının** bilgisiyle daha doğru olur.
+- **PM önerisi: (A)**, ve ilk sürümde yalnız **B1 + B2**. B3/B4 veriye güven
+  oturduktan sonra.
+
+**Ön koşul:** `expo-notifications` onayı (halen bekliyor) + gizlilik politikasında
+bildirim maddesi.
+
+## K-079 — İstemcinin API'ye bağlanması (BE-6) MongoDB'den önce yapılmayacak
+- Tarih: 2026-09-19 · Durum: ✅ Karar (PM)
+
+BE-6, uygulamanın `src/db/*` katmanını backend'e bağlayacak — K-068'in asıl işi ve
+en riskli turu. **MongoDB kurulmadan başlatmıyorum.**
+
+Gerekçe: bugün uygulama SQLite ile **çalışıyor**. BE-6'yı Mongo yokken yaparsak
+uygulama çalışmayan bir sunucuya bağlanır ve **tamamen kullanılamaz hâle gelir**;
+üstelik hatanın bağlama kodundan mı, sunucudan mı, şemadan mı geldiğini ayırt
+edemeyiz. Elimizde 93 testin 46'sı zaten "Mongo bekliyor" durumunda.
+
+Sıra: **MongoDB → tüm testler yeşil → BE-6 → QA (Aşama 4).**
+
+## K-080 — Hesap ZORUNLU (K-073 kapandı)
+- Tarih: 2026-09-19 · Durum: ✅ KARAR (Mustafa)
+
+Mustafa: "hesap zorunlu olacak." → K-073'ün **(A)** şıkkı.
+**"Hesapsız devam et" kaldırılıyor**, giriş duvarı kuruluyor.
+
+Geçersiz kalan hükümler: K-047/K-052'nin "giriş duvarı YOK" maddesi · F-19b
+("Hesapsız devam et her iki ekranda") · `ekran-envanteri.md` satır 92
+("hesap için tek davet E-19'daki tek satırdır" — artık davet değil, kapı).
+
+**Etki:**
+- Açılış sırası: E-00 → (oturum yoksa) E-22/E-23 → onboarding → uygulama.
+- Ayarlar'daki hesap satırı artık "davet" değil, **oturum yönetimi**.
+- Gizlilik politikası ve brandbook dili: hesap artık opsiyonel değil (BE-8).
+- Kullanıcı hesabı silince uygulama kullanılamaz hâle gelir → hesap silme akışı
+  kullanıcıyı giriş ekranına düşürmeli.
+
+## K-081 — MongoDB: Atlas · bildirim: Expo DIŞI, ertelendi
+- Tarih: 2026-09-19 · Durum: ✅ Karar (Mustafa) · 🔵 bir eksik bilgi
+
+1. **MongoDB Atlas kullanılacak** (yerel kurulum değil). Mustafa bağlantı dizesini
+   verdi: `mongodb+srv://<db_username>:<sifre>@trinkow-cluster.fh8lrsy.mongodb.net/`
+   - 🔵 **Eksik: gerçek kullanıcı adı** — dizede `<db_username>` yer tutucu olarak duruyor.
+   - ⚠️ **Güvenlik:** şifre sohbete düz metin olarak girdi. `.env` dosyasına yazılacak
+     (gitignore'da, commit edilmiyor) ama **şifre bir yerde "sızmış" sayılır** —
+     Atlas'tan yeni bir veritabanı kullanıcısı/şifresi üretilip bunun iptal edilmesi
+     önerilir. Karar Mustafa'nın.
+   - Testler **ayrı veritabanında** (`trinkow_test`) çalışır, gerçek veriye dokunmaz.
+     Atlas uzak olduğu için testler yerel Mongo'ya göre yavaş olacak — kabul.
+2. **Bildirim Expo ile YAPILMAYACAK.** Mustafa: "expoda olmasın ya bildirim işini
+   sonra ben çözerim." → `expo-notifications` **eklenmiyor**, K-078'in teknoloji
+   önerisi (Expo Push) **düşüyor**; bildirim dili/kuralları taslağı (B1-B4, günde en
+   fazla 1, "limitini aştın" bildirimi YOK) geçerli kalır, uygulama sonraya.
+   - ⚠️ Sonuç: Ayarlar'daki bildirim satırı şu an gerçek izin isteyemiyor, yani
+     **çalışmayan bir anahtar**. "Şifremi unuttum"la aynı sorun. Yayın öncesi ya
+     bağlanır ya gizlenir (D-2c-4 ile birlikte).
+
+## K-082 — D-2c-3 kabul + yanıltıcı mahremiyet metni
+- Tarih: 2026-09-19 · Durum: ✅ Kabul · 🔴 bir madde acil
+
+Giriş duvarı kuruldu, "Hesapsız devam et" kaldırıldı, çıkış/hesap silme giriş
+ekranına düşürüyor, geçersiz token sessizce giriş ekranına atıyor. tsc 0 hata,
+iOS export temiz, yeni bağımlılık yok. Ölü anahtar: `giris.hesapsiz` (silinmedi,
+T-5'te karara bağlanacak).
+
+1. 🔴 **Uygulamada yanıltıcı bir mahremiyet cümlesi var.** `hesap.mahremiyet` →
+   "Harcamaların sende kalır." K-068'den sonra bu **doğru değil**: harcama verisi
+   sunucuda. Eksik bir vaatten daha kötüsü, **yanlış** bir vaattir — hem güven hem
+   hukuk sorunu. **Karar:** metin ilk fırsatta düzeltilecek (BE-8 ile birlikte;
+   yayın bloklayıcısı listesine eklendi). Geliştirici doğru davrandı: kendi başına
+   yeni bir marka cümlesi uydurmadı, PM'e getirdi.
+2. 🟡 Yönlendirme koruması yalnız oturum-değişim olayında ve açılışta çalışıyor;
+   çıkıştan sonra geri tuşuyla eski yığına dönmek teorik olarak mümkün. Veri hâlâ
+   yerelde olduğu için risk düşük; **BE-6 turunda sertleştirilecek.**
+
+## K-083 — Atlas bağlandı, TÜM TESTLER YEŞİL (104/104)
+- Tarih: 2026-09-20 · Durum: ✅ Kilometre taşı
+
+Mustafa Atlas kullanıcı adını verdi (`tekermustafa038_db_user`). `.env` güncellendi
+(gitignore'da, commit edilmiyor), bağlantı doğrulandı, **104 testin tamamı geçti**
+(~2dk 47sn — Atlas uzak olduğu için yerel Mongo'dan yavaş, kabul).
+
+**Beş modül ilk kez gerçekten doğrulandı:** `auth` · `kullanici` · `harcama` ·
+`ozet` · `katalog`. Bugüne kadar 46'sı hiç koşmamıştı.
+
+### Yol boyunca çıkan iki test altyapısı hatası (PM düzeltti)
+1. `conftest.py` `.env`'den **önce** `os.environ.setdefault("MONGODB_URI", localhost)`
+   yapıyordu; `load_dotenv` var olan değişkeni ezmediği için testler Atlas yerine
+   localhost'a gidiyordu. Sıra düzeltildi + test veritabanı adı artık **her zaman**
+   ayrı (`trinkow_test`), `.env`'deki ad ne olursa olsun gerçek veriye dokunulmaz.
+2. Motor istemcisi `lru_cache`'te tutulduğu için **oluşturulduğu olay döngüsüne**
+   bağlanıyordu; pytest-asyncio her teste yeni döngü verdiğinden ikinci testten
+   itibaren "Event loop is closed" hatası çıkıyordu. Fixture artık her testte
+   istemciyi tazeliyor.
+
+**Not (şeffaflık):** bu iki düzeltmeyi PM kendisi yaptı (3 küçük düzenleme,
+`tests/conftest.py`). Normalde kod alt-ajana gider; burada ortam/test
+konfigürasyonu olduğu ve tüm doğrulamayı kilitlediği için doğrudan yapıldı.
+
+### Sonuç: K-079'un kapısı açıldı
+"MongoDB → testler yeşil → BE-6" sırasındaki ilk iki adım tamam.
+**BE-6 (istemcinin API'ye bağlanması) başlatılabilir.**
+
+⚠️ Şifre önerisi hâlâ geçerli: bağlantı şifresi sohbete düz metin girdi, Atlas'tan
+yeni kullanıcı/şifre üretilip bunun iptal edilmesi önerilir.
+
+## K-084 — BE-6a kabul + iki sözleşme kararı
+- Tarih: 2026-09-20 · Durum: ✅ Kabul
+
+`profil.ts` ve `ayarTercihleri.ts` API'ye bağlandı, **fonksiyon imzaları değişmedi**
+(ekranlar el değmeden çalışıyor). Yükleniyor/hata hâlleri eklendi. tsc 0 hata.
+**Uçtan uca curl ile doğrulandı:** kayıt → profil → katman1 → katman2 (birleştirme
+testi dahil) → plan/kur → tercihler. Yeni bağımlılık yok.
+
+1. ✅ **`PATCH /kullanici/profil/katman1` eklenecek** (BE-3b). Şu an Katman 1'in tek
+   alanını güncellemek için istemci önce okuyup sonra tüm alanları geri yazıyor
+   (read-modify-write): fazladan gidiş-dönüş + kuramsal yarış durumu. Katman 2'de
+   kısmi güncelleme zaten var; Katman 1 de aynı olmalı. **Bloklayıcı değil.**
+2. ✅ **"Kurulum günü" iki yerde tanımlı** (sunucuda `tercihler.kurulum_gunu`,
+   istemcide `ayar.kurulum_gunu` — seri hesabı bunu kullanıyor). **Karar: sunucu
+   otoritedir** (K-068). Birleştirme, seri/pano sunucuya taşınırken (BE-6c) yapılacak;
+   o güne kadar iki değerin **aynı** olmasına dikkat edilecek.
+3. ✅ Alışkanlık kartlarının kart-bazlı yazımı: istemci son bilinen kart durumuyla
+   birleştirip gönderiyor, curl ile doğrulanmış. Kabul.
+
+## K-085 — BE-6b kabul + backend'de 6 eksik (biri yayın bloklayıcısı)
+- Tarih: 2026-09-20 · Durum: ✅ Kabul · düzeltme turu açıldı (BE-4b)
+
+`harcama.ts` · `limitler.ts` · `urunKategori.ts` API'ye bağlandı, ekranlar değişmedi.
+Uçtan uca curl ile doğrulandı (ekle → listele → PATCH → taksit serisi → taksitli tekil
+silme 422 → seri silme → limitler → limit geçmişi → ürün öğrenme → silme). tsc 0 hata.
+
+- ✅ **`Harcama.id` `number` → `string`** (Mongo ObjectId). Sözleşme gerçeği, tercih değil;
+  etkilediği iki ekran düzeltildi. Kabul.
+- ✅ **Geri al (K-029):** sunucuda yumuşak silme yok, geri al kaydı yeni id ile yeniden
+  yaratıyor. Geliştirici hiçbir ekranın eski id'ye yapışmadığını doğrulamış. Kabul.
+- ✅ **Kısmi taksit hatası:** yazılan taksitler seri silme ucuyla geri alınıyor, kullanıcı
+  yarım seriyle kalmıyor. Doğru çözüm.
+
+### 🔴 PM'in kendi bulduğu eksik — hesap silme veriyi silmiyor
+`DELETE /auth/hesap` yalnız **kimlik** kaydını siliyor; `kullanici_profilleri`,
+`harcamalar`, `kategori_limitleri`, `gun_durumlari`, `limit_gecmisleri`,
+`urun_kategori_ogrenmeleri` sunucuda **kalıyor**. Bu, hesap silme sırası (BE-2) geldiğinde
+bu modüller henüz yokken yazıldığı için oluştu.
+**Yayın bloklayıcısı:** App Store hesap silme şartı ve veri koruma mevzuatı, hesapla
+birlikte kullanıcı verisinin de silinmesini gerektirir. BE-4b'ye alındı.
+
+### Düzeltme turuna giden diğer maddeler
+1. 🔴 **Kategori limiti silinemiyor** — `DELETE` ucu yok, `PUT` de `limit_kurus>0`
+   zorunlu tuttuğu için "sil" temsil edilemiyor. Şu an yalnız yerelde siliniyor, sunucudan
+   okununca geri geliyor. **Bloklayıcı.**
+2. **`en_eski_kayit_gunu` HTTP'ye açılacak** — istemcinin "ilk kayıt günü"ne ihtiyacı var
+   (seri sınırı).
+3. **"Tüm verileri sil" ucu yok** (Ayarlar'daki yüksek etkili eylem). Geliştirici geri
+   dönüşsüz bir işlemi yarım uygulamamayı seçmiş — doğru karar.
+4. **`PATCH /kullanici/profil/katman1`** (K-084/1) bu turda eklenecek.
+5. **Günlük limit elle değiştirilince** sunucudaki `gunluk_limit_kurus` güncellenmiyor.
+6. ⏸️ "Sık alınanlar" için sunucuda dedup ucu yok; istemci son 200 kayıttan hesaplıyor.
+   **Kabul** — tam geçmiş taraması Faz 1 için gereksiz, dokümante edildi.
+
+**Bilinen ara durum:** pano/özet/seri hâlâ yerel SQLite'tan okuyor → yeni kayıtlar o
+ekranlarda görünmüyor. BE-6c ile kapanacak.
+
+## K-086 — BE-4b kabul: 6 eksik kapandı, 117/117 test geçiyor
+- Tarih: 2026-09-20 · Durum: ✅ Kabul
+
+1. 🔴→✅ **Hesap silme artık kullanıcının TÜM verisini siliyor.** Sıra: önce diğer
+   modüllerin verisi (servis arayüzü üzerinden — modüller arası kural korundu), en son
+   kimlik. Yarıda kesilirse kullanıcı hâlâ giriş yapıp tekrar deneyebilir; adımlar
+   idempotent. **Yayın bloklayıcısı kapandı.**
+2. ✅ `DELETE /harcama/ayar/kategori-limitleri/{kategori}` (204, idempotent).
+3. ✅ `DELETE /harcama/ayar/tum-veriler` — veriyi siler, hesabı/profili bırakır.
+4. ✅ `GET /harcama/ayar/en-eski-kayit-gunu`.
+5. ✅ `PATCH /kullanici/profil/katman1` (K-084/1 kapandı).
+6. ✅ Günlük limit tek otorite: `gunluk_limit_kurus`, `limit_gecmisi` onun tarihçesi.
+
+Servis constructor'larına opsiyonel bağımlılık parametreleri eklendi (varsayılanı kendi
+üretiyor) — mevcut çağrılar kırılmadı, test edilebilirlik arttı. Kabul.
+
+**Doküman borcu:** `backend/README.md`'nin "Veritabanı" ve "MongoDB'yi yerelde ayağa
+kaldır" bölümleri **bayat** — artık Atlas kullanıyoruz (K-081/K-083). Bir sonraki
+backend turunda düzeltilecek.
+
+## K-087 — BE-6c kabul: veri taşıma bitti + 1 kritik saat dilimi hatası
+- Tarih: 2026-09-20 · Durum: ✅ Kabul · 🔴 düzeltme turu açıldı (BE-5c)
+
+Pano · özet · kategori detayı · **seri** · katalog · Ayarlar'ın kalan iki eylemi
+bağlandı. **Seri hesabının tamamı istemciden kalktı** — tek kaynak sunucu (iki yerde
+iki farklı seri sayısı çıkma riski kapandı). Yerel şema temizlendi (5 tablo kaldırıldı).
+Uçtan uca denendi, tsc 0 hata, yeni bağımlılık yok.
+
+### 🟢 Ajanın yakaladığı gerçek hata (kapsamı dışındaydı, yine de buldu)
+`semasi.ts`'teki **örnek veri tohumlaması** BE-6b'den beri her açılışta ~19 sahte
+harcamayı **gerçek kullanıcı hesabına POST ediyor** ve `gunluk_limit_kurus`'u sessizce
+300 ₺'ye eziyordu. Sebep: "zaten dolu mu?" kontrolü artık hiç yazılmayan yerel tabloya
+bakıyordu, hep "boş" çıkıyordu. Kaldırıldı. **Simülatörde fark edilmesi zor, veriyi
+kirleten cinsten bir hata.**
+
+### 🔴 Saat dilimi çelişkisi — düzeltilecek (BE-5c)
+`/ozet/seri` "bugün"ü **UTC** kabul ediyor; istemci her yerde **yerel** günü kullanıyor
+(TR = UTC+3). Sonuç: gece 00:00–03:00 arasında eklenen harcama sunucuya göre "gelecek"
+sayılıp o gün seriye girmeyebilir. **Seri = ürünün güven sermayesi**, kabul edilemez.
+**Karar:** sunucu "bugün"ü kendisi türetmez; gün bilgisi **istemciden gelir** —
+`harcama` modülünde zaten böyle ("gün alanı istemciden gelir, sunucu saat dilimi
+varsayımı yapmaz"). `ozet` de aynı kurala uyacak. Kullanıcının **gün sınırı tercihi**
+(Ayarlar'da 00:00/03:00/06:00) zaten yerelde hesaplanıyor; bu kural onunla da tutarlı.
+
+### Kabul edilen, sonraki tura bırakılanlar
+- `ayar.gunluk_limit_kurus` hâlâ yerelde okunuyor (5 ekran) → sunucudaki değerle
+  ayrışabilir. **BE-6d.**
+- `kategoriLimitiSil` hâlâ yerelde — backend ucu BE-4b'de eklendi, bağlanmadı. **BE-6d.**
+- E-24 ay ızgarası ve E-16 hafta şeridi için sunucuda "aralıkta gün-başı toplam" ucu yok;
+  istemci ham listeden grupluyor. **Kabul** (toplama tekrarı değil, yalnız gruplama).
+
+## K-088 — BE-6d kabul: VERİ TAŞIMA TAMAMLANDI, Aşama 4 (QA) açıldı
+- Tarih: 2026-09-20 · Durum: ✅ Kilometre taşı
+
+Günlük limit tek otoriteye bağlandı · kategori limiti silme bağlandı · seri isteğine
+yerel gün gönderiliyor · `kategori_limiti` tablosu kaldırıldı (şema 6→7). tsc 0 hata,
+canlı backend'e karşı doğrulandı, yeni bağımlılık yok.
+
+### 🟢 Ajanın yakaladığı ikinci gerçek hata
+`plan.tsx` / `limitler.tsx`'in **elle limit düzenleme akışı sunucudaki otoriteyi hiç
+güncellemiyordu** — yalnız yerel `ayar`a yazıp doğrudan `limit_gecmisi`ne POST atıyordu.
+Bu fark edilmeden "limiti sunucudan oku" maddesi uygulansaydı, kullanıcı Limitler
+ekranından girdiği değeri **kaydeder kaydetmez kaybediyor** görünecekti. Ayrıca bir
+**çift yazma** bulundu (hem yerel hem limit geçmişi) ve kaldırıldı.
+
+Ders (iki turda üst üste): **veri taşıma turlarında asıl risk yeni kodda değil, eski
+kodun "hâlâ çalışıyor olmasında."** Bu sınıf artık brief'lerde açıkça aranıyor.
+
+### Yerelde kalanlar (kabul, K-068 ihlali değil)
+Oturum token'ı · profilleme/ipucu/kutlama gibi saf UI bayrakları · uygulamayla birlikte
+gelen 80 kalemlik katalog (uygulama kaynağı, ETag ile tazeleniyor).
+
+### Aşama geçişi
+**Aşama 3 (Geliştirme) çıkış kriteri karşılandı:** planlanan özellikler kodlandı,
+istemci tamamen sunucu üstünde çalışıyor, backend 118/118 test geçiyor.
+→ **Aşama 4 (Kalite) açıldı, `qa-engineer` çağrıldı.**
+Yayın öncesi bilinen borçlar (şifre sıfırlama · bildirim anahtarı · güvenli token
+deposu · token rotasyonu · açılış ekranı · yanlış mahremiyet cümlesi · gizlilik
+politikası) QA raporuyla birlikte tek listede karara bağlanacak.
+
+## K-089 — QA turu: GEÇMEDİ (2 bloklayıcı) · QA-2 kapandı
+- Tarih: 2026-09-20 · Durum: 🔄 QA-1 sürüyor, QA-2 ✅
+
+`qa-engineer` raporu: `docs/qa-raporu.md`. Backend 118/118, istemci tsc 0 hata.
+**Karar: GEÇMEDİ.** İki bloklayıcı:
+
+**BLOCKER 1 (python-developer, sürüyor):** `POST /kullanici/plan/kur` "bugün"ü sunucu
+UTC'sinden türetiyor — K-087'de `/ozet/seri` için düzeltilen hatanın **taşınmamış ikizi**.
+TR saatiyle 00:00–02:59'da plan kuran kullanıcı, ekranda gördüğünden farklı bir günlük
+limitle plan kurabilir. Aynı sınıf (sunucunun kendi saatinden gün türetmesi) tüm
+backend'de taratılıyor.
+
+**BLOCKER 2 (frontend-developer) ✅ KAPANDI:** uygulama kullanıcıya gerçek olmayan
+şeyler söylüyordu. Düzeltilen 5 + taramada bulunan 3 = **8 metin**:
+- "Kayıtların sende kalır" → "hesabında kalır" (4 yerde)
+- "Hesap isteğe bağlı" → "Hesap zorunlu" (K-080)
+- 🔴 **Hesap silme onayı "veri kalır" diyordu** → "tüm verilerin silinir" (K-086).
+  Geri dönüşü olmayan bir işlem **yanlış bilgiyle** onaylatılıyordu; listenin en ağır maddesi.
+- Bağlantı hatası metinlerindeki **"Kayıtların bağlantısız çalışır"** vaadi kaldırıldı
+  (offline-first K-068 ile geçersiz — ajanın kendi taramasında buldu).
+- Onboarding'de "Gelirin telefonunda kalır" → "hesabında kalır".
+- `metinler.md` §0'daki **örnek cümle** de düzeltildi ki yanlış örnek tekrar kopyalanmasın.
+
+Metin otoritesi kuralı korundu: önce `metinler.md`, sonra kod (K-065/3).
+
+**QA'nın işaret ettiği yapısal boşluk:** istemcide otomatik test YOK. Öncelik sırası:
+`plan.ts` (formül altın-vaka) · `tarih.ts` (gün sınırı/ay sonu) · `api.ts` (401→yenile→düşür) ·
+`harcamaEylemleri.ts` (taksit kısmi hata) · `seri.ts` · `oturumDeposu.ts`.
+→ **Q-1 olarak backlog'a alındı**, bloklayıcılar kapanınca Mustafa'ya sunulacak.
+
+## K-090 — PM hatası: paralel ajanlarda sözleşmenin yarısı konuşuldu
+- Tarih: 2026-09-20 · Durum: 🔄 Düzeltiliyor (QA-1d)
+
+Saat dilimi düzeltmesinin backend ve istemci ayakları **paralel** verildi. Brief'lerde
+parametrenin **adı** ("tam olarak `bugun`") belirtildi ama **taşınma biçimi** (sorgu mu
+gövde mi) belirtilmedi. Sonuç:
+- Backend: `bugun: str | None = Query(...)` (sorgu parametresi)
+- İstemci: `govde: { bugun }` (istek gövdesi)
+
+**Gönderilen gün sunucuya hiç ulaşmıyor**, sunucu UTC'ye düşüyor — yani düzeltmeye
+çalıştığımız hatanın kendisi, ama artık **sessiz** (hata vermiyor, yanlış çalışıyor).
+Testlerde görünmedi çünkü backend testi kendi parametresini doğru veriyor, istemcide
+otomatik test yok (QA'nın Q-1 bulgusu tam da bu boşluk).
+
+**Ders (kurala dönüştürüldü):** İki ajana **aynı sözleşmenin iki ucu** paralel
+verilecekse brief'te sözleşme **tam** yazılır: yol · yöntem · **parametrenin nerede
+taşındığı** · alan adları · dönüş tipi. Yarım sözleşme, paralelliğin kazandırdığı
+zamandan fazlasını geri alır. Alternatif: sözleşme ucunu önce bitir, sonra diğerini
+başlat (sıralı).
+
+**Sonraki brief'lere eklendi:** "uçtan uca curl kanıtı" artık sözleşmeye dokunan her
+turda **zorunlu** — tip denetimi (tsc) bu sınıf hatayı yakalayamaz.
+
+## K-091 — QA-1d kapandı + yeni kural: uçtan uca deneme gerçek veritabanına yazmasın
+- Tarih: 2026-09-20 · Durum: ✅ Kapandı · 🔵 küçük temizlik Mustafa'da
+
+`bugun` artık sorgu parametresi olarak gidiyor. **Kanıt biçimi doğruydu:** ajan iki
+farklı gün gönderip (`2026-09-20` ve `2026-01-05`) Mongo'daki `limit_gecmisleri`
+satırlarının **gönderilen günle birebir eşleştiğini** gösterdi — ikisi de UTC'ye
+düşseydi iki satır da aynı güne yazardı. Bu, "çalışıyor gibi görünüyor" ile
+"çalıştığı kanıtlandı" arasındaki fark.
+
+Taramada `api.ts`'teki tüm çağrılar README sözleşmesiyle karşılaştırıldı; başka
+query/body uyuşmazlığı yok.
+
+### 🔵 Yeni kural + küçük temizlik
+Uçtan uca denemeler `uvicorn`'u `.env` ile çalıştırdığı için **gerçek veritabanına
+(`trinkow`) yazıyor**. Bu turda bir test kullanıcısı orada kaldı
+(`qa1d-...@example.com`). Bugün zararsız — Mustafa henüz uygulamayı kullanmadı, gerçek
+veri yok — ama alışkanlık hâline gelirse gerçek veri arasında çöp birikir.
+
+**Kural (bundan sonraki brief'lere giriyor):** uçtan uca deneme yapan ajan sunucuyu
+**ayrı bir veritabanı adıyla** çalıştırır (`MONGODB_DB_NAME=trinkow_e2e uvicorn ...`),
+gerçek `trinkow` veritabanına yazmaz.
+
+**Mustafa'ya:** kalan test kullanıcısını sileyim mi? (Veri silme onay kapısı — kendi
+başıma yapmıyorum. Tek bir sahte hesap, silinmesi 10 saniye.)
+
+## K-092 — QA DELTA: GEÇTİ · Aşama 4 kapandı
+- Tarih: 2026-09-20 · Durum: ✅ Aşama geçişi
+
+`qa-engineer` delta denetimi: **BLOCKER yok.** Backend 123/123, istemci tsc 0 hata.
+- **B1 (saat dilimi) KAPANDI** — üç uç da `bugun`u sorgu parametresi olarak alıyor,
+  istemci üçüne de yerel günü gönderiyor, K-090'daki gövde/sorgu karışıklığı tekrarlamıyor.
+  Kalan `datetime.now(utc)` örnekleri belgelenmiş geriye-dönük istisna (istemci her zaman
+  parametre gönderdiği için tetiklenmiyor); token/zaman damgaları meşru.
+- **B2 (yanıltıcı metinler) KAPANDI** — `metinler.ts` + `metinler.md` taramasında kalıntı yok;
+  hesap silme onayı artık "tüm verilerin silinir" diyor.
+
+**Yeni bulgu (ÖNEMLİ, yayını engellemiyor):** `src/db/limitler.ts:101` `gunlukLimitGecmisiKaydet`
+ve `api.ts:426` `limitGecmisiYazIstegi` **ölü kod**; `profil.ts:40` docstring'i hâlâ onları
+yazma yolu gösteriyor. Fonksiyonel çift yazma yok ama biri bunu "eksik" sanıp geri bağlarsa
+K-064/1 sınıfı hata sessizce döner. → küçük temizlik turu (QA-1e kalıntısı).
+
+**Aşama 4 çıkış kriteri karşılandı** (testler geçiyor, blocker yok) → Aşama 5 (DevOps/Yayın)
+kapısına gelindi. Ama Mustafa "prod barındırma gerek yok" dedi (K-081/4) ve yayın öncesi
+borç listesi henüz önceliklendirilmedi → **Aşama 5 açılmadan önce Mustafa kararı gerekiyor.**

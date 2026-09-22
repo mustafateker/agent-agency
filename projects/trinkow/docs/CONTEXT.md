@@ -37,7 +37,9 @@ kullanıcı. Üç farklı niyetle geliyor — ürün bu niyete göre kişiselle�
   yayılır → "aşamalı profilleme"
 - Seçilen niyete göre **anında kişiselleşen** pano (ör. "Borç Avcısı Modu")
 - Adım göstergesi ("Adım 1/3") — belirsizliği kaldırır, tamamlanma artırır
-- **Offline-first**, veri cihazda (SQLite). Sunucu yok; hesap YEREL (K-047).
+- **Veri sunucuda** (kendi Python backend'imiz + MongoDB). 2026-09-19 direktifi
+  K-068: "cihazda bilgi tutma muhabbeti yok". Cihaz yalnız oturum token'ını ve
+  görüntülenen verinin geçici önbelleğini tutar; **tek gerçek kaynak sunucudur**.
 - Kategori bazlı takip (zihinsel muhasebe: her kategorinin kendi limiti)
 - **Seri (streak) + milestone kutlaması** — 2026-09-17'de Mustafa'nın direktifiyle
   Faz 2'den MVP'ye ALINDI. Kural seti: `status/DECISIONS.md` K-048. Kapsam
@@ -45,8 +47,8 @@ kullanıcı. Üç farklı niyetle geliyor — ürün bu niyete göre kişiselle�
 - **Ürün arama ile hızlı giriş** — harcama eklerken yerel ürün kataloğundan
   arama, fiyatı kullanıcı girer. Uyarlama yasakları: K-050.
 - **Günlük sekmesi tarih sayfalamalı** (Bugün / Dün / 17/09 Çarşamba): K-049.
-- **Giriş/Kayıt ekranları** tasarlanıyor; Faz 1'de hesap YERELdir, sunucuya
-  veri gitmez. Google/Apple + backend hâlâ onay bekliyor: K-047.
+- **Giriş/Kayıt zorunlu hâle geldi** (K-068): hesap sunucuda, kimlik **kendi
+  `auth` modülümüz + JWT**. Supabase düştü (K-052 geçersiz).
 
 **KAPSAM DIŞI (Faz 2/3 — MVP'ye sokma):**
 - Oyunlaştırma: XP, seviye, rozet, lig → **Faz 2+ / bir kısmı kalıcı olarak dışı**
@@ -55,16 +57,18 @@ kullanıcı. Üç farklı niyetle geliyor — ürün bu niyete göre kişiselle�
 - Açık bankacılık / otomatik kart okuma (BDDK) → **Faz 3**
 - iOS Live Activities (kilit ekranı çubuğu) → raporda "ek olarak" geçiyor,
   MVP çekirdeği değil
-- Çoklu kullanıcı, aile paylaşımı, bulut senkronizasyon
+- Çoklu kullanıcı, aile paylaşımı (bulut senkronu artık kapsam İÇİNDE — K-068)
 
 ## Ürün tipi ve stack — KESİNLEŞTİ
 **React Native (Expo)** ile gerçek mobil uygulama. Karar: K-002 + K-005.
 Geliştirme ortamı: Mac + iOS simülatörü mevcut.
 
-- Veri: `expo-sqlite`, **offline-first**, cihazda. Sunucu yok; hesap yerel (K-047).
+- Veri: **kendi backend'imiz** (Python · FastAPI · MongoDB) — `projects/trinkow/backend/`.
+  İstemcideki `src/db/*` modülleri veri erişiminin tek dikişidir; API'ye onlar bağlanır.
 - Navigasyon: `expo-router` · Dil: TypeScript
-- **Faz 1'de backend YOK** → Python bileşeni yok (CLAUDE.md'nin "backend
-  Python" kuralı Faz 3'te, fiş okuma API'siyle devreye girer).
+- **Backend: Python (FastAPI) + MongoDB** — modüler yapı, her modülde
+  `controller` · `service` · `dto` · `model`. Mustafa direktifi, K-067/K-068.
+  Şimdilik yalnız yerelde çalışır; prod barındırma kararı ertelendi.
 
 **Tasarım ve kod için bağlayıcı sonuç — burası önemli:**
 Bu bir web sitesi değil. CSS yok, HTML yok, **hover state yok** (dokunmatik:

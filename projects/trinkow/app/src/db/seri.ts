@@ -1,60 +1,57 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { ayarOku, gunAraligiToplamlari, ilkKayitGunu } from '@/db/harcama';
-import { ayBasligi, ayAnahtari, gunAnahtari, gunEkle, tarihtenGun } from '@/lib/tarih';
+import { ayarOku, ayarYaz } from '@/db/harcama';
+import {
+  enEskiKayitGunuGetirIstegi,
+  gunDurumuYazIstegi,
+  ozetSeriGetir,
+  tercihleriGetir,
+  type OzetSeriYaniti,
+} from '@/lib/api';
+import { ayAnahtari, ayBasligi, gunAnahtari, tarihtenGun } from '@/lib/tarih';
 
 /**
- * K-048 — seri (streak) hesabı. Kaynak: tokens.md §14.5 + DECISIONS K-048.
+ * K-048 — seri (streak). BE-6c: hesabın TAMAMI artık sunucudadır
+ * (`GET /ozet/seri`, backend/README.md "ozet" bölümü + K-064/1) — mevcut
+ * seri · en uzun seri (+bittiği gün, KALICI ratchet, `kullanici_profilleri`de)
+ * · son 30 günün ızgarası · geçilen milestone'lar hep oradan gelir. Bu
+ * dosyada bir daha `harcama`/`limit_gecmisi` toplama mantığı YOKTUR (K-068 —
+ * iki yerde iki farklı seri sayısı çıkmasın).
  *
- * BİLİNÇLİ BASİTLEŞTİRME (rapora işlendi): günlük limit geçmişte
- * değiştiyse şema bunu saklamıyor — geçmiş günler DAİMA güncel günlük
- * limitle değerlendirilir. Prototipin "O gün limiti 250 ₺" gibi farklı
- * tarihsel değer gösteren kareleri bu yüzden MVP'de tek bir güncel
- * limitle çizilir; limit geçmişi Faz 1 kapsamı dışında.
+ * `MILESTONES` sabiti ve pure `gunSeriDurumu` sınıflandırması bilerek
+ * kalıyor: ilki `MilestoneRail`in render girdisidir, ikincisi sunucudaki
+ * `gun_izgara_durumu` ile BİREBİR aynı saf kural (K-068 ihlali değil —
+ * "toplama" değil, zaten hesaplanmış tek bir günün tutarını sınıflandırıyor)
+ * ve `useGunSecici.ts`in ay ızgarasında hâlâ kullanılıyor.
+ *
+ * "Bugün YENİ geçilen ve daha önce hiç gösterilmemiş milestone" (kutlama
+ * tetiği) SAF bir UI durumudur, finansal veri DEĞİLDİR (K-068 kapsamı
+ * dışı) — bu yüzden yalnız burada, yerel `ayar.seri_en_yuksek_gosterilen_donum`
+ * ile takip edilmeye devam eder; sunucu `gecilen_milestoneler`i (TÜM
+ * zamanların) döner ama "daha önce gösterildi mi" bayrağını TUTMAZ.
  */
 
-/** K-048 — milestone dizisi. Artırılamaz/uydurulmaz (bağlayıcı liste). */
+/** K-048 — milestone dizisi. Artırılamaz/uydurulmaz (bağlayıcı liste, sunucudakiyle BİREBİR aynı). */
 export const MILESTONES = [3, 7, 14, 30, 60, 100, 180, 365] as const;
 
-export async function gunHarcamasizIsaretle(db: SQLiteDatabase, gun: string): Promise<void> {
-  await db.runAsync(
-    'INSERT INTO gun_durumu (gun, harcamasiz) VALUES (?, 1) ON CONFLICT(gun) DO UPDATE SET harcamasiz = 1',
-    gun,
-  );
-}
-
-export async function gunHarcamasizMi(db: SQLiteDatabase, gun: string): Promise<boolean> {
-  const r = await db.getFirstAsync<{ harcamasiz: number }>(
-    'SELECT harcamasiz FROM gun_durumu WHERE gun = ?',
-    gun,
-  );
-  return r?.harcamasiz === 1;
-}
-
-/** Aralıktaki harcamasız-işaretli günler — toplu okuma (bkz. `gunAraligiToplamlari`). */
-async function harcamasizGunler(
-  db: SQLiteDatabase,
-  baslangicGun: string,
-  bitisGun: string,
-): Promise<Set<string>> {
-  const satirlar = await db.getAllAsync<{ gun: string }>(
-    'SELECT gun FROM gun_durumu WHERE harcamasiz = 1 AND gun BETWEEN ? AND ?',
-    baslangicGun,
-    bitisGun,
-  );
-  return new Set(satirlar.map((s) => s.gun));
+/** K-048 hile kapısı (b) — `PUT /harcama/gun-durumu` (BE-6c). */
+export async function gunHarcamasizIsaretle(_db: SQLiteDatabase, gun: string): Promise<void> {
+  await gunDurumuYazIstegi(gun, true);
 }
 
 /**
- * K-049 sol sınırı: kayıt varsa ilk kaydın günü, yoksa kurulum günü — ikisinin
- * DE ERKEN olanı (örnek veri bugünden "N gün önce" tarihlerle üretildiği için
- * ilk kayıt kurulum gününden önce olabilir; gerçek kullanıcıda ikisi eşittir).
+ * K-049 sol sınır: kayıt varsa ilk kaydın günü, yoksa kurulum günü — ikisinin
+ * DE ERKEN olanı (sunucudaki `seri_sinir_gunu_belirle` ile AYNI kural,
+ * backend/ozet_service.py). BE-6c/K-084-2: yerel `ayar.kurulum_gunu` ARTIK
+ * OKUNMAZ — sunucudaki `tercihler.kurulum_gunu` TEK otoritedir.
+ * `app/index.tsx#useGunlukSinir` (Günlük sekmesi sayfalaması) ve
+ * `useGunSecici.ts` (ay ızgarası) bunu paylaşır.
  */
-export async function ilkSinirGunu(db: SQLiteDatabase): Promise<string> {
-  const kurulum = (await ayarOku(db, 'kurulum_gunu')) ?? gunAnahtari(new Date());
-  const ilkKayit = await ilkKayitGunu(db);
-  if (!ilkKayit) return kurulum;
-  return ilkKayit < kurulum ? ilkKayit : kurulum;
+export async function ilkSinirGunu(_db: SQLiteDatabase): Promise<string> {
+  const bugunGun = gunAnahtari(new Date());
+  const [tercihler, enEski] = await Promise.all([tercihleriGetir(), enEskiKayitGunuGetirIstegi()]);
+  const kurulum = tercihler.kurulum_gunu ?? bugunGun;
+  return enEski.gun !== null && enEski.gun < kurulum ? enEski.gun : kurulum;
 }
 
 /**
@@ -65,7 +62,7 @@ export async function ilkSinirGunu(db: SQLiteDatabase): Promise<string> {
  */
 export type GunSeriDurumu = 'altinda' | 'disinda' | 'bos';
 
-/** Tek bir günün ızgara/seri durumu — E-21/E-24 ortak sınıflandırma. */
+/** Tek bir günün ızgara/seri durumu — E-24 ay ızgarası sınıflandırması (sunucudaki `gun_izgara_durumu` ile birebir aynı SAF kural). */
 export function gunSeriDurumu(
   harcananKurus: number,
   kayitAdedi: number,
@@ -76,16 +73,14 @@ export function gunSeriDurumu(
   return 'altinda';
 }
 
-/** Bir günün seriye sayılıp sayılmadığı (K-048 hile kapısı). `limitKurus` yoksa `null`. */
-function gunSeriyeSayilirMi(
-  harcananKurus: number,
-  kayitAdedi: number,
-  harcamasizIsaretli: boolean,
-  limitKurus: number,
-): boolean {
-  const kayitliYaDaIsaretli = kayitAdedi > 0 || harcamasizIsaretli;
-  return kayitliYaDaIsaretli && harcananKurus <= limitKurus;
-}
+/** E-10 günün seri/UI durumu — `/ozet/pano`nun `seri` alanından BİREBİR gelir (bkz. `usePano.ts`). */
+export type GunSeriBilgisi = {
+  harcananKurus: number;
+  kayitAdedi: number;
+  harcamasizIsaretli: boolean;
+  /** `limitKurus` tanımsızsa `null` (seri hiç değerlendirilmez). */
+  seriyeSayildiMi: boolean | null;
+};
 
 export type SeriDurumu = {
   /** Bugün dahil, geriye doğru kesintisiz seriye sayılan gün sayısı. */
@@ -107,174 +102,51 @@ export type SeriDurumu = {
   kutlanacakMilestone: number | null;
 };
 
-/** Tek bir günün seri/UI durumu — E-10 geçmiş sayfa şeridi için. */
-export type GunSeriBilgisi = {
-  harcananKurus: number;
-  kayitAdedi: number;
-  harcamasizIsaretli: boolean;
-  /** `limitKurus` tanımsızsa `null` (seri hiç değerlendirilmez). */
-  seriyeSayildiMi: boolean | null;
-};
+/** E-21 ızgara hücresi — ham gün anahtarı (`YYYY-MM-DD`) + sınıflandırma. `useSeriEkrani.ts` gün numarasına/etikete kendi çevirir. */
+export type SeriIzgaraHucresi = { gun: string; durum: GunSeriDurumu };
 
-export async function gunSeriBilgisi(
-  db: SQLiteDatabase,
-  gun: string,
-  limitKurus: number | null,
-): Promise<GunSeriBilgisi> {
-  const [toplamlar, harcamasiz] = await Promise.all([
-    gunAraligiToplamlari(db, gun, gun),
-    gunHarcamasizMi(db, gun),
-  ]);
-  const g = toplamlar.get(gun);
-  const harcananKurus = g?.toplamKurus ?? 0;
-  const kayitAdedi = g?.kayitAdedi ?? 0;
-  return {
-    harcananKurus,
-    kayitAdedi,
-    harcamasizIsaretli: harcamasiz,
-    seriyeSayildiMi:
-      limitKurus === null
-        ? null
-        : gunSeriyeSayilirMi(harcananKurus, kayitAdedi, harcamasiz, limitKurus),
-  };
-}
+export type SeriGorunumu = { durum: SeriDurumu; izgara: SeriIzgaraHucresi[] };
 
-function sonrakiDurak(n: number): number | null {
-  return MILESTONES.find((m) => m > n) ?? null;
-}
-
-function oncekiDurak(n: number): number {
-  let onceki = 0;
-  for (const m of MILESTONES) {
-    if (m <= n) onceki = m;
-    else break;
-  }
-  return onceki;
-}
-
-/**
- * Seri durumunu baştan hesaplar (K-048/§14.5). `bugun` test edilebilirlik
- * için parametredir; üretimde `new Date()` verilir.
- */
-export async function seriDurumuHesapla(
-  db: SQLiteDatabase,
-  bugun: Date,
-  limitKurus: number | null,
-): Promise<SeriDurumu> {
-  const bugunGun = gunAnahtari(bugun);
+async function kutlanacakMilestoneBul(db: SQLiteDatabase, mevcutSeri: number): Promise<number | null> {
   const gosterilenDonum = Number((await ayarOku(db, 'seri_en_yuksek_gosterilen_donum')) ?? '0');
-
-  if (limitKurus === null) {
-    const persistedEnUzun = Number((await ayarOku(db, 'seri_en_uzun_gun')) ?? '0');
-    const etiketGun = await ayarOku(db, 'seri_en_uzun_bitis_gun');
-    return {
-      mevcutSeri: 0,
-      enUzunSeri: persistedEnUzun,
-      enUzunSeriEtiketi: etiketGun ? ayBasligi(ayAnahtari(tarihtenGun(etiketGun))) : null,
-      kapali: true,
-      kirildiMi: false,
-      sonrakiDurak: null,
-      oncekiDurak: 0,
-      kalanGun: null,
-      aralikYuzde: 0,
-      kutlanacakMilestone: null,
-    };
-  }
-
-  const ilkGun = await ilkSinirGunu(db);
-  const [toplamlar, harcamasizSet] = await Promise.all([
-    gunAraligiToplamlari(db, ilkGun, bugunGun),
-    harcamasizGunler(db, ilkGun, bugunGun),
-  ]);
-
-  // Gün gün nitelik dizisi (ilk gün → bugün).
-  const gunler: string[] = [];
-  for (let g = ilkGun; g <= bugunGun; ) {
-    gunler.push(g);
-    if (g === bugunGun) break;
-    g = gunAnahtari(gunEkle(tarihtenGun(g), 1));
-  }
-  const nitelikler = gunler.map((g) => {
-    const t = toplamlar.get(g);
-    return gunSeriyeSayilirMi(
-      t?.toplamKurus ?? 0,
-      t?.kayitAdedi ?? 0,
-      harcamasizSet.has(g),
-      limitKurus,
-    );
-  });
-
-  // Mevcut seri: bugünden geriye kesintisiz "true" sayısı.
-  let mevcutSeri = 0;
-  for (let i = nitelikler.length - 1; i >= 0; i -= 1) {
-    if (!nitelikler[i]) break;
-    mevcutSeri += 1;
-  }
-
-  // En uzun seri: tüm zamanların en uzun kesintisiz koşusu + bittiği gün.
-  let calisanKosu = 0;
-  let enUzunKosu = 0;
-  let enUzunBitisIndeksi = -1;
-  for (let i = 0; i < nitelikler.length; i += 1) {
-    if (nitelikler[i]) {
-      calisanKosu += 1;
-      if (calisanKosu > enUzunKosu) {
-        enUzunKosu = calisanKosu;
-        enUzunBitisIndeksi = i;
-      }
-    } else {
-      calisanKosu = 0;
-    }
-  }
-
-  const persistedEnUzun = Number((await ayarOku(db, 'seri_en_uzun_gun')) ?? '0');
-  const persistedEtiketGun = await ayarOku(db, 'seri_en_uzun_bitis_gun');
-
-  let enUzunSeri = persistedEnUzun;
-  let enUzunBitisGun = persistedEtiketGun;
-  if (enUzunKosu > persistedEnUzun) {
-    enUzunSeri = enUzunKosu;
-    enUzunBitisGun = gunler[enUzunBitisIndeksi];
-    await db.runAsync(
-      "INSERT OR REPLACE INTO ayar (anahtar, deger) VALUES ('seri_en_uzun_gun', ?)",
-      String(enUzunSeri),
-    );
-    await db.runAsync(
-      "INSERT OR REPLACE INTO ayar (anahtar, deger) VALUES ('seri_en_uzun_bitis_gun', ?)",
-      enUzunBitisGun,
-    );
-  }
-
-  const kirildiMi = mevcutSeri === 0 && enUzunSeri > 0;
-  const sonraki = sonrakiDurak(mevcutSeri);
-  const onceki = oncekiDurak(mevcutSeri);
-  const aralikYuzde = sonraki ? (mevcutSeri - onceki) / (sonraki - onceki) : 1;
-
-  const kutlanacakMilestone =
-    (MILESTONES as readonly number[]).includes(mevcutSeri) && mevcutSeri > gosterilenDonum
-      ? mevcutSeri
-      : null;
-
-  return {
-    mevcutSeri,
-    enUzunSeri,
-    enUzunSeriEtiketi: enUzunBitisGun ? ayBasligi(ayAnahtari(tarihtenGun(enUzunBitisGun))) : null,
-    kapali: false,
-    kirildiMi,
-    sonrakiDurak: sonraki,
-    oncekiDurak: onceki,
-    kalanGun: mevcutSeri > 0 && sonraki ? sonraki - mevcutSeri : null,
-    aralikYuzde,
-    kutlanacakMilestone,
-  };
+  return (MILESTONES as readonly number[]).includes(mevcutSeri) && mevcutSeri > gosterilenDonum ? mevcutSeri : null;
 }
 
 /** Kutlama gösterildikten sonra kalıcı işaretle — uygulama yeniden açılınca tekrar oynamaz. */
 export async function milestoneGosterildiIsaretle(db: SQLiteDatabase, milestone: number): Promise<void> {
   const mevcut = Number((await ayarOku(db, 'seri_en_yuksek_gosterilen_donum')) ?? '0');
   if (milestone <= mevcut) return;
-  await db.runAsync(
-    "INSERT OR REPLACE INTO ayar (anahtar, deger) VALUES ('seri_en_yuksek_gosterilen_donum', ?)",
-    String(milestone),
-  );
+  await ayarYaz(db, 'seri_en_yuksek_gosterilen_donum', String(milestone));
+}
+
+function yanitiSeriDurumunaCevir(y: OzetSeriYaniti, kutlanacakMilestone: number | null): SeriDurumu {
+  return {
+    mevcutSeri: y.mevcut_seri,
+    enUzunSeri: y.en_uzun_seri,
+    enUzunSeriEtiketi: y.en_uzun_seri_bitis_gunu ? ayBasligi(ayAnahtari(tarihtenGun(y.en_uzun_seri_bitis_gunu))) : null,
+    kapali: y.kapali,
+    kirildiMi: y.kirildi_mi,
+    sonrakiDurak: y.sonraki_durak,
+    oncekiDurak: y.onceki_durak,
+    kalanGun: y.kalan_gun,
+    aralikYuzde: y.aralik_yuzde,
+    kutlanacakMilestone,
+  };
+}
+
+/** E-21 — seri durumu + son 30 günün ızgarası, TEK ağ isteğiyle (`useSeriEkrani.ts`). */
+export async function seriGorunumuGetir(db: SQLiteDatabase): Promise<SeriGorunumu> {
+  // K-087 — sunucuya "bugün"ü YEREL gün sınırı hesabıyla gönderiyoruz (UTC'ye düşerse
+  // gece 00:00-03:00 arası eklenen harcama yanlış güne sayılabilir).
+  const yanit = await ozetSeriGetir(gunAnahtari(new Date()));
+  const kutlanacak = await kutlanacakMilestoneBul(db, yanit.mevcut_seri);
+  return {
+    durum: yanitiSeriDurumunaCevir(yanit, kutlanacak),
+    izgara: yanit.izgara.map((h) => ({ gun: h.gun, durum: h.durum })),
+  };
+}
+
+/** E-10 başlığındaki seri özeti + milestone tetiği (`useSeriOzet.ts`) — ızgarayı kullanmaz, aynı yanıtı atar. */
+export async function seriDurumuHesapla(db: SQLiteDatabase): Promise<SeriDurumu> {
+  return (await seriGorunumuGetir(db)).durum;
 }

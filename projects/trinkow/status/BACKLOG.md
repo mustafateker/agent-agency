@@ -355,3 +355,151 @@ Aşama 2 yeniden açıldı; bu maddeler tasarım → denetim → onay → kod s�
 - [ ] brandbook §8.2 S-1…S-8 "açık sorular" listesi **bayat**: palet/yön soruları
       K-024/K-027 (claymorphism) ve K-035 ile kapandı, kod da o tokenlarla yazıldı.
       Liste "kapandı" işaretiyle temizlenecek — yeni karar gerekmiyor.
+
+---
+
+## 🚀 Aşama 3 — Kodlama sırası (K-063 onayı sonrası, 2026-09-18)
+Mustafa: "frontend olarak sen bunu kodla, bir an önce ürüne ulaşalım."
+Sıra hız önceliğine göre: önce ürün değeri, auth en sonda.
+
+- [x] **D-2d-1** ✅ Günlük sekmesi + yatay tarih sayfalama + seri sistemi (F-16) +
+      gün seçici (E-24). Yeni bağımlılık yok. 2 PM kararı doğurdu → **K-064**.
+      (2026-09-19)
+- [x] **D-2d-2** ✅ (2026-09-19) — E-11 ürün arama + 80 kalemlik yerel katalog (F-18)
+      **+ K-064/1** `limit_gecmisi` tablosu (seri geçmişi güncel limitle
+      değerlendirilmesin) **+ K-064/2** `gunsec.alt.acik_gun` metin düzeltmesi
+      **+ K-062** metin taşıyan yüzeylerde gradyan → düz `primary-deep`
+      (Button.tsx vd., erişilebilirlik zorunluluğu). (2026-09-19)
+      Kapsam dışı bırakıldı → D-2d-3: limit önerisi sheet'i (Katman 1'e bağlı).
+      Sonuç: 8 yeni dosya (`urunKatalogu.ts` 80 kalem · `urunArama.ts` ·
+      `urunKategori.ts` öğrenme tablosu · 5 bileşen), şema 1→2, tsc 0 hata,
+      iOS export temiz, yeni bağımlılık yok. Düzeltme turu: `gun-btn` artık
+      E-24 Gün seçici'yi **seçim kipinde** açıyor (sapma K-065/1).
+      PM hükümleri: **K-065**.
+- [x] **D-2d-3a** ✅ (2026-09-19, K-070) — Onboarding Katman 1 (E-01 niyet · E-02 gelir
+      (atlanabilir) · E-03 maaş günü) + günlük limit önerisi sheet'i (K-059/5) +
+      profil veri katmanı (şema 2→3) + `kalan_gun`/`gunluk_limit` formül modülü
+      (tek tanım, 3b bunu kullanacak).
+- [x] **D-2d-3b** ✅ (2026-09-19, K-071) — Katman 2 "Seni tanıyalım" (E-25, ~8 kart) + sabit giderler +
+      alışkanlık kartları + "Planın hazır" (E-26) + yüzde kaydırıcıları +
+      kategori limiti tohumlama + **F-11 niyete göre kişiselleşen pano** (K-070 devri).
+      Renk kararı hazır: **K-066** (`share.birikim` = `success`, iki sınırla).
+- [ ] **D-2c** — E-22 Oturum aç · E-23 Hesap oluştur · Supabase Auth ·
+      E-19 Ayarlar hesap bölümü (çıkış / hesabı sil) · E-00 açılış · onboarding.
+      Tek yeni bağımlılık kümesi burada; ürün onsuz da çalışsın diye en sonda.
+- [ ] **D-3** — qa-engineer (Aşama 4). QA notu (K-064): 300+ günlük geçmişte
+      `FlatList` pencereleme senaryosu denenecek.
+
+## 🆕 BACKEND (Mustafa direktifi, 2026-09-19 — K-067)
+Python · modüler (`modul/{dto,service,controller,model,repository}`) · MongoDB (yerel)
+**Sıra kuralı: arayüz geliştirmesi bitmeden backend KODU yazılmaz.** Modüller tek tek tasarlanır.
+
+- [x] **BE-0** ✅ `projects/trinkow/backend/` + `README.md` (klasör yapısı ve kurallar)
+- [x] **BE-1** ✅ K-067'nin 4 sorusu cevaplandı → **K-068** (veri sunucuda ·
+      kendi JWT auth'umuz · klasörleme aynen · prod barındırma yok).
+- [x] **BE-2** ✅ (2026-09-19) — `auth` modülü + FastAPI/Motor iskeleti.
+      6 uç nokta, 2 koleksiyon (unique + TTL index), pytest yazıldı.
+      ⚠️ Testler **gerçek Mongo'ya karşı çalıştırılamadı** (yerel sunucu yok) → K-069.
+- [ ] **BE-2a** 🔵 Mustafa: yerel MongoDB kurulumu (K-069) — onay gerekiyor,
+      sonra `pytest` gerçek veritabanına karşı doğrulanır.
+- [ ] **BE-2b** Yenileme token'ı rotasyonu (K-069/1) — her yenilemede eski jti iptal.
+- [ ] **BE-2c** Şifre sıfırlama akışı — e-posta gönderimi gerektirir (dış servis,
+      onay kapısı). K-058 buna bağlı, yayın öncesi gerekli.
+- [ ] **BE-2d** Google / Apple ile giriş — sağlayıcı token'ının `auth` modülünde
+      doğrulanması (K-057: iOS'ta ikisi, Android'de yalnız Google).
+- [x] **BE-3** ✅ (2026-09-19) — `kullanici` modülü: profil oku · Katman 1 · Katman 2
+      (kısmi) · plan kur (sunucuda hesaplanıyor, K-075) · günlük limit. 19 test yazıldı,
+      Mongo yokluğundan koşamadı. Eksikler BE-4 Madde 0'a devredildi.
+- [x] **BE-4** ✅ (2026-09-19, K-076) — `harcama` modülü (harcama · taksit serisi · kategori
+      limiti · gün durumu · limit geçmişi · ürün öğrenme) + Madde 0: pytest fixture
+      düzeltmesi (formül testleri Mongo'suz koşsun) · `gunluk_limit_onerisi_kurus` ve
+      `son_kart` alanları · uygulama tercihleri uç noktası.
+- [x] **BE-5** ✅ (2026-09-19, K-077) — `ozet` modülü: günlük pano · özet · kategori dağılımı ·
+      **seri hesabı** (K-048 + K-064/1). Toplama sunucuda, gösterim istemcide (K-076/3).
+- [x] **BE-5b** ✅ (2026-09-19) — seri düzeltmeleri: en uzun seri kalıcı (ratchet) ·
+      sınır günü ilk kayda göre · limit geçmişi toplu çekim (O(gün) → O(1) sorgu).
+- [x] **BE-7** ✅ (2026-09-19) — `katalog` modülü: 80 kalem tohumlama · ETag/sürüm ile
+      listeleme · tekil okuma. Fiyat/marka/görsel yok (K-050). Arama istemcide kalıyor. — 80 kalemlik ürün kataloğunun sunucudan güncellenmesi
+      (uygulama sürümü çıkmadan katalog güncellenebilsin).
+- [ ] **BE-9** `bildirim` modülü — acelesi yok, önce dil ve tetikleyici tasarımı.
+      Mustafa: "ona bir şeyler düşün, sonrasında karar veririz"
+- [ ] **BE-6** 🔒 Mobil istemcinin backend'e bağlanması — **MongoDB kurulana kadar
+      BAŞLATILMIYOR** (K-079). Bugün uygulama SQLite ile çalışıyor; çalışmayan bir
+      sunucuya bağlamak onu tamamen kullanılamaz hâle getirir.
+- [ ] **BE-7** Gizlilik politikası metninin backend kapsamına göre güncellenmesi
+      (K-057/7 zaten açık; backend kapsamı büyürse metin de büyür)
+- [ ] **BE-8** brand-strategist: brandbook mahremiyet dili **yeniden** revize —
+      "verin cihazında kalır" K-068 ile geçersiz. Gizlilik politikası metni (K-057/7)
+      bu revizyondan sonra yazılır; sosyal içerik takviminde de mahremiyet vaadi var.
+- [ ] **D-2c sıra değişti** — oturum aç / hesap oluştur ekranları artık **BE-2'den
+      SONRA** kodlanır (Supabase'e göre yazılıp atılacak kod üretilmesin).
+- [ ] **F-11b** — "Borç" niyetinin gerçek sayıya bağlanması: Katman 2'ye toplam borç
+      kartı (K-071 açık boşluğu). D-2c sonrası karara bağlanacak.
+- [x] **D-2c-1** ✅ (2026-09-19, K-072) — E-19 Ayarlar + E-20 bağlamsal profilleme
+      sheet'i. Şema 4→5.
+- [x] **D-2c-1b** ✅ (2026-09-19) — Özet başlığına Ayarlar girişi (K-072) +
+      varsayılan ödeme ön seçimi + gün sınırı tercihinin gün hesabına bağlanması
+      (tek yerde: `lib/tarih.ts`). Sapma: `ScreenHeader`'a ikinci ikon eklendi
+      (envanterdeki "sağda tek IconButton" kuralı → T-5'te güncellenecek).
+- [x] **D-2c-2** ✅ (2026-09-19, K-074) — E-22/E-23 + API istemcisi + oturum deposu.
+      ⚠️ E-00 açılış ekranı yapılmadı (aşağıda). **ARAYÜZ TAMAMLANDI.**
+- [ ] **D-2c-3** — E-00 açılış ekranı (marka + topuz), yayın öncesi.
+- [ ] 🔴 **D-2c-4** — "Şifremi unuttum" şu an sahte (K-074/3): BE-2c yazılana kadar
+      bağlantı gizlenir. **Yayın bloklayıcısı.**
+- [ ] ~~eski D-2c-2 satırı~~ — E-00 açılış + E-22 oturum aç + E-23 hesap oluştur +
+      `lib/api.ts` + `lib/oturumDeposu.ts` + Ayarlar hesap eylemlerinin bağlanması.
+      Açık dikişler: "Hesapsız devam et" (K-073) · Google/Apple (BE-2d) ·
+      güvenli token saklama (`expo-secure-store` onayı).
+- [ ] **S-013** — `design-reviewer` denetim listesine **erişilebilirlik grafiği**
+      maddesi: her ekrana uygulama içinden bir yoldan gidilebiliyor mu? K-072'de
+      Ayarlar'ın kapısız kaldığı PASS'ten sonra fark edildi.
+- [ ] **D-2c-1c** — `prof.degisti` sonrası "Taksit yükü" kartının panoya eklenmesi
+      (K-072/3, küçük).
+- [ ] 🔵 **Mustafa: `expo-notifications` onayı** (ücretsiz, Expo paketi) — bildirim
+      izni satırının gerçekten çalışması için. K-072.
+
+## 🆕 K-080/K-081/K-082 sonrası (2026-09-19)
+- [x] **D-2c-3** ✅ Hesap zorunlu: giriş duvarı · "Hesapsız devam et" kaldırıldı ·
+      çıkış/hesap silme giriş ekranına düşürüyor (K-080).
+- [ ] 🔵 **Mustafa: Atlas veritabanı KULLANICI ADI** — bağlantı dizesinde `<db_username>`
+      yer tutucu. Bu gelmeden 47 test gerçek veritabanına karşı koşamıyor.
+- [ ] 🔴 **Mustafa (öneri): Atlas şifresini yenile** — şifre sohbete düz metin girdi.
+- [ ] 🔴 **C-1** `hesap.mahremiyet` metni yanıltıcı ("Harcamaların sende kalır" ama veri
+      sunucuda) → `metinler.md` + `metinler.ts` + brandbook birlikte düzeltilecek (K-082/1).
+      **Yayın bloklayıcısı.**
+- [ ] **BE-9 iptal/ertelendi** — bildirim Expo ile yapılmayacak (K-081/2); Mustafa
+      kendisi çözecek. Dil/kural taslağı (K-078) geçerli kalıyor.
+- [ ] **D-2c-4'e ek** — Ayarlar'daki bildirim anahtarı gerçek izin isteyemiyor
+      (çalışmayan anahtar). Yayın öncesi bağlanır ya da gizlenir.
+- [x] **BE-6a** ✅ profil/plan/tercihler API'ye bağlandı (K-084)
+- [x] **BE-6b** ✅ harcama/taksit/limit/ürün öğrenme API'ye bağlandı (K-085)
+- [x] **BE-4b** ✅ backend 6 eksik kapandı; hesap silme artık tüm veriyi siliyor (K-086)
+- [ ] **BE-6c** 🔄 ÇALIŞIYOR — pano/özet/seri + katalog + Ayarlar'ın kalan 2 eylemi +
+      yerel şema temizliği. **Veri taşımanın son turu.**
+- [ ] **BE-10** `backend/README.md` bayat bölümler: "yerel MongoDB" → Atlas (K-086 notu)
+- [x] **BE-6c/6d** ✅ veri taşıma tamamlandı (K-087/K-088)
+- [x] **D-3 QA** ✅ tur yapıldı → **GEÇMEDİ**, 2 bloklayıcı (K-089) · `docs/qa-raporu.md`
+- [x] **QA-2** ✅ 8 yanıltıcı metin düzeltildi (hesap silme onayı dahil)
+- [ ] **QA-1** 🔄 `plani_kur` gün parametresi + backend genelinde saat dilimi taraması
+- [ ] **Q-1** 🔵 İstemci test altyapısı YOK (Vitest) — QA'nın yapısal bulgusu.
+      Öncelikli 6 modül belirlendi. **Mustafa'ya sorulacak:** şimdi mi, yayından sonra mı?
+- [ ] **T-5 ek** `metinler.md` §25'teki "hesap önkoşul değildir / Hesapsız devam et"
+      doküman notu temizlensin (K-080 ile geçersiz, prose notu).
+
+## 🟢 QA GEÇTİ (2026-09-20, K-092) — yayın öncesi borç listesi
+Uygulama + backend çalışıyor, testler yeşil. Aşağıdakiler **kararı Mustafa'da**:
+- [ ] **R-1** 🔴 "Şifremi unuttum" sahte — backend'de sıfırlama ucu yok. Ya yazılır
+      (e-posta servisi gerekir → yeni bağımlılık) ya da bağlantı gizlenir.
+- [ ] **R-2** 🔴 Token'lar güvenli depoda değil (SQLite) → `expo-secure-store` (ücretsiz).
+- [ ] **R-3** 🔴 Yenileme token'ı rotasyonu yok (çalınan token süresi dolana kadar geçerli).
+- [ ] **R-4** Gizlilik politikası + kullanım şartları metni (App Store şartı) — Mustafa'da.
+- [ ] **R-5** Brandbook mahremiyet dili revizyonu (BE-8) — "veri cihazda" artık geçersiz.
+- [ ] **R-6** Ayarlar'daki bildirim anahtarı gerçek izin isteyemiyor → bağla ya da gizle.
+      (Mustafa bildirim işini kendisi çözecek — K-081/2.)
+- [ ] **R-7** E-00 açılış ekranı (marka + topuz) yapılmadı.
+- [ ] **R-8** Google / Apple ile giriş (BE-2d) — kütüphane onayı gerekiyor.
+- [ ] **Q-1** İstemci test altyapısı yok (Vitest) — öncelikli 6 modül belirlendi.
+- [ ] **QA-1e kalıntısı** Ölü kod temizliği (`gunlukLimitGecmisiKaydet`, `limitGecmisiYazIstegi`
+      + `profil.ts:40` docstring) — küçük.
+- [ ] 🔵 **Commit** — bu oturumdaki tüm iş (arayüz + backend + bağlama) **commit edilmedi.**
+- [ ] 🔵 Atlas'ta kalan test kullanıcısı silinsin mi? · Atlas şifresi yenilensin mi?

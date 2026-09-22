@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { Icon } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
@@ -23,6 +23,11 @@ export function TextField({
   maxLength,
   clearable = false,
   accessibilityLabel,
+  onBlur,
+  keyboardType,
+  autoCapitalize,
+  autoComplete,
+  textContentType,
 }: {
   label?: string;
   value: string;
@@ -32,6 +37,12 @@ export function TextField({
   maxLength?: number;
   clearable?: boolean;
   accessibilityLabel?: string;
+  /** D-2c-2 · E-22/E-23 — e-posta alanı `onBlur`'da biçim doğrular. */
+  onBlur?: () => void;
+  keyboardType?: TextInputProps['keyboardType'];
+  autoCapitalize?: TextInputProps['autoCapitalize'];
+  autoComplete?: TextInputProps['autoComplete'];
+  textContentType?: TextInputProps['textContentType'];
 }) {
   const [odakli, setOdakli] = useState(false);
   const kalan = maxLength !== undefined ? maxLength - value.length : null;
@@ -61,9 +72,17 @@ export function TextField({
           placeholderTextColor={color.text3}
           maxLength={maxLength}
           numberOfLines={1}
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+          autoComplete={autoComplete}
+          textContentType={textContentType}
+          importantForAutofill={autoComplete ? 'yes' : undefined}
           accessibilityLabel={accessibilityLabel ?? label ?? placeholder}
           onFocus={() => setOdakli(true)}
-          onBlur={() => setOdakli(false)}
+          onBlur={() => {
+            setOdakli(false);
+            onBlur?.();
+          }}
           style={stil.girdi}
         />
         {clearable && value.length > 0 ? (
