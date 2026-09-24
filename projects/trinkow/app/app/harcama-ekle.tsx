@@ -1,15 +1,16 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { MoneyInput } from '@/components/MoneyInput';
+import { istek } from '@/lib/api';
 import { AmountWell, type AmountWellGunButonu } from '@/components/AmountWell';
 import { Button } from '@/components/Button';
 import { CategoryPicker } from '@/components/CategoryPicker';
 import { CategoryValueRow } from '@/components/CategoryValueRow';
 import { Chip } from '@/components/Chip';
-import { ClayKeypad } from '@/components/ClayKeypad';
 import { InfoStrip } from '@/components/InfoStrip';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SearchField } from '@/components/SearchField';
@@ -85,7 +86,7 @@ type TutarAltMetinTuru = 'gecmisten' | 'katalogdan' | 'kategori' | null;
 export default function HarcamaEkleEkrani() {
   const db = useSQLiteContext();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ gunFarki?: string; kategori?: string }>();
+  const params = useLocalSearchParams<{ gunFarki?: string; kategori?: string; ad?: string; tutarKurus?: string; rutinId?: string }>();
 
   // v4 K-049 — Günlük'ün geçmiş sayfasından açılınca tarih o güne SABİTLENİR
   // (0/-1 dışındaki bir gün farkı geldiyse Bugün/Dün seçici gizlenir).
@@ -93,11 +94,17 @@ export default function HarcamaEkleEkrani() {
   const sabitGunFarki =
     gunFarkiParam !== null && Number.isFinite(gunFarkiParam) && gunFarkiParam !== 0 && gunFarkiParam !== -1;
 
-  const [buffer, setBuffer] = useState('');
+  const [buffer, setBuffer] = useState(() => params.tutarKurus && Number(params.tutarKurus) > 0 ? kurustanTutarGirisi(Number(params.tutarKurus)) : '');
+  const gonderiliyor = useRef(false);
+  const [istemciId] = useState(() => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.floor(Math.random() * 16); return (c === 'x' ? r : (r & 3) | 8).toString(16); }));
+  const [rutinId, setRutinId] = useState<string | null>(params.rutinId ?? null);
+  const [adet, setAdet] = useState('1');
+  const [sabitGiderKodu, setSabitGiderKodu] = useState<'kira'|'fatura'|'ulasim'|'kredi'|null>(null);
+  const [rutinler, setRutinler] = useState<{id:string;ad:string;kategori:string;birim_fiyat_kurus:number}[]>([]);
 
   // F-18 — arama alanı. `urunAdi` doluysa alan "seçili" durumdadır (ürün
   // kaydın AYRI alanı, K-033); `aramaMetni` yalnız seçim yokken canlıdır.
-  const [urunAdi, setUrunAdi] = useState('');
+  const [urunAdi, setUrunAdi] = useState(params.ad ?? '');
   const [aramaMetni, setAramaMetni] = useState('');
   const [gecmisSonuclar, setGecmisSonuclar] = useState<SikAlinan[]>([]);
   const [gecmisYukleniyor, setGecmisYukleniyor] = useState(false);
@@ -134,13 +141,14 @@ export default function HarcamaEkleEkrani() {
 
   useEffect(() => {
     let canli = true;
-    void sikAlinanlar(db, 3).then((l) => canli && setSikAlinanlarListesi(l));
-    void gunlukLimit(db).then((l) => canli && setLimitKurus(l));
-    void tumOgrenilenKategoriler(db).then((m) => canli && setOgrenilenKategoriler(m));
+    void sikAlinanlar(db, 30).then((l) => canli && setSikAlinanlarListesi(l)).catch(() => {});
+    void istek<{rutinler:typeof rutinler}>(`/butce/rutinler?bugun=${gunAnahtari(new Date())}`, {tokenGerekli:true}).then(r => canli && setRutinler(r.rutinler)).catch(() => {});
+    void gunlukLimit(db).then((l) => canli && setLimitKurus(l)).catch(() => {});
+    void tumOgrenilenKategoriler(db).then((m) => canli && setOgrenilenKategoriler(m)).catch(() => {});
     // K-072 — yalnız İLK yüklemede ön-seçim olarak uygulanır; kullanıcının
     // ekranda `odemeSec` ile yaptığı değişikliği bu efekt geç render'da EZMEZ
     // (bağımlılık dizisi yalnız `db`, taksitliAcik/odeme buraya eklenmez).
-    void varsayilanOdemeOku(db).then((v) => canli && setOdeme(v));
+    void varsayilanOdemeOku(db).then((v) => canli && setOdeme(v)).catch(() => {});
     return () => {
       canli = false;
     };
@@ -253,22 +261,17 @@ export default function HarcamaEkleEkrani() {
 
   /** Ürün + kategori + (varsa) tutar tek kaynaktan geldi — kendi geçmişi ya da "Son kullandıkların" çipi. */
   function urunSec(ad: string, kategoriKoduSecilen: KategoriKodu, gecmisTutarKurus: number) {
+    setRutinId(null);
+    setAdet('1');
     setUrunAdi(ad);
     setAramaMetni('');
     setKategoriKodu(kategoriKoduSecilen);
     setKategoriUrundenMi(true);
     setKategoriHata(undefined);
     setTutarHata(undefined);
-    if (tutarKurus === 0) {
-      // RN inşa notu #3 — tutar 0 iken doldurmak "üzerine yazmak" değildir.
-      setBuffer(kurustanTutarGirisi(gecmisTutarKurus));
-      setTutarAltMetinTuru('gecmisten');
-      setOneriTutarKurus(null);
-    } else {
-      // Girilen metnin üzerine YAZILMAZ — "geçen sefer" öneri çipi sunulur.
-      setTutarAltMetinTuru(null);
-      setOneriTutarKurus(gecmisTutarKurus);
-    }
+    setBuffer(kurustanTutarGirisi(gecmisTutarKurus));
+    setTutarAltMetinTuru('gecmisten');
+    setOneriTutarKurus(null);
   }
 
   function katalogSec(oge: KatalogOgesi) {
@@ -310,6 +313,8 @@ export default function HarcamaEkleEkrani() {
   }
 
   async function kaydet() {
+    if (gonderiliyor.current) return;
+    if (rutinId && (!Number.isInteger(Number(adet)) || Number(adet) <= 0)) { setYazmaHata('Adet pozitif bir tam sayı olmalı.'); return; }
     if (tutarKurus <= 0) {
       setTutarHata(t['ekle.hata.tutar']);
       return;
@@ -322,6 +327,7 @@ export default function HarcamaEkleEkrani() {
       setTutarHata(t['hata.tutar_buyuk']);
       return;
     }
+    gonderiliyor.current = true;
     setKaydediliyor(true);
     setYazmaHata(undefined);
     try {
@@ -337,6 +343,7 @@ export default function HarcamaEkleEkrani() {
         });
       } else {
         await harcamaEkle(db, {
+          istemciId, rutinId, adet: Number(adet) || 1, sabitGiderKodu,
           tutarKurus,
           kategori: kategoriKodu,
           urunAdi: urunAdi.trim() || null,
@@ -361,12 +368,13 @@ export default function HarcamaEkleEkrani() {
     } catch {
       setYazmaHata(t['ekle.hata.yazilamadi']);
     } finally {
+      gonderiliyor.current = false;
       setKaydediliyor(false);
     }
   }
 
   return (
-    <View style={stil.ekran}>
+    <KeyboardAvoidingView style={stil.ekran} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={{ height: insets.top }} />
       <ScrollView
         style={stil.kaydir}
@@ -383,6 +391,8 @@ export default function HarcamaEkleEkrani() {
         <View style={stil.pad}>
           <AmountWell
             tutarGosterim={tutarGosterim}
+            value={buffer}
+            onChangeText={(text) => tutarDegistir(() => text)}
             ustSol={t['ekle.tutar.etiket']}
             ustSag={gunEtiket}
             gunButon={gunButon}
@@ -450,7 +460,7 @@ export default function HarcamaEkleEkrani() {
             <View style={{ height: rhythm.section }} />
             <View style={stil.pad}>
               <Txt role="label" tone={color.text2}>
-                {t['ekle.arama.grup.gecmis']}
+                Favoriler ve sık kullanılanlar
               </Txt>
             </View>
             <View style={{ height: rhythm.group }} />
@@ -460,8 +470,8 @@ export default function HarcamaEkleEkrani() {
               contentContainerStyle={[stil.yatayKaydir, { paddingHorizontal: layout.screenPaddingX }]}>
               {sikAlinanlarListesi.map((s) => (
                 <Chip
-                  key={s.urunAdi}
-                  ad={s.urunAdi}
+                  key={`${s.kategori}:${s.urunAdi}`}
+                  ad={`${s.sabitlenmis ? '★ ' : ''}${s.urunAdi} · ${kategoriGetir(s.kategori).ad}`}
                   tutar={paraYaz(s.tutarKurus)}
                   dotColor={aileRenkleri(kategoriGetir(s.kategori).aile).solid}
                   dotAlways
@@ -472,6 +482,21 @@ export default function HarcamaEkleEkrani() {
             </ScrollView>
           </>
         ) : null}
+
+        {!taksitliAcik && <View style={[stil.pad, {gap: 12, marginVertical: 16}]}>
+          <Txt role="label">Rutin harcama bağlantısı</Txt>
+          <ScrollView horizontal keyboardShouldPersistTaps="handled" contentContainerStyle={{gap: 8}}>
+            <Chip ad="Rutin değil" selected={!rutinId} onPress={() => setRutinId(null)} />
+            {rutinler.map(r => <Chip key={r.id} ad={r.ad} selected={rutinId === r.id} onPress={() => { urunSec(r.ad, kategoriGetir(r.kategori).kod, r.birim_fiyat_kurus); setRutinId(r.id); setSabitGiderKodu(null); }} />)}
+          </ScrollView>
+          {rutinId && <><Txt role="caption">Kaç adet aldın? Yukarıdaki tutar toplam harcama tutarıdır.</Txt><MoneyInput value={adet} onChangeText={setAdet} label="Alınan adet" integerOnly /></>}
+          <Txt role="label">Önceden bütçeden ayrılan sabit ödeme</Txt>
+          <Txt role="caption">Yalnız planında ayırdığın ödemeyi bağla. Planı aşan kısmı günlük bütçenden düşer.</Txt>
+          <ScrollView horizontal keyboardShouldPersistTaps="handled" contentContainerStyle={{gap: 8}}>
+            <Chip ad="Bağlama" selected={!sabitGiderKodu} onPress={() => setSabitGiderKodu(null)} />
+            {([['kira','Kira'],['fatura','Fatura'],['ulasim','Ulaşım'],['kredi','Kredi']] as const).map(([kod,ad]) => <Chip key={kod} ad={ad} selected={sabitGiderKodu === kod} onPress={() => {setSabitGiderKodu(kod); setRutinId(null);}} />)}
+          </ScrollView>
+        </View>}
 
         {aramaAktif ? (
           <View style={stil.pad}>
@@ -489,11 +514,11 @@ export default function HarcamaEkleEkrani() {
                 {gecmisSonuclar.length > 0 ? (
                   <>
                     <Txt role="label" tone={color.text2}>
-                      {t['ekle.arama.grup.gecmis']}
+                      Favoriler ve sık kullanılanlar
                     </Txt>
                     <View style={{ height: rhythm.group }} />
                     {gecmisSonuclar.map((s, i) => (
-                      <View key={s.urunAdi} style={i > 0 ? { marginTop: rhythm.group } : undefined}>
+                      <View key={`${s.kategori}:${s.urunAdi}`} style={i > 0 ? { marginTop: rhythm.group } : undefined}>
                         <SearchResultRow
                           kategori={kategoriGetir(s.kategori)}
                           baslik={s.urunAdi}
@@ -658,14 +683,6 @@ export default function HarcamaEkleEkrani() {
 
       <View style={[stil.altSabit, { paddingBottom: insets.bottom + rhythm.group }]}>
         <View style={stil.pad}>
-          <ClayKeypad
-            onDigit={(d) => tutarDegistir((b) => tutarGirisiEkle(b, d))}
-            onComma={() => tutarDegistir((b) => tutarGirisiEkle(b, ','))}
-            onBackspace={() => tutarDegistir(tutarGirisiSil)}
-          />
-        </View>
-        <View style={{ height: rhythm.blockInCard }} />
-        <View style={stil.pad}>
           {yazmaHata ? (
             <>
               <Txt role="caption" tone={color.dangerInk}>
@@ -683,7 +700,7 @@ export default function HarcamaEkleEkrani() {
           />
         </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

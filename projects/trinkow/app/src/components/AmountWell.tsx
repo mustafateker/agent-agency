@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { MoneyInput } from '@/components/MoneyInput';
 import { ClaySurface } from '@/components/ClaySurface';
 import { Icon } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
@@ -22,8 +23,7 @@ export type AmountWellGunButonu = {
 };
 
 /**
- * tokens.md §7.4/§7.11 — tutar kuyusu. Sistem klavyesi açılmaz; sayı
- * `ClayKeypad`'den gelir. Uzun tutar kuralı (tokens.md §7.11, K-042):
+ * tokens.md §7.4/§7.11 — tutar kuyusu. Düzenlenirken gerçek native TextInput kullanır. Uzun tutar kuralı (tokens.md §7.11, K-042):
  * gösterim 7 karakteri AŞARSA (8+) `hero` (56pt) → `display` (32pt)
  * rolüne iner, `₺` de bir basamak iner (`display` → `amount`). Kuyu
  * yüksekliği sabit kalır. Prototip üreteci de aynı kurala göre düzeltildi.
@@ -34,7 +34,7 @@ export function AmountWell({
   ustSag,
   gunButon,
   hata,
-  cursorGoster = true,
+  value, onChangeText, autoFocus = false,
 }: {
   tutarGosterim: string;
   ustSol: string;
@@ -44,6 +44,9 @@ export function AmountWell({
   gunButon?: AmountWellGunButonu;
   hata?: string;
   cursorGoster?: boolean;
+  value?: string;
+  onChangeText?: (text: string) => void;
+  autoFocus?: boolean;
 }) {
   const uzun = tutarGosterim.length > 7;
   const sayiRolu = uzun ? 'display' : 'hero';
@@ -63,10 +66,9 @@ export function AmountWell({
         </View>
         <View style={{ height: rhythm.group }} />
         <View style={stil.paraSatiri}>
-          <Txt role={sayiRolu} numberOfLines={1}>
+          {onChangeText ? <MoneyInput hideLabel value={value ?? ''} onChangeText={onChangeText} label={ustSol} autoFocus={autoFocus} style={{ fontSize: uzun ? 32 : 56, lineHeight: 64, textAlign: 'center' }} /> : <Txt role={sayiRolu} numberOfLines={1}>
             {tutarGosterim}
-          </Txt>
-          {cursorGoster ? <View style={stil.imlec} /> : null}
+          </Txt>}
           <View style={{ width: rhythm.group }} />
           <Txt role={simgeRolu} tone={color.text2}>
             {SIMGE}

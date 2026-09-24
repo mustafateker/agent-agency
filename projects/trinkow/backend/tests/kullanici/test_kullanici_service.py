@@ -225,7 +225,8 @@ async def test_plani_kur_hesaplayip_kaydeder(temiz_veritabani: None) -> None:
     profil = await servis.plani_kur("kullanici-plan", bugun=date(2024, 9, 17))
 
     assert profil.plan_kuruldu is True
-    assert profil.gunluk_limit_kurus == 30_000
+    # Yeni otomatik bütçe takvim ayına yayılır: (3.200.000 - 1.880.000 - 480.000) / 30.
+    assert profil.gunluk_limit_kurus == 28_000
     assert profil.zorunlu_pay_yuzde == 59
     assert profil.plan_kurulum_tarihi is not None
 

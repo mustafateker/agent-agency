@@ -21,6 +21,8 @@ from app.core.errors import (
 )
 from app.core.security import yenileme_tokeni_olustur
 from app.modules.auth.auth_service import AuthService, erisim_tokenini_dogrula
+from app.modules.butce.butce_dto import ButceIstegi, FavoriIstegi, RutinIstegi
+from app.modules.butce.butce_service import ButceService
 from app.modules.harcama.harcama_service import HarcamaService
 from app.modules.kullanici.kullanici_service import KullaniciService
 
@@ -74,7 +76,8 @@ async def test_token_yenileme_yeni_erisim_tokeni_uretir() -> None:
     servis = _servis()
     _, yenileme = await servis.kayit_ol("ayse@example.com", "sifre1234")
 
-    yeni_erisim = await servis.token_yenile(yenileme)
+    yeni_erisim, yeni_yenileme = await servis.token_yenile(yenileme)
+    assert yeni_yenileme != yenileme
 
     assert erisim_tokenini_dogrula(yeni_erisim) is not None
 
@@ -131,6 +134,11 @@ async def test_hesabi_sil_diger_modullerin_verisini_de_temizler() -> None:
     await harcama_servisi.gun_durumu_isaretle(kullanici_id, "2026-09-19", True)
     await harcama_servisi.limit_gecmisi_yaz(kullanici_id, "2026-09-19", 15_000)
     await harcama_servisi.urun_kategori_ogren(kullanici_id, "ekmek", "market")
+    butce_servisi = ButceService(get_database())
+    await butce_servisi.yaz(kullanici_id, "2026-09-19", ButceIstegi(gelir_kurus=300_000))
+    await butce_servisi.rutin_yaz(kullanici_id, "2026-09-19", "kahve", RutinIstegi(ad="Kahve", kategori="kafe", gunluk_adet=1, birim_fiyat_kurus=5_000))
+    await butce_servisi.favori_yaz(kullanici_id, "ekmek", FavoriIstegi(ad="Ekmek", kategori="market", tutar_kurus=3_000))
+    await get_database().birikim_defterleri.insert_one({"kullanici_id": kullanici_id, "hareketler": []})
 
     await servis.hesabi_sil(kullanici_id)
 
@@ -144,6 +152,12 @@ async def test_hesabi_sil_diger_modullerin_verisini_de_temizler() -> None:
         ("gun_durumlari", {"kullanici_id": kullanici_id}),
         ("limit_gecmisleri", {"kullanici_id": kullanici_id}),
         ("urun_kategori_ogrenmeleri", {"kullanici_id": kullanici_id}),
+        ("butce_surumleri", {"kullanici_id": kullanici_id}),
+        ("butce_gocleri", {"kullanici_id": kullanici_id}),
+        ("rutin_surumleri", {"kullanici_id": kullanici_id}),
+        ("rutin_vazgecmeleri", {"kullanici_id": kullanici_id}),
+        ("favori_kalemler", {"kullanici_id": kullanici_id}),
+        ("birikim_defterleri", {"kullanici_id": kullanici_id}),
     ):
         assert await veritabani[koleksiyon].count_documents(sorgu) == 0, koleksiyon
 

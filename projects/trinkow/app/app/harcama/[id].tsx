@@ -1,13 +1,13 @@
+import { ErrorState } from '@/components/ErrorState';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AmountWell } from '@/components/AmountWell';
 import { Button } from '@/components/Button';
 import { CategoryGridSheet } from '@/components/CategoryPicker';
-import { ClayKeypad } from '@/components/ClayKeypad';
 import { ClayPressable } from '@/components/ClayPressable';
 import { ClaySurface } from '@/components/ClaySurface';
 import { Dialog } from '@/components/Dialog';
@@ -45,7 +45,7 @@ import { clay, color, layout, radius, rhythm, size } from '@/theme/tokens';
  * silme `Dialog` ile onaylanır.
  *
  * D-2a (M-1) — tutar düzenlenebilir: tutar kuyusuna dokununca E-11'deki
- * `AmountWell` + `ClayKeypad` deseni AYNEN yeniden kullanılır (F-8, BACKLOG).
+ * `AmountWell` içindeki native para girişi yeniden kullanılır.
  * Taksitli kayıtta tutar KİLİTLİDİR (`detay.tutar_kilit`) — tek bir taksitin
  * tutarını değiştirmek serinin toplamıyla tutarsız kalır; kategori/ödeme/not
  * taksitli kayıtta da düzenlenebilir kalır (mevcut davranış, değişmedi).
@@ -71,11 +71,13 @@ export default function HarcamaDetayEkrani() {
   const [kaydediliyor, setKaydediliyor] = useState(false);
   const [yazmaHata, setYazmaHata] = useState<string | undefined>();
 
-  // D-2a (M-1) — tutar buffer'ı E-11 ile birebir aynı desen (`ClayKeypad` ham metni).
+  // D-2a (M-1) — tutar metni native TextInput ile düzenlenir.
   const [tutarBuffer, setTutarBuffer] = useState('');
   const [tutarDuzenleAcik, setTutarDuzenleAcik] = useState(false);
   const [tutarHata, setTutarHata] = useState<string | undefined>();
 
+  const [okumaHata, setOkumaHata] = useState(false);
+  const [yenidenDene, setYenidenDene] = useState(0);
   const [silDialogAcik, setSilDialogAcik] = useState(false);
   const [silSiliniyor, setSilSiliniyor] = useState(false);
   // "Kalan {adet} taksit" — mevcut kayıttan SONRAKİ ödenmemiş taksit sayısı
@@ -85,6 +87,7 @@ export default function HarcamaDetayEkrani() {
   useEffect(() => {
     let canli = true;
     setYukleniyor(true);
+    setOkumaHata(false);
     void harcamaGetir(db, harcamaId).then((h) => {
       if (!canli) return;
       if (!h) {
@@ -97,11 +100,13 @@ export default function HarcamaDetayEkrani() {
         setTutarBuffer(kurustanTutarGirisi(h.tutarKurus));
       }
       setYukleniyor(false);
+    }).catch(() => {
+      if (canli) { setOkumaHata(true); setYukleniyor(false); }
     });
     return () => {
       canli = false;
     };
-  }, [db, harcamaId]);
+  }, [db, harcamaId, yenidenDene]);
 
   useEffect(() => {
     if (!yukleniyor) {
@@ -150,20 +155,30 @@ export default function HarcamaDetayEkrani() {
 
   async function silTekHarcama() {
     if (!harcama) return;
-    await harcamaTekilSilVeGeriAlSun(db, harcama);
-    router.back();
+    try {
+      await harcamaTekilSilVeGeriAlSun(db, harcama);
+      router.back();
+    } catch {
+      setYazmaHata(t['hata.yazma']);
+    }
   }
 
   async function silTaksitSerisi() {
     if (!harcama?.taksitId) return;
     setSilSiliniyor(true);
-    await taksitSerisiSilVeToastGoster(db, harcama.taksitId);
-    router.back();
+    try {
+      await taksitSerisiSilVeToastGoster(db, harcama.taksitId);
+      router.back();
+    } catch {
+      setYazmaHata(t['hata.yazma']);
+    } finally {
+      setSilSiliniyor(false);
+    }
   }
 
   if (bulunamadi) {
     return (
-      <View style={stil.ekran}>
+      <KeyboardAvoidingView style={stil.ekran} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={{ height: insets.top }} />
         <View style={stil.basSatiri}>
           <Txt role="h2">{t['detay.baslik']}</Txt>
@@ -183,7 +198,7 @@ export default function HarcamaDetayEkrani() {
           <Button label={t['detay.bulunamadi.eylem']} variant="primary" onPress={() => router.back()} />
         </View>
         <View style={{ height: insets.bottom + rhythm.pad }} />
-      </View>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -191,8 +206,10 @@ export default function HarcamaDetayEkrani() {
   const kat = kategoriKodu ? kategoriGetir(kategoriKodu) : null;
   const kaydetDisabled = tutarDuzenleAcik && tutarKurusDuzenlenen <= 0;
 
+  if (okumaHata) return <View style={{ flex: 1, justifyContent: 'center', padding: 16 }}><ErrorState onRetry={() => setYenidenDene((n) => n + 1)} /></View>;
+
   return (
-    <View style={stil.ekran}>
+    <KeyboardAvoidingView style={stil.ekran} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={{ height: insets.top }} />
       <ScrollView
         style={stil.kaydir}
@@ -210,13 +227,16 @@ export default function HarcamaDetayEkrani() {
         ) : harcama && kat ? (
           <>
             <Pressable
-              disabled={taksitli}
+              disabled={taksitli || tutarDuzenleAcik}
               accessibilityRole="button"
               accessibilityLabel={tutarDuzenleAcik ? 'Tutar düzenleyiciyi kapat' : 'Tutarı düzenle'}
               onPress={() => setTutarDuzenleAcik((a) => !a)}>
               {tutarDuzenleAcik ? (
                 <AmountWell
                   tutarGosterim={tutarGosterim}
+                  value={tutarBuffer}
+                  onChangeText={(text) => tutarBufferDegistir(() => text)}
+                  autoFocus
                   ustSol={t['ekle.tutar.etiket']}
                   ustSag={`${kisaTarih(new Date(harcama.zaman))} · ${saatYaz(harcama.zaman)}`}
                   hata={tutarHata}
@@ -358,17 +378,6 @@ export default function HarcamaDetayEkrani() {
         ) : null}
       </ScrollView>
 
-      {tutarDuzenleAcik ? (
-        <View style={[stil.altSabit, { paddingBottom: insets.bottom + rhythm.group }]}>
-          <View style={stil.pad}>
-            <ClayKeypad
-              onDigit={(d) => tutarBufferDegistir((b) => tutarGirisiEkle(b, d))}
-              onComma={() => tutarBufferDegistir((b) => tutarGirisiEkle(b, ','))}
-              onBackspace={() => tutarBufferDegistir(tutarGirisiSil)}
-            />
-          </View>
-        </View>
-      ) : null}
 
       <CategoryGridSheet
         visible={kategoriSecimAcik}
@@ -393,7 +402,7 @@ export default function HarcamaDetayEkrani() {
           onVazgec={() => setSilDialogAcik(false)}
         />
       ) : null}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

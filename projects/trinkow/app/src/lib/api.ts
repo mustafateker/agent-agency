@@ -14,9 +14,13 @@
  * ile TEK SEFERLİK otomatik tekrar dener; o da başarısızsa oturum silinir
  * ve orijinal 401 hatası fırlatılır.
  */
-import { oturumErisimTokeniGuncelle, oturumOku, oturumSil } from '@/lib/oturumDeposu';
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
+import { apiAdresiniCoz } from '@/lib/apiAdres';
+import { oturumErisimTokeniGuncelle, oturumOku, oturumGecersizKil } from '@/lib/oturumDeposu';
 
-const TEMEL_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'http://127.0.0.1:8000').replace(/\/+$/, '');
+const TEMEL_URL = apiAdresiniCoz(process.env.EXPO_PUBLIC_API_URL, __DEV__ ? Constants.expoConfig?.hostUri : undefined, Platform.OS);
+export const GELISTIRME_GIRISI = __DEV__ && process.env.EXPO_PUBLIC_DEV_LOGIN === '1';
 const ZAMAN_ASIMI_MS = 10000;
 
 export class ApiHatasi extends Error {
@@ -40,14 +44,15 @@ type IstekSecenekleri = {
   govde?: unknown;
   /** `Authorization: Bearer <erişim token>` gerektiren uçlar (`/auth/ben`, `/auth/hesap`). */
   tokenGerekli?: boolean;
+  erisimTokeni?: string;
 };
 
-async function istek<T>(yol: string, secenekler: IstekSecenekleri = {}, tekrarDenendi = false): Promise<T> {
+export async function istek<T>(yol: string, secenekler: IstekSecenekleri = {}, tekrarDenendi = false): Promise<T> {
   const { yontem = 'GET', govde, tokenGerekli = false } = secenekler;
+  const oturum = tokenGerekli ? await oturumOku() : null;
+  if (tokenGerekli && !oturum) throw new ApiHatasi(401, 'OTURUM_YOK', 'Oturum açmalısın.');
   const denetimci = new AbortController();
   const zamanAsimi = setTimeout(() => denetimci.abort(), ZAMAN_ASIMI_MS);
-
-  const oturum = tokenGerekli ? await oturumOku() : null;
 
   let yanit: Response;
   try {
@@ -55,7 +60,7 @@ async function istek<T>(yol: string, secenekler: IstekSecenekleri = {}, tekrarDe
       method: yontem,
       headers: {
         'Content-Type': 'application/json',
-        ...(tokenGerekli && oturum ? { Authorization: `Bearer ${oturum.erisimTokeni}` } : {}),
+        ...(secenekler.erisimTokeni || oturum ? { Authorization: `Bearer ${secenekler.erisimTokeni ?? oturum?.erisimTokeni}` } : {}),
       },
       body: govde !== undefined ? JSON.stringify(govde) : undefined,
       signal: denetimci.signal,
@@ -66,10 +71,13 @@ async function istek<T>(yol: string, secenekler: IstekSecenekleri = {}, tekrarDe
     clearTimeout(zamanAsimi);
   }
 
-  if (yanit.status === 401 && tokenGerekli && !tekrarDenendi) {
-    const yenilendi = await tokenYenileDene();
-    if (yenilendi) return istek<T>(yol, secenekler, true);
-    await oturumSil();
+  if (oturum && (await oturumOku())?.oturumKimligi !== oturum.oturumKimligi) {
+    throw new ApiHatasi(401, 'OTURUM_DEGISTI', 'Oturum değişti.');
+  }
+
+  if (yanit.status === 401 && oturum) {
+    if (!tekrarDenendi && ((await oturumOku())?.yenilemeTokeni !== oturum.yenilemeTokeni || await tokenYenileDene(oturum.yenilemeTokeni))) return istek<T>(yol, secenekler, true);
+    await oturumGecersizKil(oturum.yenilemeTokeni);
   }
 
   if (yanit.status === 204) return undefined as T;
@@ -90,18 +98,29 @@ async function istek<T>(yol: string, secenekler: IstekSecenekleri = {}, tekrarDe
   return (await yanit.json()) as T;
 }
 
-async function tokenYenileDene(): Promise<boolean> {
+const yenilemeler = new Map<string, Promise<boolean>>();
+
+function tokenYenileDene(yenilemeTokeni: string): Promise<boolean> {
+  const mevcut = yenilemeler.get(yenilemeTokeni);
+  if (mevcut) return mevcut;
+  const islem = tokenYenile(yenilemeTokeni).finally(() => yenilemeler.delete(yenilemeTokeni));
+  yenilemeler.set(yenilemeTokeni, islem);
+  return islem;
+}
+
+async function tokenYenile(yenilemeTokeni: string): Promise<boolean> {
   const oturum = await oturumOku();
-  if (!oturum) return false;
+  if (!oturum || oturum.yenilemeTokeni !== yenilemeTokeni) return false;
   try {
-    const yeni = await istek<{ erisim_tokeni: string }>('/auth/token/yenile', {
+    const yeni = await istek<{ erisim_tokeni: string; yenileme_tokeni: string }>('/auth/token/yenile', {
       yontem: 'POST',
       govde: { yenileme_tokeni: oturum.yenilemeTokeni },
     });
-    await oturumErisimTokeniGuncelle(yeni.erisim_tokeni);
+    await oturumErisimTokeniGuncelle(yeni.erisim_tokeni, yenilemeTokeni, yeni.yenileme_tokeni);
     return true;
-  } catch {
-    return false;
+  } catch (hata) {
+    if (hata instanceof ApiHatasi && (hata.durum === 401 || hata.durum === 403)) return false;
+    throw hata; // Bağlantı/5xx hatası oturumu geçersiz kılmaz.
   }
 }
 
@@ -119,8 +138,8 @@ export async function kayitOl(email: string, sifre: string): Promise<TokenCifti>
 }
 
 /** `POST /auth/giris` — 401 → kimlik hatası (e-posta/şifre ayrımı sızdırılmaz). */
-export async function girisYap(email: string, sifre: string): Promise<TokenCifti> {
-  const yanit = await istek<{ erisim_tokeni: string; yenileme_tokeni: string }>('/auth/giris', {
+export async function girisYap(email: string, sifre: string, demo = false): Promise<TokenCifti> {
+  const yanit = await istek<{ erisim_tokeni: string; yenileme_tokeni: string }>(demo && GELISTIRME_GIRISI ? '/auth/gelistirme-giris' : '/auth/giris', {
     yontem: 'POST',
     govde: { email, sifre },
   });
@@ -130,9 +149,10 @@ export async function girisYap(email: string, sifre: string): Promise<TokenCifti
 export type KullaniciBilgisi = { id: string; email: string; kimlikSaglayici: string };
 
 /** `GET /auth/ben` — Ayarlar E-19 hesap satırının gerçek e-posta/sağlayıcı kaynağı. */
-export async function benKimim(): Promise<KullaniciBilgisi> {
+export async function benKimim(erisimTokeni?: string): Promise<KullaniciBilgisi> {
   const yanit = await istek<{ id: string; email: string; kimlik_saglayici: string }>('/auth/ben', {
-    tokenGerekli: true,
+    tokenGerekli: !erisimTokeni,
+    erisimTokeni,
   });
   return { id: yanit.id, email: yanit.email, kimlikSaglayici: yanit.kimlik_saglayici };
 }
@@ -303,6 +323,9 @@ export async function tercihleriGuncelle(govde: TercihlerGuncellemeGovdesi): Pro
 export type OdemeTipiGovde = 'nakit' | 'kart';
 
 export type HarcamaYaniti = {
+  rutin_id?: string | null;
+  adet?: number;
+  sabit_gider_kodu?: 'kira' | 'fatura' | 'ulasim' | 'kredi' | null;
   id: string;
   tutar_kurus: number;
   kategori: string;
@@ -317,6 +340,10 @@ export type HarcamaYaniti = {
 };
 
 export type HarcamaEkleGovdesi = {
+  istemci_id?: string;
+  rutin_id?: string | null;
+  adet?: number;
+  sabit_gider_kodu?: 'kira' | 'fatura' | 'ulasim' | 'kredi' | null;
   tutar_kurus: number;
   kategori: string;
   urun_adi: string | null;
@@ -330,6 +357,9 @@ export type HarcamaEkleGovdesi = {
 };
 
 export type HarcamaGuncellemeGovdesi = Partial<{
+  rutin_id?: string | null;
+  adet?: number;
+  sabit_gider_kodu?: 'kira' | 'fatura' | 'ulasim' | 'kredi' | null;
   tutar_kurus: number;
   kategori: string;
   urun_adi: string | null;
@@ -589,6 +619,7 @@ export type KatalogSonucu = { degisti: true; katalog: KatalogListesiYaniti } | {
 /** `GET /katalog/` — `bilinenSurum` `If-None-Match` ile gönderilir; değişmediyse 304 (`{degisti:false}`, gövde yok). */
 export async function katalogGetir(bilinenSurum: string | null, tekrarDenendi = false): Promise<KatalogSonucu> {
   const oturum = await oturumOku();
+  if (!oturum) throw new ApiHatasi(401, 'OTURUM_YOK', 'Oturum açmalısın.');
   const denetimci = new AbortController();
   const zamanAsimi = setTimeout(() => denetimci.abort(), ZAMAN_ASIMI_MS);
   let yanit: Response;
@@ -608,14 +639,20 @@ export async function katalogGetir(bilinenSurum: string | null, tekrarDenendi = 
     clearTimeout(zamanAsimi);
   }
 
-  if (yanit.status === 401 && !tekrarDenendi) {
-    const yenilendi = await tokenYenileDene();
-    if (yenilendi) return katalogGetir(bilinenSurum, true);
-    await oturumSil();
+  if (yanit.status === 401) {
+    if (!tekrarDenendi && await tokenYenileDene(oturum.yenilemeTokeni)) return katalogGetir(bilinenSurum, true);
+    await oturumGecersizKil(oturum.yenilemeTokeni);
   }
 
   if (yanit.status === 304) return { degisti: false };
   if (!yanit.ok) throw new ApiHatasi(yanit.status, 'bilinmeyen', 'Katalog okunamadı.');
   const katalog = (await yanit.json()) as KatalogListesiYaniti;
   return { degisti: true, katalog };
+}
+
+export async function sifirlamaIste(email: string): Promise<void> {
+  await istek('/auth/sifre/sifirlama-iste', { yontem: 'POST', govde: { email } });
+}
+export async function sifreyiYenile(token: string, sifre: string): Promise<void> {
+  await istek('/auth/sifre/sifirla', { yontem: 'POST', govde: { token, sifre } });
 }

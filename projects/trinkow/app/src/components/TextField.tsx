@@ -32,7 +32,7 @@ export function TextField({
   label?: string;
   value: string;
   onChangeText: (v: string) => void;
-  placeholder: string;
+  placeholder?: string;
   error?: string;
   maxLength?: number;
   clearable?: boolean;

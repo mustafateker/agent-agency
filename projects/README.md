@@ -21,7 +21,7 @@ projects/<proje-adı>/
 
 ## Aktif proje: `trinkow/`
 **Trinkow** — harcamaları "kalori sayar gibi" takip ettiren davranışsal
-finans uygulaması. React Native (Expo), Türkçe, offline-first.
+finans uygulaması. React Native (Expo), Türkçe; FastAPI + MongoDB, veri sunucuda.
 Ayrıntı: `trinkow/docs/CONTEXT.md`
 
 Durum: Aşama 3 (Geliştirme). Tasarım tamamlandı ve onaylandı

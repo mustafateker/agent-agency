@@ -75,8 +75,8 @@ export async function gunSiniriOku(_db: SQLiteDatabase): Promise<GunSiniriSaat> 
  * hâlâ senkron okunuyor, yalnız onu BESLEYEN yer artık sunucu.
  */
 export async function gunSiniriKaydet(_db: SQLiteDatabase, saat: GunSiniriSaat): Promise<void> {
-  gunSiniriSaatiniAyarla(saat);
   await tercihleriGuncelle({ gun_siniri: saat });
+  gunSiniriSaatiniAyarla(saat);
 }
 
 export async function varsayilanOdemeOku(_db: SQLiteDatabase): Promise<OdemeTipi> {

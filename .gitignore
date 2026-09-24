@@ -13,3 +13,4 @@ dist/
 # backend (BE-2)
 .pytest_cache/
 *.egg-info/
+.local/

@@ -1,56 +1,81 @@
-# Welcome to your Expo app 👋
+# Trinkow mobil uygulaması
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+React Native / Expo + TypeScript. Finansal verinin kaynağı `../backend` içindeki
+FastAPI / MongoDB servisidir; Expo tek başına API'yi çalıştırmaz.
 
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Yerel geliştirme (önerilen)
 
 ```bash
-npm run reset-project
+cd projects/trinkow/app
+npm run dev
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Bu komut yerel MongoDB'yi `127.0.0.1:27018`, API'yi `0.0.0.0:8000` ve Expo'yu
+başlatır. `i` ile iOS simülatörünü açabilir veya telefonda QR kodunu okutabilirsin.
+Bilgisayar ve telefon aynı ağda olmalı. Ctrl+C bu komutun başlattığı süreçleri durdurur.
+Başka bir Expo zaten açıksa yalnız API için: `python3 ../dev.py --no-app`.
 
-### Other setup steps
+Normal giriş ve kayıt formları e-posta/şifreyi gerçek backend ile doğrular. Yerel
+başlatıcı ayrıca **Test hesabıyla devam et** seçeneğini açar; bu seçenek yalnız
+geliştirme içindir ve normal formun doğrulamasını gevşetmez. İlk girişte onboarding
+gelir.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Test hesabı da gerçek JWT ve ayrı bir yerel backend kullanır. Veriler
+`../.local/data` içinde kalıcı, `trinkow_demo` veritabanındadır. Atlas `.env` ve
+mevcut Atlas verileri değiştirilmez.
+Yerel MongoDB yalnız bilgisayardan erişilebilir; mobil cihaz API'ye bağlanır.
 
-## Learn more
+### İlk kurulum / başka bilgisayar
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npm ci
+cd ../backend
+python3 -m venv .venv
+.venv/bin/pip install -e '.[dev]'
+# .env yoksa .env.example'dan oluştur ve JWT_SECRET_KEY'i ayarla.
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+PATH üzerinde `mongod` varsa başlatıcı onu kullanır. Bu çalışma ortamına resmi
+MongoDB Community 8.0.30 paketi `../.local/mongodb` içine kuruldu (Git'e girmez).
+Başka bir Apple Silicon Mac'te aynı kurulumu yapmak için proje kökünde:
 
-## Join the community
+```bash
+mkdir -p .local/mongodb
+curl -fL https://fastdl.mongodb.org/osx/mongodb-macos-arm64-8.0.30.tgz -o /tmp/trinkow-mongodb.tgz
+tar -xzf /tmp/trinkow-mongodb.tgz -C .local/mongodb --strip-components=1
+```
 
-Join our community of developers creating universal apps.
+Diğer platformlar: [MongoDB resmi kurulum belgesi](https://www.mongodb.com/docs/v8.0/administration/install-community/).
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Atlas / normal giriş
+
+Backend'i kendi `.env` ayarlarıyla `.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0`
+ile başlat. `TRINKOW_DEV_LOGIN` varsayılan olarak kapalıdır; normal `/auth/giris`
+her zaman gerçek şifre doğrular. İstemciyi `EXPO_PUBLIC_DEV_LOGIN=0 npm start` ile aç.
+Üretim derlemesinde istemcinin demo girişi daima kapalıdır.
+
+`EXPO_PUBLIC_API_URL` verilmezse geliştirmede Expo bilgisayarının adresi seçilir;
+Android emülatöründe localhost için `10.0.2.2` kullanılır. Farklı bir API için
+`.env.example` içindeki açıklamayı izle. Expo tunnel yalnız Metro'yu taşır,
+API için ayrıca erişilebilir bir adres gerekir.
+
+## Kontroller
+
+```bash
+npm test
+npm run typecheck
+npx expo-doctor
+npx expo export --platform ios --platform android --output-dir /tmp/trinkow-export
+cd ../backend
+MONGODB_URI=mongodb://127.0.0.1:27018 .venv/bin/python -m pytest -q
+```
+
+Backend testleri ayrı `trinkow_test` veritabanını temizler. Özel ad `TEST_DB_NAME`
+ile verilir; `_test` ile bitmeli ve uygulamanın veritabanından farklı olmalıdır.
+Web hedefi bu mobil projenin kurulu bağımlılıkları arasında değildir.
+
+E-posta ile parola sıfırlama gerçek, süreli ve tek kullanımlık bağlantıyla çalışır;
+yerelde backend posta kutusuna, canlı ayarda SMTP'ye gönderilir. Hatırlanan oturum
+SecureStore'da tutulur; hatırlanmayan oturum uygulama belleğiyle sınırlıdır.
+Apple/Google girişi ve gerçek telefon bildirimleri bu turun kapsamında değildir;
+giriş düğmeleri bağlantının henüz hazır olmadığını açıkça bildirir.

@@ -40,14 +40,15 @@ Aşama 6, marka onayından sonra diğerleriyle paralel yürür.
 
 ## Aktif proje
 **Trinkow** — harcamaları "kalori sayar gibi" takip ettiren davranışsal finans
-uygulaması. React Native (Expo), Türkçe, offline-first, sunucusuz.
-Aşama 3 (Geliştirme). Tasarım onaylandı: 13 dosya, 62 yüzey, claymorphism.
+uygulaması. React Native (Expo), Türkçe; Python/FastAPI + MongoDB backend.
+Veri sunucuda; yerel geliştirme ve geçici test girişi için
+`cd projects/trinkow/app && npm run dev`. Ayrıntı: `projects/trinkow/app/README.md`.
 → `projects/trinkow/docs/CONTEXT.md`
 
 ## İlkeler
 - **Tasarım jenerik olmayacak** — her çıktı anti-pattern listesine karşı
   `design-reviewer` tarafından denetlenir; REVİZE bloklayıcıdır.
-- **Ücretli bağımlılık yok** — font OFL, ikon MIT/ISC, sunucu yok.
+- **Ücretli bağımlılık yok** — font OFL, ikon MIT/ISC; ücretli servisler ayrıca onaylanır.
 - **Uygulama yalan söylemez** — eksik veri uydurulmaz, tahmin "güncel" diye
   sunulmaz.
 - **Onay kapıları PM tarafından varsayılamaz** (marka, tasarım, deploy,

@@ -68,7 +68,7 @@ def gun_seriye_sayilir_mi(
     aşmıyorsa sayılır.
     """
     kayitli_ya_da_isaretli = kayit_adedi > 0 or harcamasiz_isaretli
-    return kayitli_ya_da_isaretli and harcanan_kurus <= limit_kurus
+    return kayitli_ya_da_isaretli
 
 
 def sonraki_durak(mevcut_seri: int) -> int | None:
@@ -260,8 +260,8 @@ def seri_hesapla(nitelikler: list[GunNitelik], limitsiz_mi: bool) -> SeriSonucu:
     `OzetService.seri_getir` içinde `en_uzun_seri_ratchet` ile verilir, bu
     saf fonksiyon Mongo'dan/kalıcı durumdan habersizdir.
     """
-    if limitsiz_mi or not nitelikler:
-        return _KAPALI_SERI_SONUCU
+    if not nitelikler:
+        return replace(_KAPALI_SERI_SONUCU, kapali=False)
 
     sayilir_mi_dizisi = [
         gun_seriye_sayilir_mi(n.harcanan_kurus, n.kayit_adedi, n.harcamasiz_isaretli, n.efektif_limit_kurus)
@@ -269,7 +269,9 @@ def seri_hesapla(nitelikler: list[GunNitelik], limitsiz_mi: bool) -> SeriSonucu:
     ]
 
     mevcut_seri = 0
-    for sayildi in reversed(sayilir_mi_dizisi):
+    # Today is pending until its first entry; yesterday's streak survives.
+    mevcut_dizi = sayilir_mi_dizisi if sayilir_mi_dizisi[-1] else sayilir_mi_dizisi[:-1]
+    for sayildi in reversed(mevcut_dizi):
         if not sayildi:
             break
         mevcut_seri += 1
@@ -496,20 +498,12 @@ class OzetService:
         profil = await self._kullanici.profili_getir(kullanici_id)
         guncel_limit = profil.gunluk_limit_kurus
 
-        if guncel_limit is None:
-            kapali_ama_kayitli = replace(
-                _KAPALI_SERI_SONUCU,
-                en_uzun_seri=profil.en_uzun_seri,
-                en_uzun_seri_bitis_gunu=profil.en_uzun_seri_bitis_gunu,
-            )
-            return SeriGorunumu(seri=kapali_ama_kayitli, izgara=[])
-
         en_eski_kayit_gunu = await self._harcama.en_eski_kayit_gunu(kullanici_id)
         ilk_gun = seri_sinir_gunu_belirle(profil.kurulum_gunu, en_eski_kayit_gunu, bugun_gun)
         if ilk_gun > bugun_gun:
             ilk_gun = bugun_gun
 
-        nitelikler = await self._gun_nitelikleri_hesapla(kullanici_id, ilk_gun, bugun_gun, guncel_limit)
+        nitelikler = await self._gun_nitelikleri_hesapla(kullanici_id, ilk_gun, bugun_gun, guncel_limit or 0)
         seri_sonucu = seri_hesapla(nitelikler, limitsiz_mi=False)
 
         yeni_en_uzun, yeni_bitis, guncellenmeli_mi = en_uzun_seri_ratchet(
@@ -534,37 +528,32 @@ class OzetService:
         gunluk_toplamlar = gunluk_toplamlari_hesapla(ay_kayitlari)
         harcanan_kurus, kayit_adedi = gunluk_toplamlar.get(gun, (0, 0))
 
-        kategori_limitleri = await self._harcama.kategori_limitlerini_getir(kullanici_id)
-        kategori_ay_toplam: dict[str, int] = {}
+        butce_surumleri = await self._kullanici._butce.surumler(kullanici_id)
+        from app.modules.tasarruf.tasarruf_service import efektif_surum
+        from app.modules.butce.butce_service import butce_hesapla
+        surum = efektif_surum(butce_surumleri, gun)
+        gun_butcesi = butce_hesapla(surum, gun) if surum else None
+        if butce_surumleri:
+            limit_kurus = gun_butcesi['gunluk_limit_kurus'] if gun_butcesi else None
         kategori_gun_toplam: dict[str, int] = {}
-        for kayit in ay_kayitlari:
-            kategori_ay_toplam[kayit.kategori] = kategori_ay_toplam.get(kayit.kategori, 0) + kayit.tutar_kurus
-            if kayit.gun == gun:
-                kategori_gun_toplam[kayit.kategori] = kategori_gun_toplam.get(kayit.kategori, 0) + kayit.tutar_kurus
-
-        kategoriler = [
-            PanoKategoriDurumu(
-                kategori=limit.kategori,
-                limit_kurus=limit.limit_kurus,
-                harcanan_kurus=kategori_ay_toplam.get(limit.kategori, 0),
-                bugun_kurus=kategori_gun_toplam.get(limit.kategori, 0),
-            )
-            for limit in kategori_limitleri
-        ]
-
+        for kayit in (x for x in ay_kayitlari if x.gun == gun):
+            kategori_gun_toplam[kayit.kategori] = kategori_gun_toplam.get(kayit.kategori, 0) + kayit.tutar_kurus
+        kategoriler = [PanoKategoriDurumu(kategori=kod, limit_kurus=tutar,
+            harcanan_kurus=kategori_gun_toplam.get(kod, 0), bugun_kurus=kategori_gun_toplam.get(kod, 0))
+            for kod, tutar in (gun_butcesi or {}).get('kategori_limitleri', {}).items()]
         ay_asimi = 0
-        if limit_kurus is not None:
-            ay_asimi = sum(1 for toplam, _ in gunluk_toplamlar.values() if toplam > limit_kurus)
+        for gun_anahtari, (toplam, _) in gunluk_toplamlar.items():
+            tarihli = efektif_surum(butce_surumleri, gun_anahtari)
+            gun_limiti = butce_hesapla(tarihli, gun_anahtari)['gunluk_limit_kurus'] if tarihli else None
+            if gun_limiti is not None and toplam > gun_limiti:
+                ay_asimi += 1
 
         harcamasiz_isaretli = False
         if kayit_adedi == 0:
             gun_durumu = await self._harcama.gun_durumu_getir(kullanici_id, gun)
             harcamasiz_isaretli = gun_durumu.harcamasiz
 
-        seriye_sayildi_mi: bool | None = None
-        if limit_kurus is not None:
-            efektif_limit = await self._harcama.limit_gecmisi_efektif_limit(kullanici_id, gun, limit_kurus)
-            seriye_sayildi_mi = gun_seriye_sayilir_mi(harcanan_kurus, kayit_adedi, harcamasiz_isaretli, efektif_limit)
+        seriye_sayildi_mi = gun_seriye_sayilir_mi(harcanan_kurus, kayit_adedi, harcamasiz_isaretli, limit_kurus or 0)
 
         ilk_gun_mu = profil.kurulum_gunu is not None and gun <= profil.kurulum_gunu
 

@@ -1,8 +1,81 @@
+# Trinkow Rev — 2026-09-23
+
+## 2026-09-24 — Onboarding rutin akışı sadeleştirmesi
+
+- Amaç ve maaş/aylık plan adımlarının ana eylemi `Sonraki` oldu.
+- Onboarding rutin adımında hazır Kahve/Sigara/Yemek kısayolları kaldırıldı; doğrudan `Rutin ekle` formu gösteriliyor.
+- Kurulum içindeki rutin kartında yalnız `Düzenle` ve `Rutini kaldır` var. Harcama ekleme ve günlük vazgeçme kontrolleri normal Rutinler ekranında kalıyor.
+- Kanıt: mobil 14/14, TypeScript, iOS+Android export ve `git diff --check` temiz.
+
+## 2026-09-24 — Günlük harcamaları kategori altında gruplama
+
+- Günlük hareketler ürün adı, saat ve tutarla ilgili kategorinin altında gösteriliyor; hareket satırı düzenleme ekranına açılıyor.
+- Günlük hızlı listeden `Abonelik`, `Fatura`, `Kira ve ev` çıkarıldı. Mevcut kayıtları kaybetmemek için bu üç kategori Günlük'te ayrı `Planlı ödemeler` listesinde görünür.
+- Kanıt: mobil 14/14, TypeScript, iOS+Android export ve `git diff --check` temiz.
+
+## 2026-09-24 — Günlük kahraman tutar düzeltmesi
+
+- Dört haneli tutarlar (`1.000` ve üzeri) gösterge iç alanına göre `hero`dan `display` ölçeğine iner; daha uzun tutarlar tek satırda otomatik küçülür.
+- Günlük kartın sol üstündeki niyet çipi (`Takip` vb.) ve sağ üstündeki günlük limit çipi kaldırıldı.
+- Kanıt: mobil 14/14, TypeScript, iOS+Android export, backend sağlık 200 ve `git diff --check` temiz.
+
+## 2026-09-24 — Profil sekmesi ve hızlı kategori harcaması
+
+- Ana navigasyon `Günlük / Tasarruf / Profil` olarak güncellendi; Özet, Profil içindeki analiz bağlantısından açılıyor.
+- Profil ana sekmesi hesap, uygulama ayarları, bütçe, limit, rutin ve favori girişlerini topluyor.
+- Günlük ekranı kategori limiti olmasa da 13 varsayılan kategorinin tamamını gösteriyor. Her satırdaki `+`, harcama formunu ilgili kategori seçili açıyor; satır aynı günün kategori toplamını gösteriyor.
+- Kanıt: mobil 14/14, TypeScript, iOS+Android export, backend sağlık 200 ve `git diff --check` temiz.
+
+## 2026-09-23 — Çalışan backend ve navigasyon düzeltmesi
+
+- Eski 8000 süreci yeni `/butce` ve `/tasarruf` router'larını yüklemiyordu; güncel backend yerel MongoDB ile yeniden başlatıldı.
+- `backend/requirements.txt` oluşturuldu ve `pyproject.toml` ile eşlendi.
+- Alt çubuk etiketi `Tasarruf` oldu; küçük ekran esnekliği, tek satır etiket, sekmelerde `replace`, safe-area ve klavye davranışı düzeltildi.
+- Kanıt: sağlık 200, OpenAPI 43 yol, backend 139/139, mobil 14/14, TypeScript, iOS+Android export ve `git diff --check` temiz.
+
+Kullanıcı planı açıkça uygulama için onayladı. Önceki değişiklikler korunacak.
+Aktif aşama: Revizyon uygulandı; yayın dışı bağımlılıklar ve cihaz dokunma QA'sı izleniyor.
+Kararlar: ayrı tasarruf/birikim; günlük kategori payları; takip serisi; maaş−sabit−hedef birikim takvim ayına bölünür; rutin tasarrufu açık doğrulama; e-posta öncelikli; yerel posta+SMTP; legal taslaklar; push/AI/prod kapsam dışı.
+
+| Görev | Sahip | Durum | Kabul |
+|---|---|---|---|
+| REV-01 tasarım delta/prototip | UI/UX | tamamlandı | `trinkow-rev.md/html`, 390×844 durumlar |
+| REV-02 tasarım denetimi | design-reviewer/root | PASS | tasarruf ve gerçek birikim ayrımı düzeltildi |
+| REV-03 bütçe/rutin/favori/tasarruf/seri API | Python finans | tamamlandı | tarihli sözleşme + Mongo kabul testleri |
+| REV-04 gerçek auth/reset/rotation/mail | Python auth | tamamlandı | tek kullanım, iptal, rate limit, outbox/SMTP |
+| REV-05 native girdiler | frontend ortak | tamamlandı | özel keypad kullanımda yok; native decimal/paste |
+| REV-06 tasarruf/onboarding/limit/favori ekranları | frontend finans | tamamlandı | gerçek API + aylık/günlük hesaplar |
+| REV-07 auth/ayarlar/legal/hesap ekranları | frontend hesap | tamamlandı | hatırla/reset/export/silme |
+| REV-08 QA entegrasyon | QA/root | otomasyon tamamlandı | 139 backend + 14 mobil + doctor + iki bundle |
+
+Dış bağımlılıklar: gerçek SMTP/gönderici; legal işletmeci bilgileri/hukuki kontrol. Yerel outbox akışı uçtan uca geçti; prod/yayın yapılmadı. App Store/Play öncesi gerçek iOS ve Android cihazda dokunma, klavye ve küçük ekran matrisi manuel çalıştırılmalı.
+Kanıt: backend 139/139; mobil 14/14; `tsc`; Expo Doctor 21/21; iOS ve Android export; ayrı `trinkow_smoke` DB'de auth→bütçe→rutin→harcama→tasarruf→reset→oturum iptali→hesap silme PASS.
+Sonraki adım: gerçek SMTP bilgilerini bağla, legal işletmeci alanlarını hukuk incelemesiyle tamamla ve cihaz kabul matrisini çalıştır.
+
+---
+Önceki kayıtlar (tarihsel):
+
 # Durum
 
-Son güncelleme: 2026-09-19 (4. oturum)
+Son güncelleme: 2026-09-22 (çalışma zamanı düzeltmeleri)
 Proje: **Trinkow** — harcama takip uygulaması (davranışsal finans / "kalori sayacı")
 Mevcut aşama: **3 — Geliştirme** · **arayüz TAMAMLANDI**, backend başladı
+
+## 2026-09-22 — güncel çalışma durumu
+Önceki oturum notları tarihseldir. Gerçek mimari Expo + Python/FastAPI + MongoDB;
+veri sunucudadır. Backend ve API bağlantısı tamamlanmış, QA bu tur yeniden çalıştırılmıştır.
+- Atlas TLS el sıkışması başarısız; Atlas verisi/ayarları değiştirilmedi.
+- `app/` içinde `npm run dev`: yerel MongoDB (27018) + API (8000) + Expo.
+- Mustafa'nın bu oturumdaki talebiyle rastgele ad/şifre girişi eklendi.
+  Demo hesaplar gerçek hesaplardan ayrıdır; normal auth şifre doğrulamaya devam eder.
+- Açılışta oturum doğrulama, gün sınırı ve onboarding sırası düzeltildi.
+  Ağ hatasında oturum korunur; 401 yenileme tekilleştirildi ve ikinci 401 kapatılır.
+- Yakalanmayan async hatalar için ilgili ekranlarda hata/yeniden deneme davranışı eklendi.
+- 128 backend testi + 8 istemci testi geçti; TypeScript ve iOS/Android export temiz.
+- Sosyal giriş / gerçek şifre sıfırlama / bildirim izni / secure-store işleri hâlâ açık;
+  bağlı olmayan giriş yöntemleri artık başarılı olmuş gibi davranmaz.
+Kurulum: `app/README.md`. Teknik kanıt ve kapsam: `docs/qa-raporu.md` son bölüm.
+
 
 ## 4. oturumun özeti (en üstte — eski notlar tarihseldir)
 **Arayüz bitti.** Kodlanan turlar: D-2d-1 (Günlük + seri + gün seçici) · D-2d-2

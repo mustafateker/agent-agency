@@ -32,9 +32,10 @@ function binlik(tamKisim: number): string {
 export function sayiyaCevir(kurusDeger: number, kurus = false): string {
   const mutlak = Math.abs(Math.round(kurusDeger));
   const lira = Math.floor(mutlak / 100);
-  if (!kurus) return binlik(lira);
+  const isaret = kurusDeger < 0 ? '-' : '';
+  if (!kurus) return isaret + binlik(lira);
   const kalan = mutlak % 100;
-  return `${binlik(lira)},${String(kalan).padStart(2, '0')}`;
+  return `${isaret}${binlik(lira)},${String(kalan).padStart(2, '0')}`;
 }
 
 /** Kuruş integer → `1.250 ₺` (liste/kahraman: kuruşsuz) */
@@ -97,4 +98,24 @@ export function tutarGirisindenKurus(buffer: string): number {
 export function kurustanTutarGirisi(kurusDeger: number): string {
   const tamStr = sayiyaCevir(kurusDeger, true);
   return tamStr.replace(/\./g, '');
+}
+
+/** Accept decimal comma/dot and pasted Turkish/English grouped amounts. */
+export function nativeTutarGirisi(text: string): string {
+  const clean = text.replace(/[^\d.,]/g, '');
+  const comma = clean.lastIndexOf(',');
+  const dot = clean.lastIndexOf('.');
+  const ayiraclar = clean.match(/[.,]/g) ?? [];
+  const ikiTurVar = comma >= 0 && dot >= 0;
+  const son = Math.max(comma, dot);
+  const sonrasinda = son < 0 ? 0 : clean.length - son - 1;
+  const yalnizGruplama = !ikiTurVar && sonrasinda === 3 &&
+    (ayiraclar.length === 1 || clean.split(/[.,]/).slice(1).every((parca) => parca.length === 3));
+  if (yalnizGruplama) return clean.replace(/[.,]/g, '').slice(0, TUTAR_TAM_KISIM_MAKS);
+  const separator = son;
+  if (separator < 0) return clean.slice(0, TUTAR_TAM_KISIM_MAKS);
+  // A single separator is decimal; both formats use their last separator.
+  const whole = clean.slice(0, separator).replace(/[.,]/g, '').slice(0, TUTAR_TAM_KISIM_MAKS);
+  const fraction = clean.slice(separator + 1).replace(/[.,]/g, '').slice(0, 2);
+  return `${whole || '0'},${fraction}`;
 }

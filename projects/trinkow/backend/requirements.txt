@@ -1,0 +1,14 @@
+# Uygulama bağımlılıkları — pyproject.toml [project.dependencies] ile aynı tutulur.
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic[email]>=2.6
+motor>=3.4
+passlib[bcrypt]>=1.7.4
+# passlib 1.7.4'ün bcrypt>=4.1 ile bilinen uyumsuzluğu nedeniyle üst sınır gerekli.
+bcrypt<4.1
+pyjwt>=2.8
+python-dotenv>=1.0
+
+# Yerel test bağımlılıkları — pyproject.toml [project.optional-dependencies].dev.
+pytest>=8.0
+pytest-asyncio>=0.23

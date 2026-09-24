@@ -55,26 +55,16 @@ export default function KayitEkrani() {
     setGonderiliyor(true);
     try {
       const cift = await kayitOl(eposta.trim(), sifre);
+      const ben = await benKimim(cift.erisimTokeni);
       await oturumYaz({
         erisimTokeni: cift.erisimTokeni,
         yenilemeTokeni: cift.yenilemeTokeni,
-        kullaniciId: '',
-        email: eposta.trim(),
-        kimlikSaglayici: 'eposta',
+        kullaniciId: ben.id,
+        email: ben.email,
+        kimlikSaglayici: ben.kimlikSaglayici,
       });
-      try {
-        const ben = await benKimim();
-        await oturumYaz({
-          erisimTokeni: cift.erisimTokeni,
-          yenilemeTokeni: cift.yenilemeTokeni,
-          kullaniciId: ben.id,
-          email: ben.email,
-          kimlikSaglayici: ben.kimlikSaglayici,
-        });
-      } catch {
-        // bkz. giris.tsx aynı not — oturum açık kalır.
-      }
-      router.replace('/');
+      // Yönlendirmeyi kök oturum koruyucusu yapar.
+
     } catch (hata) {
       if (hata instanceof ApiAgHatasi) {
         setAgHatasi(true);
@@ -93,7 +83,7 @@ export default function KayitEkrani() {
   return (
     <View style={stil.ekran}>
       <View style={{ height: insets.top }} />
-      <PushHeader baslik={t['kayit.baslik']} onGeri={() => router.back()} />
+      <PushHeader baslik={t['kayit.baslik']} onGeri={() => router.replace('/giris')} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -107,19 +97,6 @@ export default function KayitEkrani() {
               <View style={{ height: rhythm.section }} />
             </>
           ) : null}
-
-          {sosyalSaglayicilar().map((saglayici, i) => (
-            <View key={saglayici}>
-              {i > 0 ? <View style={{ height: rhythm.group }} /> : null}
-              <SocialAuthButton
-                provider={saglayici}
-                onPress={() => void (saglayici === 'apple' ? appleIleDevamEt() : googleIleDevamEt())}
-              />
-            </View>
-          ))}
-          <View style={{ height: rhythm.blockInCard }} />
-          <OrDivider />
-          <View style={{ height: rhythm.blockInCard }} />
 
           <TextField
             label={t['alan.eposta']}
@@ -154,7 +131,7 @@ export default function KayitEkrani() {
           <InfoStrip variant="info" icon="info" metin={`${t['hesap.mahremiyet']} ${t['hesap.mahremiyet.ek']}`} />
 
           <View style={{ height: rhythm.section }} />
-          <LegalConsentText metin={t['kayit.yasal']} />
+          <LegalConsentText onLinkPress={(i) => router.push({ pathname: "/legal", params: { belge: i === 0 ? "kosullar" : "gizlilik" } })} metin={t['kayit.yasal']} />
 
           <View style={{ height: rhythm.blockInCard }} />
           <View style={stil.aralik}>
@@ -162,8 +139,6 @@ export default function KayitEkrani() {
             <Button label={t['kayit.giris_kapisi.aksiyon']} variant="ghost" auto onPress={() => router.replace('/giris')} />
           </View>
           <View style={{ height: rhythm.section }} />
-        </ScrollView>
-
         <View style={[stil.altSabit, { paddingBottom: insets.bottom + rhythm.pad }]}>
           <Button
             label={t['kayit.eylem']}
@@ -174,6 +149,23 @@ export default function KayitEkrani() {
             onPress={() => void gonder()}
           />
         </View>
+          {sosyalSaglayicilar().map((saglayici, i) => (
+            <View key={saglayici}>
+              {i > 0 ? <View style={{ height: rhythm.group }} /> : null}
+              <SocialAuthButton
+                provider={saglayici}
+                disabled
+                onPress={() => void (saglayici === 'apple' ? appleIleDevamEt() : googleIleDevamEt())}
+              />
+            </View>
+          ))}
+          <View style={{ height: rhythm.blockInCard }} />
+          <OrDivider />
+          <View style={{ height: rhythm.blockInCard }} />
+
+        </ScrollView>
+
+
       </KeyboardAvoidingView>
     </View>
   );

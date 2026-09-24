@@ -25,7 +25,7 @@ export function PasswordField({
   label?: string;
   value: string;
   onChangeText: (v: string) => void;
-  placeholder: string;
+  placeholder?: string;
   error?: string;
   /** RN inşa notu 4 — şifre yöneticileri çalışsın diye doğru autofill eşlemesi. */
   autoComplete: 'current-password' | 'new-password' | 'password';

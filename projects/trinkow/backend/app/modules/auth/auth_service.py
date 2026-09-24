@@ -9,20 +9,26 @@ gelir (K-068/3: repository katmanı yok).
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from hashlib import sha256
+from secrets import token_urlsafe
 from typing import Any
 
 import jwt
 from bson import ObjectId
 from bson.errors import InvalidId
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
 
 from app.core.config import get_settings
+from app.core.posta import posta_ayarlarini_dogrula, sifirlama_postasi_gonder
 from app.core.errors import (
     EpostaZatenKayitli,
     GecersizKimlikBilgisi,
     GecersizToken,
     KullaniciBulunamadi,
     TokenSuresiDolmus,
+    UygulamaHatasi,
 )
 from app.core.security import (
     erisim_tokeni_olustur,
@@ -32,6 +38,7 @@ from app.core.security import (
     yenileme_tokeni_olustur,
 )
 from app.modules.auth.auth_model import KullaniciBelgesi
+from app.modules.butce.butce_service import ButceService
 from app.modules.harcama.harcama_service import HarcamaService
 from app.modules.kullanici.kullanici_service import KullaniciService
 
@@ -75,8 +82,10 @@ class AuthService:
         veritabani: AsyncIOMotorDatabase,
         harcama_servisi: HarcamaService | None = None,
         kullanici_servisi: KullaniciService | None = None,
+        butce_servisi: ButceService | None = None,
     ) -> None:
         self._kullanicilar = veritabani[KULLANICILAR_KOLEKSIYONU]
+        self._hiz_siniri = veritabani["auth_hiz_siniri"]
         self._yenileme_tokenlari = veritabani[YENILEME_TOKENLARI_KOLEKSIYONU]
         # Madde 1 (K-085/BE-4b) — hesap silinirken diğer modüllerin verisini de
         # silmek için servis arayüzleri (Kural 1: doğrudan koleksiyon erişimi
@@ -84,6 +93,27 @@ class AuthService:
         # `AuthService(get_database())` çağrıları kırılmaz.
         self._harcama = harcama_servisi or HarcamaService(veritabani)
         self._kullanici = kullanici_servisi or KullaniciService(veritabani)
+        self._butce = butce_servisi or ButceService(veritabani)
+
+    async def gelistirme_girisi(self, etiket: str) -> tuple[str, str]:
+        """Rastgele etiketi ayrı bir demo kimliğine bağlar; gerçek hesaba girmez."""
+        if not get_settings().gelistirme_girisi:
+            raise UygulamaHatasi("GELISTIRME_GIRISI_KAPALI", "Test girişi kapalı.", 404)
+        etiket = etiket.strip().casefold()
+        if not etiket:
+            raise UygulamaHatasi("GECERSIZ_ETIKET", "Bir test adı gir.", 422)
+        email = f"demo-{sha256(etiket.encode()).hexdigest()[:40]}@demo.trinkow.example"
+        belge = KullaniciBelgesi(email=email, sifre_hash=None, kimlik_saglayici="demo").belgeye_cevir()
+        try:
+            kullanici = await self._kullanicilar.find_one_and_update(
+                {"email": email, "kimlik_saglayici": "demo"},
+                {"$setOnInsert": belge}, upsert=True, return_document=ReturnDocument.AFTER,
+            )
+        except DuplicateKeyError:
+            kullanici = await self._kullanicilar.find_one({"email": email, "kimlik_saglayici": "demo"})
+        if kullanici is None:
+            raise GecersizKimlikBilgisi()
+        return await self._token_cifti_uret(str(kullanici["_id"]))
 
     async def kayit_ol(self, email: str, duz_sifre: str) -> tuple[str, str]:
         """Yeni kullanıcı oluşturur ve doğrudan oturum açtırır (token çifti döner).
@@ -92,12 +122,16 @@ class AuthService:
         `find_one` kontrolü yalnız daha okunur bir hata mesajı için,
         yarış durumunda index zaten ikinci kaydı reddeder.
         """
+        email = email.strip().casefold()
         mevcut = await self._kullanicilar.find_one({"email": email})
         if mevcut is not None:
             raise EpostaZatenKayitli()
 
         kullanici = KullaniciBelgesi(email=email, sifre_hash=sifre_hashle(duz_sifre))
-        ekleme_sonucu = await self._kullanicilar.insert_one(kullanici.belgeye_cevir())
+        try:
+            ekleme_sonucu = await self._kullanicilar.insert_one(kullanici.belgeye_cevir())
+        except DuplicateKeyError as hata:
+            raise EpostaZatenKayitli() from hata
         return await self._token_cifti_uret(str(ekleme_sonucu.inserted_id))
 
     async def giris_yap(self, email: str, duz_sifre: str) -> tuple[str, str]:
@@ -106,6 +140,7 @@ class AuthService:
         Hatalıysa **genel** hata verir: e-posta mı şifre mi yanlış olduğu
         sızdırılmaz (hesap sayımı saldırısına karşı, bkz. metinler.md § E-22).
         """
+        email = email.strip().casefold()
         belge = await self._kullanicilar.find_one({"email": email})
         if belge is None or belge.get("sifre_hash") is None:
             raise GecersizKimlikBilgisi()
@@ -113,16 +148,68 @@ class AuthService:
         if not sifre_dogrula(duz_sifre, belge["sifre_hash"]):
             raise GecersizKimlikBilgisi()
 
-        return await self._token_cifti_uret(str(belge["_id"]))
+        return await self._token_cifti_uret(str(belge["_id"]), belge.get("oturum_surumu", 0))
 
-    async def token_yenile(self, yenileme_tokeni: str) -> str:
-        """Geçerli ve iptal edilmemiş bir yenileme token'ı ile yeni erişim token'ı üretir."""
-        yuk = self._yenileme_tokenini_dogrula(yenileme_tokeni)
-        kayit = await self._yenileme_tokenlari.find_one({"jti": yuk["jti"]})
-        if kayit is None or kayit.get("iptal_edildi_mi", False):
+    async def erisim_dogrula(self, token: str) -> str:
+        kullanici_id = erisim_tokenini_dogrula(token)
+        belge = await self._kullanicilar.find_one({"_id": _object_id_cevir(kullanici_id)})
+        if belge is None or belge.get("oturum_surumu", 0) != _token_coz_ve_hataya_cevir(token).get("ver", 0):
             raise GecersizToken()
+        return kullanici_id
 
-        return erisim_tokeni_olustur(yuk["sub"])
+    async def token_yenile(self, yenileme_tokeni: str) -> tuple[str, str]:
+        """Tek kullanımlı refresh token'ını atomik tüketip yeni çift üretir."""
+        yuk = self._yenileme_tokenini_dogrula(yenileme_tokeni)
+        belge = await self._kullanicilar.find_one({"_id": _object_id_cevir(yuk["sub"])})
+        if belge is None or belge.get("oturum_surumu", 0) != yuk.get("ver", 0):
+            raise GecersizToken()
+        kayit = await self._yenileme_tokenlari.find_one_and_update(
+            {"jti": yuk["jti"], "iptal_edildi_mi": False},
+            {"$set": {"iptal_edildi_mi": True}},
+        )
+        if kayit is None:
+            raise GecersizToken()
+        return await self._token_cifti_uret(yuk["sub"], yuk.get("ver", 0))
+
+    async def sifirlama_iste(self, email: str, istemci: str = "yerel") -> None:
+        posta_ayarlarini_dogrula()
+        email = email.strip().casefold()
+        simdi = datetime.now(timezone.utc)
+        # _id benzersizliği paralel isteklerde de sınırlamayı korur.
+        for anahtar in ("eposta:" + email, "istemci:" + istemci):
+            try:
+                await self._hiz_siniri.find_one_and_update(
+                    {"_id": sha256(anahtar.encode()).hexdigest(), "son": {"$lt": simdi - timedelta(seconds=60)}},
+                    {"$set": {"son": simdi}}, upsert=True,
+                )
+            except DuplicateKeyError:
+                return
+        belge = await self._kullanicilar.find_one({"email": email})
+        if belge is None or belge.get("kimlik_saglayici") == "demo":
+            return
+        token = token_urlsafe(32)
+        token_hash = sha256(token.encode()).hexdigest()
+        await self._kullanicilar.update_one({"_id": belge["_id"]}, {"$set": {
+            "sifirlama_hash": token_hash, "sifirlama_son": simdi + timedelta(minutes=30),
+        }})
+        try:
+            await sifirlama_postasi_gonder(email, token)
+        except UygulamaHatasi:
+            await self._kullanicilar.update_one({"_id": belge["_id"], "sifirlama_hash": token_hash},
+                {"$unset": {"sifirlama_hash": "", "sifirlama_son": ""}})
+            raise
+
+    async def sifre_sifirla(self, token: str, sifre: str) -> None:
+        yeni_hash = sifre_hashle(sifre)
+        # Tüketim, şifre değişimi ve oturum iptali tek kullanıcı belgesinde atomiktir.
+        belge = await self._kullanicilar.find_one_and_update(
+            {"sifirlama_hash": sha256(token.encode()).hexdigest(), "sifirlama_son": {"$gt": datetime.now(timezone.utc)}},
+            {"$set": {"sifre_hash": yeni_hash}, "$inc": {"oturum_surumu": 1},
+             "$unset": {"sifirlama_hash": "", "sifirlama_son": ""}},
+        )
+        if belge is None:
+            raise UygulamaHatasi("SIFIRLAMA_GECERSIZ", "Bağlantı geçersiz veya süresi dolmuş. Yeni bağlantı iste.", 400)
+        await self._yenileme_tokenlari.update_many({"kullanici_id": str(belge["_id"])}, {"$set": {"iptal_edildi_mi": True}})
 
     async def oturum_kapat(self, yenileme_tokeni: str) -> None:
         """Verilen yenileme token'ını iptal ederek oturumu geçersiz kılar."""
@@ -155,6 +242,7 @@ class AuthService:
         # 1) Diğer modüllerin verisi (servis arayüzü üzerinden, Kural 1).
         await self._harcama.kullanici_verisini_sil(kullanici_id)
         await self._kullanici.kullanici_verisini_sil(kullanici_id)
+        await self._butce.hesap_verilerini_sil(kullanici_id)
 
         # 2) Kimlik EN SON: önce oturumlar (yenileme token'ları) iptal edilir
         #    ki silinmiş bir kullanıcı adına yeni erişim token'ı üretilemesin,
@@ -162,9 +250,14 @@ class AuthService:
         await self._yenileme_tokenlari.delete_many({"kullanici_id": kullanici_id})
         await self._kullanicilar.delete_one({"_id": _object_id_cevir(kullanici_id)})
 
-    async def _token_cifti_uret(self, kullanici_id: str) -> tuple[str, str]:
-        erisim = erisim_tokeni_olustur(kullanici_id)
-        yenileme, jti = yenileme_tokeni_olustur(kullanici_id)
+    async def _token_cifti_uret(self, kullanici_id: str, surum: int | None = None) -> tuple[str, str]:
+        if surum is None:
+            belge = await self._kullanicilar.find_one({"_id": _object_id_cevir(kullanici_id)})
+            if belge is None:
+                raise GecersizToken()
+            surum = belge.get("oturum_surumu", 0)
+        erisim = erisim_tokeni_olustur(kullanici_id, surum=surum)
+        yenileme, jti = yenileme_tokeni_olustur(kullanici_id, surum=surum)
         yenileme_omru_gun = get_settings().yenileme_token_gun
         await self._yenileme_tokenlari.insert_one(
             {

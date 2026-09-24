@@ -219,3 +219,62 @@
 - **Bloklu:** D-2c, K-044 (giriş/kayıt + Google/Apple) kararı gelene kadar başlamaz.
   Bu karar açılış + onboarding akışının tamamını belirliyor.
 - Sıradaki iş **D-3 (qa-engineer)** — D-2c'yi beklemez, 8 kodlanmış ekran test edilebilir.
+
+
+## 2026-09-22 — çalışma zamanı onarımı
+- Başlatma: `app/` → `npm run dev`; yerel MongoDB + API + Expo, rastgele test girişi açık.
+- Atlas TLS başarısız; `.env` ve Atlas verileri korundu. Yerel veri `.local/data`da.
+- Oturum/açılış/async hata düzeltmeleri; 128 backend + 8 istemci testi geçti.
+- iOS rota açılışları kontrol edildi; tam dokunma otomasyonu/Android cihaz testi yok.
+- Devam eden işler ve kanıt: `docs/qa-raporu.md` son bölüm; kurulum: `app/README.md`.
+
+
+## REV-20260923 başlangıç
+- Önceki uncommitted değişiklikler korundu; tracked diff yedeği /tmp/trinkow-rev-baseline/pre-rev.patch.
+- UI/UX, finans backend ve auth backend ajanları ayrı dosya alanlarında başladı.
+- Durum: henüz revizyon kabul edilmedi. Tasarım ve API sözleşmesi bekleniyor.
+- Her dalga sonunda görev/dosya/test/kalan iş buraya işlenecek.
+
+## REV-20260923 tamamlanma devri
+- Tasarım: `docs/design/trinkow-rev.md`, `.html`, `trinkow-rev-api.md`; root delta incelemesi PASS. “Hesaplanan tasarruf” ile hareket defterindeki “gerçek birikim” ayrı tutuldu.
+- Backend: auth reset/SMTP-outbox/refresh rotation; tarihli bütçe, rutin/vazgeçme, favori sıklığı, aylık tasarruf ve gerçek birikim defteri; hesap/veri silme yeni koleksiyonları kapsıyor.
+- Mobil: SecureStore ve bellek oturumu, native para girdisi, dört adımlı onboarding, Bütçe/Limitler/Rutinler/Favoriler/Tasarruflar/Özet, kapsamlı Ayarlar/legal/yardım/hesap silme. `Kayıtlar` Tasarruflar'a yönlenir.
+- Değişen ana alanlar: `backend/app/modules/{auth,butce,tasarruf,harcama,ozet,kullanici}`, `app/app/`, `app/src/{components,lib,db}`, testler ve Expo paket kilidi. Önceki çalışma korunmuştur.
+- Kanıt: backend 139/139; mobil 14/14; TypeScript; Expo Doctor 21/21; iOS ve Android export; ayrı DB/outbox HTTP smoke PASS. `git diff --check` temiz.
+- Açık dış işler: gerçek SMTP/gönderici ayarı, işletmeci bilgileri ve hukuki inceleme, yayın öncesi fiziksel iOS/Android klavye/odak matrisi. Prod deploy yapılmadı.
+
+## REV-20260923 backend/navigation takip düzeltmesi
+
+- `backend/requirements.txt` eklendi; güncel API 8000 portunda MongoDB 27018 ile çalışıyor. Sağlık 200, OpenAPI 43 yol ve yeni bütçe/tasarruf uçları mevcut.
+- Ana alt navigasyon küçük ekranlara esnetildi, sekme adı `Tasarruf` yapıldı, sekme geçişleri `replace` oldu. Ana sekmelerde geri düğmesi kaldırıldı; klavye açıkken alt bar gizleniyor.
+- Değişen alanlar: `backend/requirements.txt`, `backend/README.md`, `app/app/index.tsx`, `app/src/components/{TabBar,RevScreen}.tsx`, metin ve tasarım belgeleri.
+- Kanıt: backend 139/139; mobil 14/14; TypeScript; iOS ve Android export; `pip check`; `git diff --check` temiz.
+
+## REV-20260924 profil/kategori navigasyonu
+
+- Alt navigasyon artık `Günlük / Tasarruf / Profil`. `/profil` hesap ve plan kısayollarını içerir; `/ozet` Profil içindeki analiz bağlantısından erişilir.
+- Günlük kategori alanı `TUM_KATEGORILER` listesindeki 13 varsayılan kategoriyi limitten bağımsız gösterir. Sağdaki artı `/harcama-ekle?kategori=<kod>` akışını açar; mevcut günlük toplam satırda görünür.
+- Değişen ana dosyalar: `app/app/{index,profil,ozet,_layout}.tsx`, `app/src/components/{TabBar,RevScreen,Icon}.tsx`, `app/src/components/pano/{GunlukSayfa,CategoryQuickAddCard}.tsx` ve metin/tasarım belgeleri.
+- Kanıt: TypeScript temiz, mobil 14/14, iOS+Android export başarılı, backend sağlık 200, `git diff --check` temiz.
+
+## REV-20260924 günlük gösterge UX düzeltmesi
+
+- `gauge.heroDigitLimit` dört haneli biçimin (`1.000`) uzunluğuna göre 5 oldu. `LimitGauge` ve limitsiz `HeroPlain`, 156pt iç alanda tek satır ve `adjustsFontSizeToFit` kullanıyor.
+- Günlük `HeroCard` üst satırındaki niyet ve günlük limit çipleri kaldırıldı; bu nedenle kullanılmayan niyet/limit eylemi propları da temizlendi.
+- Değişen dosyalar: `app/src/components/{LimitGauge}.tsx`, `app/src/components/pano/{HeroCard,GunlukSayfa}.tsx`, `app/src/theme/tokens.ts`.
+- Kanıt: TypeScript temiz, mobil 14/14, iOS+Android export başarılı, backend sağlık 200, `git diff --check` temiz.
+
+## REV-20260924 günlük kategori gruplaması
+
+- `GUNLUK_HARCAMA_KATEGORILERI`, planlı ödeme kategorileri olan `abonelik/fatura/kiraev` değerlerini dışarıda bırakır; genel kategori seçici ve bütçe limitleri tüm kategorileri korur.
+- Günlük harcamalar `CategoryQuickAddCard` içinde kategoriye göre gruplanır. Ürün adı, saat ve tutar görünür; dokununca harcama detayı açılır. Sabit ödeme kayıtları ayrı `Planlı ödemeler` listesinde kalır.
+- Değişen dosyalar: `app/src/lib/kategoriler.ts`, `app/src/components/pano/{CategoryQuickAddCard,GunlukSayfa}.tsx` ve tasarım/durum belgeleri.
+- Kanıt: TypeScript temiz, mobil 14/14, iOS+Android export başarılı, `git diff --check` temiz.
+
+## REV-20260924 onboarding rutin sadeleştirmesi
+
+- `onboarding.tsx` amaç ve bütçe adımlarında `Sonraki` kullanıyor; rutin adımı `RoutinePanel onboarding` açıyor.
+- `RoutinePanel` onboarding kipinde hazır rutin butonlarını, `+ Harcama ekle`, vazgeçilen adet ve vazgeçiş eylemlerini çizmez. Rutin kartında yalnız düzenleme ve kaldırma bırakılır.
+- Normal `/rutinler` ekranı tasarruf planındaki açık “Bugün almadım” doğrulamasını korur.
+- Değişen dosyalar: `app/app/{onboarding,rutinler}.tsx` ve tasarım/durum belgeleri.
+- Kanıt: TypeScript temiz, mobil 14/14, iOS+Android export başarılı, `git diff --check` temiz.

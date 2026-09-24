@@ -11,12 +11,12 @@ import { clay, color, gradient, icon, radius, rhythm, size } from '@/theme/token
  * Faz 1: 3 sekme + FAB. Etiketsiz ikon YOK.
  * FAB bar üst kenarından 16 yukarı taşar, sağdan 8.
  */
-export type TabKey = 'gunluk' | 'kayitlar' | 'ozet';
+export type TabKey = 'gunluk' | 'tasarruflar' | 'profil';
 
 const SEKMELER: { key: TabKey; ad: string; ikon: IconName }[] = [
   { key: 'gunluk', ad: 'Günlük', ikon: 'gauge' },
-  { key: 'kayitlar', ad: 'Kayıtlar', ikon: 'notebook' },
-  { key: 'ozet', ad: 'Özet', ikon: 'chart' },
+  { key: 'tasarruflar', ad: 'Tasarruf', ikon: 'notebook' },
+  { key: 'profil', ad: 'Profil', ikon: 'user' },
 ];
 
 export function TabBar({
@@ -61,7 +61,11 @@ export function TabBar({
                 <Icon name={s.ikon} size={size.icon} color={tone} />
               </View>
               <View style={{ height: rhythm.sameObject }} />
-              <Txt role={aktif ? 'label' : 'caption'} tone={tone}>
+              <Txt
+                role={aktif ? 'label' : 'caption'}
+                tone={tone}
+                numberOfLines={1}
+                style={stil.sekmeEtiketi}>
                 {s.ad}
               </Txt>
             </Pressable>
@@ -122,7 +126,8 @@ const stil = StyleSheet.create({
     overflow: 'hidden',
   },
   sekme: {
-    width: size.tabItemWidth,
+    flex: 1,
+    minWidth: 0,
     height: size.tabItemHeight,
     alignItems: 'center',
     justifyContent: 'center',
@@ -134,6 +139,7 @@ const stil = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radius.pill,
   },
+  sekmeEtiketi: { width: '100%', textAlign: 'center' },
   bosluk: { width: size.tabItemWidth, height: size.tabItemHeight },
   fab: {
     position: 'absolute',

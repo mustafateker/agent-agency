@@ -38,7 +38,13 @@ class HarcamaBelgesi:
         taksit_no: int | None = None,
         taksit_toplam: int | None = None,
         _id: Any = None,
+        rutin_id: str | None = None,
+        adet: int = 1,
+        sabit_gider_kodu: str | None = None,
     ) -> None:
+        self.rutin_id = rutin_id
+        self.adet = adet
+        self.sabit_gider_kodu = sabit_gider_kodu
         self.id = _id
         self.kullanici_id = kullanici_id
         self.tutar_kurus = tutar_kurus
@@ -59,6 +65,9 @@ class HarcamaBelgesi:
     def belgeye_cevir(self) -> dict[str, Any]:
         """Mongo'ya yazılacak sözlük gösterimini üretir."""
         return {
+            "rutin_id": self.rutin_id,
+            "adet": self.adet,
+            "sabit_gider_kodu": self.sabit_gider_kodu,
             "kullanici_id": self.kullanici_id,
             "tutar_kurus": self.tutar_kurus,
             "kategori": self.kategori,
@@ -76,6 +85,9 @@ class HarcamaBelgesi:
     def belgeden_olustur(belge: dict[str, Any]) -> "HarcamaBelgesi":
         """Mongo'dan okunan sözlüğü nesneye çevirir."""
         return HarcamaBelgesi(
+            rutin_id=belge.get("rutin_id"),
+            adet=belge.get("adet", 1),
+            sabit_gider_kodu=belge.get("sabit_gider_kodu"),
             _id=belge["_id"],
             kullanici_id=belge["kullanici_id"],
             tutar_kurus=belge["tutar_kurus"],

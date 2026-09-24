@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Trinkow Rev</title>
+<link rel="stylesheet" href="prototip-v4/stil.css">
+<style>
+body{background:var(--bg);padding:24px;font-family:Montserrat,sans-serif}
+.rev-scenes{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.rev-phone{width:390px;height:844px;background:var(--bg);border-radius:32px;box-shadow:var(--clay-raised-lg);display:flex;flex-direction:column;overflow:hidden}
+.rev-safe{height:48px;flex-shrink:0;padding:16px 24px;color:var(--text-2);font-size:13px}
+.rev-scroll{flex:1;overflow:auto;padding:0 24px 24px;display:flex;flex-direction:column;gap:24px}
+.rev-head,.rev-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.rev-card{background:var(--surface);border-radius:24px;padding:24px;box-shadow:var(--clay-raised);display:flex;flex-direction:column;gap:12px}
+.rev-col{display:flex;flex-direction:column;gap:12px}.rev-stack{display:flex;flex-direction:column;gap:24px}
+.rev-phone h2{font:600 26px/32px Poppins,sans-serif;letter-spacing:-.6px;margin:0;color:var(--text)}
+.rev-phone h3{font:600 19px/25px Poppins,sans-serif;margin:0;color:var(--text)}
+.rev-phone p,.rev-phone label{font:400 16px/24px Montserrat,sans-serif;margin:0;color:var(--text)}
+.rev-phone small{font:400 13px/18px Montserrat,sans-serif;color:var(--text-2)}
+.rev-phone strong{font:700 17px/24px Montserrat,sans-serif;color:var(--text)}
+.rev-phone button,.rev-phone a{min-height:48px;padding:12px 16px;border:0;border-radius:16px;background:var(--surface);color:var(--text);font:600 13px/18px Montserrat,sans-serif;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:var(--clay-raised)}
+.rev-phone .primary{background:var(--primary-deep);color:var(--on-primary);box-shadow:var(--clay-action)}
+.rev-phone button:active,.rev-phone .pressed{background:var(--groove);box-shadow:var(--clay-pressed)}
+.rev-phone .primary:active{background:var(--primary-press)}
+.rev-phone button:disabled{background:var(--disabled-bg);color:var(--text-2);box-shadow:var(--clay-sunken)}
+.rev-phone input{min-height:48px;width:100%;padding:12px 16px;border:0;border-radius:16px;background:var(--well);color:var(--text);font:600 17px/24px Montserrat,sans-serif;box-shadow:var(--clay-sunken)}
+.rev-phone input[type=checkbox]{width:24px;min-height:24px;box-shadow:none;accent-color:var(--primary-deep)}
+.rev-phone .check{min-height:48px;display:flex;align-items:center;gap:12px}
+.rev-phone .selected{background:var(--primary-deep);color:var(--on-primary)}
+.rev-phone .danger{color:var(--danger-ink)}
+.rev-tabs{display:flex;gap:8px;padding:12px 24px 32px;background:var(--surface)}
+.rev-tabs button{flex:1;padding:12px 8px;box-shadow:none}
+.rev-phone .muted{color:var(--text-2)}
+.rev-phone :focus-visible{outline:2px solid var(--primary-deep);outline-offset:2px}
+</style></head><body>
+<h1 class="t-h1">Trinkow Rev</h1><p class="t-cap">390 × 844 · örnek veriler · ekranlar kendi içinde kaydırılır · native klavye mobil girdiye dokununca açılır</p>
+<div class="rev-scenes">
+<section class="rev-phone" aria-label="Tasarruflar dolu durum"><div class="rev-safe">9:41 · Güvenli alan</div><div class="rev-scroll">
+<header class="rev-head"><h2>Tasarruflar</h2><button>Ayarlar</button></header><div class="rev-row"><button aria-label="Önceki ay">‹</button><strong>Eylül 2026</strong><button aria-label="Sonraki ay">›</button></div>
+<small>Ay devam ediyor · 23 Eylül'e kadar</small><article class="rev-card"><small>Harcanabilir gelirin</small><h2>24.000 ₺</h2><div class="rev-row"><p>Harcadığın</p><strong>12.600 ₺</strong></div><div class="rev-row"><p>Kalan</p><strong>11.400 ₺</strong></div><small>Bu ay henüz harcamadığın tutar.</small></article>
+<article class="rev-card"><h3>Hesaplanan tasarrufun</h3><h2>18.200 ₺</h2><small>Kaydettiğin gelir ve harcamalara göre. Banka bakiyen değildir.</small></article>
+<article class="rev-card"><h3>Rutinlerindeki fark</h3><div class="rev-row"><strong>Kahve</strong><strong>420 ₺</strong></div><small>Rutin beklentin 1.610 ₺ · Harcaman 1.190 ₺</small><p>Küçük seçimlerin birikiyor.</p></article><article class="rev-card"><h3>Hedefine bir adım</h3><p>Bu tutarı birikim hedefin için ayırmayı düşünebilirsin.</p><small>Borçlu kullanıcı örneği: Bu tutar borcunun %12'sine denk geliyor.</small></article>
+</div><nav class="rev-tabs"><button>Günlük</button><button class="selected">Tasarruf</button><button>Profil</button></nav></section>
+<section class="rev-phone" aria-label="Native harcama girişi"><div class="rev-safe">9:41 · Güvenli alan</div><div class="rev-scroll"><header class="rev-head"><button>Geri</button><h2>Harcama ekle</h2></header><label class="rev-col">Tutar<input inputmode="decimal" value="70,00" aria-label="Harcama tutarı, Türk lirası"></label><small>Bugün · 23 Eylül</small><article class="rev-card"><h3>Sık kullandıkların</h3><button>Kahve · Son fiyat 70 ₺</button><button>Ulaşım · Son fiyat 35 ₺</button><small>Seç, gerekiyorsa fiyatını düzenle.</small></article><label class="rev-col">Ürün<input value="Filtre kahve"></label><div class="rev-row"><strong>Kategori</strong><button>Yeme içme</button></div><button class="primary">Kaydet</button><button>Bitti</button><small>Telefon klavyesi bu alana dokununca açılır. Kaydet düğmesi klavyenin üstünde erişilebilir kalır.</small></div><div class="rev-safe">Alt güvenli alan</div></section>
+<section class="rev-phone" aria-label="Onboarding rutin seçimi"><div class="rev-safe">9:41 · Güvenli alan</div><div class="rev-scroll"><small>Rutinlerin</small><h2>Günlük harcamaların neler?</h2><p>Sana uyanları seç. Kendi ödediğin tutarları kullanacağız.</p><article class="rev-card"><label class="check"><input type="checkbox" checked>Kahve</label><label class="rev-col">Günlük adet<input inputmode="numeric" value="1"></label><label class="rev-col">Birim fiyat · ₺<input inputmode="decimal" value="70"></label></article><label class="check"><input type="checkbox">Sigara</label><label class="check"><input type="checkbox">Yemek</label><label class="check"><input type="checkbox">Ulaşım</label><label class="check"><input type="checkbox">Atıştırmalık</label><button>Kendim ekleyeyim</button><button class="primary">Devam et</button><button>Rutin harcamam yok</button></div><div class="rev-safe">Alt güvenli alan</div></section>
+<section class="rev-phone" aria-label="Giriş sosyal seçenekler altta"><div class="rev-safe">9:41 · Güvenli alan</div><div class="rev-scroll"><h2>Hoş geldin</h2><p>Gününe kaldığın yerden devam et.</p><label class="rev-col">Eposta<input type="email" autocomplete="email"></label><label class="rev-col">Parola<input type="password" autocomplete="current-password"></label><label class="check"><input type="checkbox">Beni hatırla</label><button>Şifremi unuttum</button><button class="primary">Giriş yap</button><button>Hesap oluştur</button><small>veya</small><button>Apple ile devam et</button><button>Google ile devam et</button><small>Kayıt ekranında da sosyal seçenekler formun altında.</small></div><div class="rev-safe">Alt güvenli alan</div></section>
+<section class="rev-phone" aria-label="Ayarlar"><div class="rev-safe">9:41 · Güvenli alan</div><div class="rev-scroll"><header class="rev-head"><button>Geri</button><h2>Ayarlar</h2></header><article class="rev-card"><h3>Hesabın</h3><button>Parolayı değiştir</button><button>Çıkış yap</button></article><article class="rev-card"><h3>Bütçen ve rutinlerin</h3><button>Gelir ve sabit giderler</button><button>Borç bilgisi</button><button>Günlük ve kategori limitleri</button><button>Rutinlerim</button></article><article class="rev-card"><h3>Tercihlerin</h3><button>Bildirimler</button><button>Gün sınırı ve ödeme</button></article><article class="rev-card"><h3>Yardım ve bilgiler</h3><button>Yardım / Sık sorulan sorular</button><button>Kullanım şartları</button><button>Gizlilik politikası</button><button>KVKK aydınlatma metni</button><small>Trinkow · sürüm bilgisi</small></article><button class="danger">Hesabımı sil</button></div><div class="rev-safe">Alt güvenli alan</div></section>
+<section class="rev-phone" aria-label="Boş yükleniyor hata ve meşgul durumları"><div class="rev-safe">9:41 · Güvenli alan</div><div class="rev-scroll"><h2>Ekran durumları</h2><article class="rev-card"><h3>İlk ayını birlikte oluşturalım</h3><p>Gelirini ve rutinlerini eklediğinde burada kendi sayılarını göreceksin.</p><button class="primary">Bilgilerimi tamamla</button></article><article class="rev-card" aria-busy="true"><h3>Hesaplanıyor</h3><strong>— ₺</strong><small>Bilgilerin yükleniyor.</small></article><article class="rev-card"><h3>Bilgiler yüklenemedi</h3><p>Bağlantını kontrol edip tekrar deneyebilirsin.</p><button>Yeniden dene</button></article><button disabled>Kaydediliyor…</button><button class="pressed">Basılı yüzey örneği</button><small>Uzun tutar: 1.250.000,50 ₺. Satır yükseklikleri yazı boyutuyla büyür.</small></div><div class="rev-safe">Alt güvenli alan</div></section>
+</div></body></html>

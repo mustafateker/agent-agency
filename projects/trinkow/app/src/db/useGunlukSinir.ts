@@ -16,12 +16,18 @@ export function useGunlukSinir(): { enEskiGunFarki: number; hazir: boolean } {
   useEffect(() => {
     let canli = true;
     async function oku() {
-      const ilkGun = await ilkSinirGunu(db);
-      const fark = Math.min(gunFarkiHesapla(tarihtenGun(ilkGun), new Date()), 0);
-      if (canli) setDurum({ enEskiGunFarki: fark, hazir: true });
+      try {
+        const ilkGun = await ilkSinirGunu(db);
+        const fark = Math.min(gunFarkiHesapla(tarihtenGun(ilkGun), new Date()), 0);
+        if (canli) setDurum({ enEskiGunFarki: fark, hazir: true });
+      } catch {
+        // Pano kendi hata/yeniden deneme durumunu gösterir; sayfalama kilitlenmez.
+        if (canli) setDurum((onceki) => ({ ...onceki, hazir: true }));
+      }
     }
     void oku();
-    return veriDegisimineAbone(() => void oku());
+    const ayril = veriDegisimineAbone(() => void oku());
+    return () => { canli = false; ayril(); };
   }, [db]);
 
   return durum;

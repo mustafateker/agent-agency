@@ -115,8 +115,8 @@ export default function GunlukEkrani() {
         <TabBar
           active="gunluk"
           onSelect={(key) => {
-            if (key === 'kayitlar') router.push('/kayitlar');
-            else if (key === 'ozet') router.push('/ozet');
+            if (key === 'tasarruflar') router.replace('/tasarruflar');
+            else if (key === 'profil') router.replace('/profil');
           }}
           onAdd={() => router.push('/harcama-ekle')}
           fabGoster={!fabGizli}

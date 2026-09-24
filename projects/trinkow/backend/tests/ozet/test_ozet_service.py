@@ -77,8 +77,8 @@ def test_seriye_sayilir_harcamasiz_isaretli_gun_sayilir() -> None:
     assert gun_seriye_sayilir_mi(0, 0, harcamasiz_isaretli=True, limit_kurus=10_000) is True
 
 
-def test_seriye_sayilir_limit_asilirsa_sayilmaz() -> None:
-    assert gun_seriye_sayilir_mi(15_000, 3, harcamasiz_isaretli=False, limit_kurus=10_000) is False
+def test_seriye_sayilir_limit_asilsa_da_takip_sayilir() -> None:
+    assert gun_seriye_sayilir_mi(15_000, 3, harcamasiz_isaretli=False, limit_kurus=10_000) is True
 
 
 def test_seriye_sayilir_tam_limitte_sayilir() -> None:
@@ -100,11 +100,11 @@ def _nitelik(gun: str, harcanan: int, adet: int, harcamasiz: bool, limit: int) -
     return GunNitelik(gun=gun, harcanan_kurus=harcanan, kayit_adedi=adet, harcamasiz_isaretli=harcamasiz, efektif_limit_kurus=limit)
 
 
-def test_seri_hesapla_limitsiz_kipte_kapali_doner() -> None:
+def test_seri_hesapla_limitsiz_kipte_de_takip_acik() -> None:
     sonuc = seri_hesapla([_nitelik("2026-09-17", 0, 1, False, 10_000)], limitsiz_mi=True)
-    assert sonuc.kapali is True
-    assert sonuc.mevcut_seri == 0
-    assert sonuc.en_uzun_seri == 0
+    assert sonuc.kapali is False
+    assert sonuc.mevcut_seri == 1
+    assert sonuc.en_uzun_seri == 1
 
 
 def test_seri_hesapla_kayitsiz_gun_seriyi_kirar() -> None:
@@ -130,7 +130,7 @@ def test_seri_hesapla_harcamasiz_isaretli_gun_seriyi_korur() -> None:
     assert sonuc.en_uzun_seri == 3
 
 
-def test_seri_hesapla_gecmis_gun_kendi_yururlukteki_limitiyle_degerlendirilir() -> None:
+def test_seri_hesapla_limit_degisiminden_bagimsizdir() -> None:
     """K-064/1 — eski limit düşükken aşım sayılan bir gün, GÜNCEL limitle yeniden değerlendirilmez."""
     nitelikler = [
         # O gün yürürlükteki limit 5.000 kuruştu, 6.000 harcanmış -> aşım, seriyi kırar.
@@ -140,8 +140,8 @@ def test_seri_hesapla_gecmis_gun_kendi_yururlukteki_limitiyle_degerlendirilir() 
         _nitelik("2026-09-12", 8_000, 1, False, 10_000),
     ]
     sonuc = seri_hesapla(nitelikler, limitsiz_mi=False)
-    assert sonuc.mevcut_seri == 2  # yalnız 11-12, 10'u limit aşımıyla kırıldı
-    assert sonuc.en_uzun_seri == 2
+    assert sonuc.mevcut_seri == 3
+    assert sonuc.en_uzun_seri == 3
 
 
 def test_seri_hesapla_kirildi_mi_ve_gecilen_milestoneler() -> None:
@@ -155,15 +155,18 @@ def test_seri_hesapla_kirildi_mi_ve_gecilen_milestoneler() -> None:
 
     # Seri kırılınca "en uzun seri" saklanır, `kirildi_mi` suçlayıcı olmayan bayrak olur.
     nitelikler.append(_nitelik("2026-09-08", 0, 0, False, 10_000))
+    bekleyen = seri_hesapla(nitelikler, limitsiz_mi=False)
+    assert bekleyen.mevcut_seri == 7  # boş bugün için süre henüz dolmadı
+    nitelikler.append(_nitelik("2026-09-09", 0, 0, False, 10_000))
     kirilmis = seri_hesapla(nitelikler, limitsiz_mi=False)
     assert kirilmis.mevcut_seri == 0
     assert kirilmis.en_uzun_seri == 7
     assert kirilmis.kirildi_mi is True
 
 
-def test_seri_hesapla_bos_liste_kapali_gibi_davranir() -> None:
+def test_seri_hesapla_bos_liste_sifir_acik_seri() -> None:
     sonuc = seri_hesapla([], limitsiz_mi=False)
-    assert sonuc.kapali is True
+    assert sonuc.kapali is False
     assert sonuc.mevcut_seri == 0
 
 
@@ -348,7 +351,7 @@ async def test_gunluk_pano_ve_seri_uctan_uca_akis(temiz_veritabani: None) -> Non
 
     with pytest.raises(GelirGerekli):
         await kullanici_servisi.plani_kur(kullanici_id, bugun=date(2026, 9, 17))
-    await kullanici_servisi.gunluk_limiti_ayarla(kullanici_id, 10_000)
+    await kullanici_servisi.gunluk_limiti_ayarla(kullanici_id, 10_000, bugun=date(2026, 9, 15))
     await kullanici_servisi.tercihleri_guncelle(kullanici_id, {"kurulum_gunu": "2026-09-15"})
 
     await harcama_servisi.harcama_ekle(kullanici_id, 4_000, "market", "2026-09-17T10:00:00", "2026-09-17", "kart")
@@ -363,3 +366,28 @@ async def test_gunluk_pano_ve_seri_uctan_uca_akis(temiz_veritabani: None) -> Non
     gorunum = await ozet_servisi.seri_getir(kullanici_id, bugun=date(2026, 9, 17))
     assert gorunum.seri.kapali is False
     assert gorunum.seri.mevcut_seri == 2  # 16 (işaretli) + 17 (kayıtlı); 15 kırık başlangıç
+
+
+async def test_seri_ilk_harcamada_aninda_artar_silmede_yeniden_hesaplanir(temiz_veritabani: None) -> None:
+    kullanici = KullaniciService(get_database())
+    harcama = HarcamaService(get_database())
+    ozet = _ozet_servisi()
+    uid = "kullanici-seri-yeni"
+    await kullanici.gunluk_limiti_ayarla(uid, 10_000, bugun=date(2026, 9, 15))
+    await kullanici.tercihleri_guncelle(uid, {"kurulum_gunu": "2026-09-15"})
+    await harcama.harcama_ekle(uid, 20_000, "market", "2026-09-15T10:00:00", "2026-09-15", "kart")
+    ilk = await ozet.seri_getir(uid, bugun=date(2026, 9, 15))
+    assert ilk.seri.mevcut_seri == 1  # limit aşımı takip serisini bozmaz
+
+    bugun_ilk = await harcama.harcama_ekle(uid, 1_000, "kafe", "2026-09-16T09:00:00", "2026-09-16", "kart")
+    await harcama.harcama_ekle(uid, 1_000, "kafe", "2026-09-16T10:00:00", "2026-09-16", "kart")
+    ikinci = await ozet.seri_getir(uid, bugun=date(2026, 9, 16))
+    assert ikinci.seri.mevcut_seri == 2  # ikinci kayıt aynı günü ikinci kez saymaz
+
+    await harcama.harcama_sil(uid, str(bugun_ilk.id))
+    kalanlar, _ = await harcama.harcamalari_listele(uid, gun="2026-09-16")
+    await harcama.harcama_sil(uid, str(kalanlar[0].id))
+    bos_bugun = await ozet.seri_getir(uid, bugun=date(2026, 9, 16))
+    assert bos_bugun.seri.mevcut_seri == 1  # boş bugün dünkü seriyi gün bitene dek korur
+    kacirilmis = await ozet.seri_getir(uid, bugun=date(2026, 9, 17))
+    assert kacirilmis.seri.mevcut_seri == 0

@@ -1,21 +1,12 @@
 import { StyleSheet, View } from 'react-native';
 
-import { Chip } from '@/components/Chip';
 import { ClaySurface } from '@/components/ClaySurface';
 import { IconButton } from '@/components/IconButton';
 import { LimitGauge } from '@/components/LimitGauge';
 import { Txt } from '@/components/Txt';
-import { gunlukLimitEtiketi, gunlukOGunLimiti, t } from '@/content/metinler';
-import type { Niyet } from '@/db/profil';
-import { paraYaz, sayiyaCevir, SIMGE } from '@/lib/para';
+import { t } from '@/content/metinler';
+import { sayiyaCevir, SIMGE } from '@/lib/para';
 import { color, gauge, radius, rhythm } from '@/theme/tokens';
-
-/** F-11 — kip çipi ve hero etiketi profildeki niyete bağlanır (K-053). */
-const KIP_ETIKET: Record<Niyet, string> = {
-  takip: t['pano.kip.takip'],
-  tasarruf: t['pano.kip.tasarruf'],
-  borc: t['pano.kip.borc'],
-};
 
 /**
  * E-10 kahraman kart (v4 — K-049 sayfalama). Tek ağırlık merkezi korunur:
@@ -27,8 +18,6 @@ const KIP_ETIKET: Record<Niyet, string> = {
  */
 type Props = {
   gunFarki: number;
-  /** F-11 — Katman 1'in niyet cevabı (K-053). Varsayılan 'takip'. */
-  niyet: Niyet;
   harcananKurus: number;
   limitKurus: number | null;
   /** §7.8 — bu günün hiç kaydı yok (gauge dolgu/topuz/taşma yok) */
@@ -36,21 +25,17 @@ type Props = {
   oncekiPasif: boolean;
   onOnceki: () => void;
   onSonraki: () => void;
-  /** Yalnız bugün sayfasında dokunulabilir (→ E-17 Limitler) */
-  onLimitPress?: () => void;
   altMetin: string;
 };
 
 export function HeroCard({
   gunFarki,
-  niyet,
   harcananKurus,
   limitKurus,
   bos,
   oncekiPasif,
   onOnceki,
   onSonraki,
-  onLimitPress,
   altMetin,
 }: Props) {
   const bugunMu = gunFarki === 0;
@@ -62,35 +47,6 @@ export function HeroCard({
       borderRadius={radius.hero}
       background={color.primarySoft}
       style={stil.kart}>
-      <View style={stil.ustSatir}>
-        <Chip ad={KIP_ETIKET[niyet]} selected dotColor={color.primary} accessibilityLabel={`Kip: ${KIP_ETIKET[niyet]}`} />
-        {limitKurus === null ? (
-          bugunMu ? (
-            <Chip
-              ad={t['kategori.limit_ekle']}
-              onPress={onLimitPress}
-              accessibilityLabel={t['kategori.limit_ekle']}
-            />
-          ) : (
-            <Txt role="label" tone={color.text2}>
-              {t['pano.limitsiz.deger']}
-            </Txt>
-          )
-        ) : bugunMu ? (
-          <Chip
-            ad={gunlukLimitEtiketi(paraYaz(limitKurus))}
-            onPress={onLimitPress}
-            accessibilityLabel={`${gunlukLimitEtiketi(paraYaz(limitKurus))}. Limitleri aç`}
-          />
-        ) : (
-          <Txt role="label" tone={color.text2}>
-            {gunlukOGunLimiti(paraYaz(limitKurus))}
-          </Txt>
-        )}
-      </View>
-
-      <View style={{ height: bugunMu ? rhythm.blockInCard : rhythm.section }} />
-
       <View style={stil.merkezSatiri}>
         <IconButton
           icon="chevron-left"
@@ -146,7 +102,14 @@ function HeroPlain({ harcananKurus, etiket }: { harcananKurus: number; etiket: s
   return (
     <View style={stil.duzMerkez}>
       <View style={stil.paraSatiri}>
-        <Txt role={uzun ? 'display' : 'hero'}>{sayi}</Txt>
+        <Txt
+          role={uzun ? 'display' : 'hero'}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.55}
+          style={stil.esnekSayi}>
+          {sayi}
+        </Txt>
         <View style={{ width: rhythm.sameObject }} />
         <Txt role={uzun ? 'amount' : 'display'}>{SIMGE}</Txt>
       </View>
@@ -160,12 +123,6 @@ function HeroPlain({ harcananKurus, etiket }: { harcananKurus: number; etiket: s
 const stil = StyleSheet.create({
   // §3.1 / §7.2 — kart iç boşluğu 16, istisnasız
   kart: { padding: rhythm.pad, alignItems: 'center' },
-  ustSatir: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
   merkezSatiri: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -173,6 +130,7 @@ const stil = StyleSheet.create({
     width: '100%',
   },
   duzMerkez: { alignItems: 'center' },
-  paraSatiri: { flexDirection: 'row', alignItems: 'baseline' },
+  paraSatiri: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', width: gauge.innerWidth },
+  esnekSayi: { flexShrink: 1, minWidth: 0 },
   ortaMetin: { textAlign: 'center' },
 });

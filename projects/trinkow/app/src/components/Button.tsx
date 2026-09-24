@@ -5,7 +5,7 @@ import { Txt } from '@/components/Txt';
 import { a11y, clay, color, radius, rhythm, size } from '@/theme/tokens';
 
 /** §7.1 — üç varyant. Ekran başına birincil buton en fazla 1. */
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 type Props = {
   label: string;
@@ -25,6 +25,7 @@ const yukseklik: Record<ButtonVariant, number> = {
   primary: size.buttonPrimary,
   secondary: size.buttonSecondary,
   ghost: size.buttonGhost,
+  danger: size.buttonPrimary,
 };
 
 export function Button({
@@ -71,12 +72,16 @@ export function Button({
           backgroundColor: pressed ? color.well : 'transparent',
           boxShadow: pressed ? clay.pressed : undefined,
         },
+        variant === 'danger' && {
+          backgroundColor: pasif ? color.disabledBg : pressed ? color.dangerInk : color.danger,
+          boxShadow: pasif ? clay.sunken : pressed ? clay.actionPressed : clay.action,
+        },
       ]}>
       {() => {
         const metinRengi =
           pasif
             ? color.text2
-            : variant === 'primary'
+            : variant === 'primary' || variant === 'danger'
               ? color.onPrimary
               : variant === 'secondary'
                 ? color.text

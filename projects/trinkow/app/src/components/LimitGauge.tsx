@@ -199,7 +199,13 @@ export function LimitGauge({ harcananKurus, limitKurus, etiket, bos = false, mer
 
       <View style={[StyleSheet.absoluteFill, stil.orta]} pointerEvents="none">
         <View style={stil.paraSatiri}>
-          <Txt role={sayiRolu} tone={sayiRengi}>
+          <Txt
+            role={sayiRolu}
+            tone={sayiRengi}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.55}
+            style={stil.esnekSayi}>
             {sayi}
           </Txt>
           <View style={{ width: rhythm.sameObject }} />
@@ -218,5 +224,11 @@ export function LimitGauge({ harcananKurus, limitKurus, etiket, bos = false, mer
 const stil = StyleSheet.create({
   orta: { alignItems: 'center', justifyContent: 'center' },
   // §7.5 — `₺` taban çizgisine hizalı, sayıyla aynı renk
-  paraSatiri: { flexDirection: 'row', alignItems: 'baseline' },
+  paraSatiri: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    width: gauge.innerWidth,
+  },
+  esnekSayi: { flexShrink: 1, minWidth: 0 },
 });

@@ -1,3 +1,26 @@
+# Trinkow Rev — 2026-09-23
+
+Kullanıcı planı açıkça uygulama için onayladı. Önceki değişiklikler korunacak.
+Aktif aşama: Revizyon uygulaması ve otomatik QA tamamlandı; yayın kapısı açılmadı.
+Kararlar: ayrı tasarruf/birikim; günlük kategori payları; takip serisi; maaş−sabit−hedef birikim takvim ayına bölünür; rutin tasarrufu açık doğrulama; e-posta öncelikli; yerel posta+SMTP; legal taslaklar; push/AI/prod kapsam dışı.
+
+| Görev | Sahip | Durum | Kabul |
+|---|---|---|---|
+| REV-01 tasarım delta/prototip | UI/UX | tamamlandı | marka + yeni durumlar |
+| REV-02 tasarım denetimi | design-reviewer/root | PASS | tasarruf/birikim ayrımı |
+| REV-03 bütçe/rutin/favori/tasarruf/seri API | Python finans | tamamlandı | sözleşme + Mongo testleri |
+| REV-04 gerçek auth/reset/rotation/mail | Python auth | tamamlandı | reset/rotation/outbox |
+| REV-05 native girdiler | frontend ortak | tamamlandı | özel keypad kaldırıldı |
+| REV-06 finans ekranları | frontend finans | tamamlandı | gerçek API akışları |
+| REV-07 hesap/ayarlar/legal | frontend hesap | tamamlandı | güvenli oturum + hesap işlemleri |
+| REV-08 QA entegrasyon | QA/root | otomasyon tamamlandı | 139 + 14 test, iki bundle |
+
+Dış bağımlılıklar: gerçek SMTP/gönderici; legal işletmeci bilgileri/hukuki kontrol. Yerel testleri durdurmaz, prod tamamlandı sayılmaz.
+Sonraki adım: prod kapsamı açılırsa SMTP/legal bilgileri ve gerçek cihaz matrisi tamamlanır.
+
+---
+Önceki kayıtlar (tarihsel):
+
 # Aşama Takibi
 
 Mevcut aşama: **4 ✅ KAPANDI → 5 (DevOps/Yayın) kapısında, Mustafa kararı bekleniyor**

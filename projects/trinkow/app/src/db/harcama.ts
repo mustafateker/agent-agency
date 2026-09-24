@@ -2,6 +2,7 @@ import type { SQLiteBindValue, SQLiteDatabase } from 'expo-sqlite';
 
 import { gunlukLimitKurusOku } from '@/db/profil';
 import {
+  istek,
   enEskiKayitGunuGetirIstegi,
   harcamaEkleIstegi,
   harcamaGetirIstegi,
@@ -49,6 +50,10 @@ export const ODEME_VARSAYILAN: OdemeTipi = 'kart';
 export type Harcama = {
   /** Mongo ObjectId (string) — BE-6b öncesi SQLite INTEGER idi, artık DEĞİL. */
   id: string;
+  rutinId?: string | null;
+  adet?: number;
+  sabitGiderKodu?: 'kira' | 'fatura' | 'ulasim' | 'kredi' | null;
+  istemciId?: string;
   /** kuruş integer */
   tutarKurus: number;
   kategori: string;
@@ -72,6 +77,7 @@ export type Harcama = {
 function cevir(y: HarcamaYaniti): Harcama {
   return {
     id: y.id,
+    rutinId: y.rutin_id, adet: y.adet, sabitGiderKodu: y.sabit_gider_kodu,
     tutarKurus: y.tutar_kurus,
     kategori: y.kategori,
     urunAdi: y.urun_adi,
@@ -246,6 +252,7 @@ export async function harcamaEkle(
   h: Omit<Harcama, 'id'>,
 ): Promise<string> {
   const yanit = await harcamaEkleIstegi({
+    rutin_id: h.rutinId, adet: h.adet, sabit_gider_kodu: h.sabitGiderKodu, istemci_id: h.istemciId,
     tutar_kurus: Math.round(h.tutarKurus),
     kategori: h.kategori,
     urun_adi: h.urunAdi,
@@ -373,6 +380,7 @@ export type SikAlinan = {
   kategori: string;
   tutarKurus: number;
   sonZaman: string;
+  sabitlenmis?: boolean;
 };
 
 /** Sunucudan taze çekilecek son kayıt sayısı — sık alınanlar/ürün arama için "yeterince geniş" bir pencere. */
@@ -395,17 +403,8 @@ async function urunGecmisiPenceresi(): Promise<HarcamaYaniti[]> {
  * tarafında bir "distinct" uç noktası gerektirir.
  */
 export async function sikAlinanlar(_db: SQLiteDatabase, limit = 3): Promise<SikAlinan[]> {
-  const kayitlar = await urunGecmisiPenceresi();
-  const enSonPerUrun = new Map<string, HarcamaYaniti>();
-  for (const k of kayitlar) {
-    if (!k.urun_adi) continue;
-    const mevcut = enSonPerUrun.get(k.urun_adi);
-    if (!mevcut || k.zaman > mevcut.zaman) enSonPerUrun.set(k.urun_adi, k);
-  }
-  return Array.from(enSonPerUrun.values())
-    .sort((a, b) => b.zaman.localeCompare(a.zaman))
-    .slice(0, limit)
-    .map((k) => ({ urunAdi: k.urun_adi as string, kategori: k.kategori, tutarKurus: k.tutar_kurus, sonZaman: k.zaman }));
+  const yanit = await istek<{kalemler: {ad:string;kategori:string;tutar_kurus:number;sabitlenmis:boolean}[]}>(`/butce/sik-kullanilanlar?bugun=${gunAnahtari(new Date())}`, {tokenGerekli:true});
+  return yanit.kalemler.slice(0, limit).map(k => ({urunAdi:k.ad,kategori:k.kategori,tutarKurus:k.tutar_kurus,sonZaman:'',sabitlenmis:k.sabitlenmis}));
 }
 
 /**

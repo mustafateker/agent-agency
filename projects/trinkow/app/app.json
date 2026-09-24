@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "scheme": "trinkow",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "icon": "./assets/images/icon.png",
     "ios": {
       "supportsTablet": false,
@@ -14,7 +13,6 @@
     },
     "android": {
       "package": "com.trinkow.app",
-      "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "backgroundColor": "#E6EFFE",
         "foregroundImage": "./assets/images/android-icon-foreground.png"

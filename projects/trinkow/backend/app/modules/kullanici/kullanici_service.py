@@ -16,6 +16,9 @@ yüzdesi, maaş günü) alır, kendi hesaplar ve hesapladığını döndürür.
 """
 from __future__ import annotations
 
+from app.modules.butce.butce_service import ButceService
+from app.modules.butce.butce_dto import ButceIstegi
+
 import math
 from datetime import date, datetime, timezone
 from typing import Any
@@ -137,6 +140,7 @@ class KullaniciService:
     """Kullanıcı profili ve plan işlemlerini yürütür."""
 
     def __init__(self, veritabani: AsyncIOMotorDatabase, harcama_servisi: HarcamaService | None = None) -> None:
+        self._butce = ButceService(veritabani)
         self._profiller = veritabani[KULLANICI_PROFILLERI_KOLEKSIYONU]
         # Madde 6 (K-085/BE-4b) — `gunluk_limiti_ayarla` limit geçmişine de
         # yazmak için `harcama` modülünün servis arayüzünü kullanır (Kural 1:
@@ -244,12 +248,16 @@ class KullaniciService:
         sosyal = sosyal_kurus_hesapla(profil.gelir_kurus, zorunlu, birikim)
         zorunlu_pay, sosyal_pay, birikim_pay = pay_yuzdeleri_hesapla(profil.gelir_kurus, zorunlu, sosyal, birikim)
         secilen_bugun = bugun or datetime.now(timezone.utc).date()
-        kalan_gun = kalan_gun_hesapla(secilen_bugun, profil.maas_gunu)
-        gunluk_limit = gunluk_limit_hesapla(sosyal, kalan_gun)
-
-        # QA-1b — `gunluk_limiti_ayarla` ile aynı gün kaynağı (K-064/1): plan
-        # kurulduğunda da `limit_gecmisi`ne yazılır, istemcinin `bugun`ü kullanılır.
-        await self._harcama.limit_gecmisi_yaz(kullanici_id, secilen_bugun.isoformat(), gunluk_limit)
+        gun = secilen_bugun.isoformat()
+        mevcut = (await self._butce.getir(kullanici_id, gun))['butce'] or {}
+        istek = ButceIstegi(gelir_kurus=profil.gelir_kurus,
+            sabit_giderler={'kira': profil.kira_aidat_kurus or 0, 'fatura': profil.faturalar_kurus or 0,
+                          'ulasim': profil.ulasim_yakit_kurus or 0, 'kredi': profil.kredi_taksit_kurus or 0},
+            hedef_birikim_kurus=birikim, borc_kurus=mevcut.get('borc_kurus'),
+            limit_modu=mevcut.get('limit_modu', 'otomatik'), manuel_limit_kurus=mevcut.get('manuel_limit_kurus'),
+            kategori_limitleri=mevcut.get('kategori_limitleri', {}))
+        yeni = await self._butce.yaz(kullanici_id, gun, istek)
+        gunluk_limit = yeni['butce']['gunluk_limit_kurus']
 
         return await self._profili_guncelle(
             kullanici_id,
@@ -291,7 +299,7 @@ class KullaniciService:
         seri hesabı geçmişe dönük yanlış çıkar (K-064/1).
         """
         secilen_bugun = (bugun or datetime.now(timezone.utc).date()).isoformat()
-        await self._harcama.limit_gecmisi_yaz(kullanici_id, secilen_bugun, gunluk_limit_kurus)
+        await self._butce.manuel_limit_yaz(kullanici_id, secilen_bugun, gunluk_limit_kurus)
         return await self._profili_guncelle(
             kullanici_id, {"gunluk_limit_kurus": gunluk_limit_kurus, "gunluk_limit_onerisi_kurus": None}
         )

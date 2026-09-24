@@ -27,6 +27,13 @@ class GirisIstegi(BaseModel):
     sifre: str = Field(min_length=1, max_length=128)
 
 
+class GelistirmeGirisIstegi(BaseModel):
+    """Geçici test girişi; e-posta biçimi ve şifre doğrulanmaz."""
+
+    email: str = Field(min_length=1, max_length=320)
+    sifre: str = Field(min_length=1, max_length=128)
+
+
 class TokenYenilemeIstegi(BaseModel):
     yenileme_tokeni: str
 
@@ -57,3 +64,16 @@ class KullaniciYaniti(BaseModel):
     email: EmailStr
     kimlik_saglayici: str
     olusturulma_tarihi: datetime
+
+
+class SifreSifirlamaIstegi(BaseModel):
+    email: EmailStr
+
+
+class SifreYenilemeIstegi(BaseModel):
+    token: str = Field(min_length=20, max_length=200)
+    sifre: str = Field(min_length=8, max_length=128)
+
+
+class MesajYaniti(BaseModel):
+    mesaj: str

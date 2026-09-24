@@ -10,10 +10,12 @@ yapılır: her uç nokta yalnız token'daki kullanıcının KENDİ verisine eri�
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, status, HTTPException
 
 from app.core.database import get_database
 from app.modules.auth.auth_controller import gecerli_kullanici_id
+from app.modules.butce.butce_service import ButceService
+from app.modules.kullanici.kullanici_service import KullaniciService
 from app.modules.harcama.harcama_dto import (
     EnEskiKayitGunuYaniti,
     GunDurumuIsaretleIstegi,
@@ -47,6 +49,7 @@ def _servis() -> HarcamaService:
 
 def _harcama_yanitina_cevir(belge: HarcamaBelgesi) -> HarcamaYaniti:
     return HarcamaYaniti(
+        rutin_id=belge.rutin_id, adet=belge.adet, sabit_gider_kodu=belge.sabit_gider_kodu,
         id=str(belge.id),
         tutar_kurus=belge.tutar_kurus,
         kategori=belge.kategori,
@@ -96,6 +99,8 @@ async def harcama_ekle(
         istek.taksit_id,
         istek.taksit_no,
         istek.taksit_toplam,
+        rutin_id=istek.rutin_id, adet=istek.adet, sabit_gider_kodu=istek.sabit_gider_kodu,
+        istemci_id=str(istek.istemci_id) if istek.istemci_id else None,
     )
     return _harcama_yanitina_cevir(belge)
 
@@ -205,7 +210,7 @@ async def kategori_limiti_yaz(
     servis: HarcamaService = Depends(_servis),
 ) -> KategoriLimitiYaniti:
     """E-17 — bir kategorinin limitini yazar/günceller."""
-    belge = await servis.kategori_limiti_yaz(kullanici_id, istek.kategori, istek.limit_kurus, istek.sira)
+    raise HTTPException(409, "Aylık kategori limitleri arşivlendi. Günlük payları /butce üzerinden düzenleyin.")
     return _kategori_limiti_yanitina_cevir(belge)
 
 
@@ -217,7 +222,7 @@ async def kategori_limiti_sil(
 ) -> None:
     """Madde 2 (K-085/BE-4b) — bir kategorinin limitini kaldırır (PUT'un
     `limit_kurus>0` zorunluluğu "sil"i temsil edemiyordu)."""
-    await servis.kategori_limiti_sil(kullanici_id, kategori)
+    raise HTTPException(409, "Aylık kategori limitleri arşivlendi. Günlük payları /butce üzerinden düzenleyin.")
 
 
 @router.post("/ayar/limit-gecmisi", response_model=LimitGecmisiYaniti, status_code=status.HTTP_201_CREATED)
@@ -270,3 +275,5 @@ async def tum_verileri_sil(
     (kullanıcı uygulamada kalır, sıfırdan başlar) — `DELETE /auth/hesap` (Madde 1)
     ile farkı budur. Aynı `kullanici_verisini_sil` metodunu yeniden kullanır."""
     await servis.kullanici_verisini_sil(kullanici_id)
+    await ButceService(get_database()).hesap_verilerini_sil(kullanici_id)
+    await KullaniciService(get_database()).kullanici_verisini_sil(kullanici_id)

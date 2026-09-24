@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { color, radius } from '@/theme/tokens';
@@ -27,7 +27,7 @@ export function BottomSheet({
       animationType="slide"
       statusBarTranslucent
       onRequestClose={onClose}>
-      <View style={stil.katman}>
+      <KeyboardAvoidingView style={stil.katman} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <Pressable
           style={[StyleSheet.absoluteFill, stil.scrim]}
           accessibilityRole="button"
@@ -38,9 +38,9 @@ export function BottomSheet({
           <View style={stil.tutamacSatiri}>
             <View style={stil.tutamac} />
           </View>
-          {children}
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 8 }}>{children}</ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

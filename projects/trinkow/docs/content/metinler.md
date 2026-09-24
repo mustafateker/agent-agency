@@ -68,8 +68,8 @@
 |---|---|
 | `app.ad` | Trinkow |
 | `sekme.gunluk` | Günlük |
-| `sekme.kayitlar` | Kayıtlar |
-| `sekme.ozet` | Özet |
+| `sekme.kayitlar` | Tasarruf |
+| `sekme.ozet` | Profil |
 | `eylem.kaydet` | Kaydet |
 | `eylem.kaydediliyor` | Kaydediliyor |
 | `eylem.vazgec` | Vazgeç |
@@ -1094,3 +1094,9 @@ prototip `06-harcama-detay.html` · `ekran-envanteri.md` E-13.
 > Öneri **gelir girildiyse** açılır; girilmediyse yüzey hiç görünmez ve
 > limitsiz kip devam eder. Formül: tokens §14.3.
 
+
+
+## 2026-09-22 — geçici geliştirme girişi ve kullanılamayan yöntemler
+- `giris.test_modu`: Test modu: herhangi bir ad ve şifreyle giriş yapabilirsin. Aynı ad, aynı test hesabını açar.
+- `giris.sifirlama_yok`: Şifre sıfırlama henüz kullanıma açık değil.
+- `giris.sosyal_yok`: Bu giriş yöntemi henüz kullanıma açık değil. E-posta alanıyla devam edebilirsin.

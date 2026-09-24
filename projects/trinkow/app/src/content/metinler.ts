@@ -7,8 +7,8 @@
 export const t = {
   // §1 genel ve navigasyon
   'sekme.gunluk': 'Günlük',
-  'sekme.kayitlar': 'Kayıtlar',
-  'sekme.ozet': 'Özet',
+  'sekme.kayitlar': 'Tasarruf',
+  'sekme.ozet': 'Profil',
   'eylem.kaydet': 'Kaydet',
   'eylem.vazgec': 'Vazgeç',
   'eylem.sil': 'Sil',
@@ -206,7 +206,7 @@ export const t = {
   'sil.siliniyor': 'Siliniyor',
 
   // §21.1 E-14 kayıtlar
-  'kayitlar.baslik': 'Kayıtlar',
+  'kayitlar.baslik': 'Tasarruf',
   'kayitlar.taksitleri_ac': 'Taksitli işlemleri aç',
   'kayitlar.onceki_ay': 'Önceki ay',
   'kayitlar.sonraki_ay': 'Sonraki ay',
@@ -522,6 +522,9 @@ export const t = {
   'alan.sifre.gorunur': 'Şifreyi göster',
   'alan.sifre.gizli': 'Şifreyi gizle',
   'giris.baslik': 'Oturum aç',
+  'giris.test_modu': 'Test modu: herhangi bir ad ve şifreyle giriş yapabilirsin. Aynı ad, aynı test hesabını açar.',
+  'giris.sifirlama_yok': 'Şifre sıfırlama henüz kullanıma açık değil.',
+  'giris.sosyal_yok': 'Bu giriş yöntemi henüz kullanıma açık değil. E-posta alanıyla devam edebilirsin.',
   'giris.eylem': 'Oturum aç',
   'giris.mesgul': 'Oturum açılıyor',
   'giris.unuttum': 'Şifremi unuttum',

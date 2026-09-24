@@ -15,6 +15,8 @@ from fastapi.responses import JSONResponse
 
 from app.core.database import get_database, indeksleri_kur
 from app.core.errors import UygulamaHatasi
+from app.modules.butce.butce_controller import router as butce_router
+from app.modules.tasarruf.tasarruf_controller import router as tasarruf_router
 from app.modules.auth.auth_controller import router as auth_router
 from app.modules.harcama.harcama_controller import router as harcama_router
 from app.modules.katalog.katalog_controller import router as katalog_router
@@ -33,6 +35,8 @@ async def yasam_dongusu(_uygulama: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="Trinkow Backend", lifespan=yasam_dongusu)
 app.include_router(auth_router)
+app.include_router(butce_router)
+app.include_router(tasarruf_router)
 app.include_router(kullanici_router)
 app.include_router(harcama_router)
 app.include_router(ozet_router)

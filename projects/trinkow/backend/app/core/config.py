@@ -25,6 +25,7 @@ class Ayarlar:
     jwt_algoritma: str
     erisim_token_dakika: int
     yenileme_token_gun: int
+    gelistirme_girisi: bool = False
 
 
 def _pozitif_int_oku(anahtar: str, varsayilan: int) -> int:
@@ -58,4 +59,5 @@ def get_settings() -> Ayarlar:
         jwt_algoritma=os.environ.get("JWT_ALGORITHM", "HS256"),
         erisim_token_dakika=_pozitif_int_oku("ACCESS_TOKEN_EXPIRE_MINUTES", 15),
         yenileme_token_gun=_pozitif_int_oku("REFRESH_TOKEN_EXPIRE_DAYS", 30),
+        gelistirme_girisi=os.environ.get("TRINKOW_DEV_LOGIN") == "1",
     )

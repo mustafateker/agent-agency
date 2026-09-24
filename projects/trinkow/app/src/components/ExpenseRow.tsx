@@ -1,3 +1,4 @@
+import { islemHatasiniGoster } from '@/lib/islemHatasi';
 import { useState } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -65,23 +66,28 @@ export function ExpenseRow({
   const seriKalan = Math.max((harcama.taksitToplam ?? 0) - (harcama.taksitNo ?? 0), 0);
 
   function tekrarla() {
-    void harcamaTekrarla(db, harcama);
+    void harcamaTekrarla(db, harcama).catch(islemHatasiniGoster);
   }
 
   function silBaslat() {
     if (harcama.taksitId) {
       setSilDialogAcik(true);
     } else {
-      void harcamaTekilSilVeGeriAlSun(db, harcama);
+      void harcamaTekilSilVeGeriAlSun(db, harcama).catch(islemHatasiniGoster);
     }
   }
 
   async function taksitSerisiniSil() {
     if (!harcama.taksitId) return;
     setSiliniyor(true);
-    await taksitSerisiSilVeToastGoster(db, harcama.taksitId);
-    setSiliniyor(false);
-    setSilDialogAcik(false);
+    try {
+      await taksitSerisiSilVeToastGoster(db, harcama.taksitId);
+      setSilDialogAcik(false);
+    } catch {
+      islemHatasiniGoster();
+    } finally {
+      setSiliniyor(false);
+    }
   }
 
   const satir = (

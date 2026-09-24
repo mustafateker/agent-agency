@@ -1,3 +1,8 @@
+> 2026-09-22: Yerel geliştirmeyi MongoDB + API + Expo ile birlikte başlatmak için
+> `cd ../app && npm run dev`. Rastgele test girişi yalnız bu yerel akışta açılır;
+> normal `/auth/giris` şifre doğrulamaya devam eder. Ayrıntı: [app/README.md](../app/README.md).
+> Bu ortamda Atlas TLS bağlantısı başarısız olduğundan testler yerel MongoDB'de doğrulandı.
+
 # Trinkow Backend
 
 Mobil uygulamadan (`projects/trinkow/app`) **tamamen ayrı** çalışan Python servisi.
@@ -27,7 +32,7 @@ backend/
 │   └── modules/
 │       ├── auth/
 │       │   ├── auth_controller.py   # HTTP katmanı: yol, doğrulama, yanıt kodu
-│       │   ├── auth_service.py      # iş mantığı — HTTP'den ve Mongo'dan habersiz
+│       │   ├── auth_service.py      # kayıt, oturum ve parola sıfırlama iş mantığı
 │       │   ├── auth_dto.py          # istek/yanıt şemaları (Pydantic)
 │       │   └── auth_model.py        # Mongo belge modeli
 │       └── <modul>/                 # aynı dört dosya
@@ -48,18 +53,18 @@ backend/
 6. `.env` commit edilmez; örnek değerler `.env.example`'da durur.
 
 ## Veritabanı
-MongoDB — **MongoDB Atlas** (bulut) kullanılıyor; bağlantı dizesi `.env`de
-hazır (bkz. `MONGODB_URI`), yerelde Mongo kurmaya gerek yok. İnceleme için
-Compass'a Atlas bağlantı dizesiyle bağlanılır. Prod barındırma kararı ayrı
-bir karardır (ücretli servis onay kapısından geçmiştir — bkz.
-`status/DECISIONS.md`).
+MongoDB kullanılır. `.env.example` güvenli yerel geliştirme bağlantısıyla gelir;
+Atlas kullanılacaksa `MONGODB_URI` yalnız yerel `.env` içinde değiştirilir. Testler
+uygulama veritabanından farklı ve `_test` ile biten bir veritabanı ister.
 
 ## Modül haritası (taslak — Mustafa ile tek tek kararlaştırılacak)
 | Modül | Ne yapar | Durum |
 |---|---|---|
-| `auth` | Kayıt, oturum açma, token yenileme, hesap silme | ✅ hazır (Google/Apple ayrı tur: BE-2d) |
+| `auth` | Kayıt, oturum, dönen yenileme token'ı, parola sıfırlama, hesap silme | ✅ hazır (Google/Apple ayrı tur) |
 | `kullanici` | Profil ve plan verisi (niyet, gelir, maaş günü, paylar) | ✅ hazır |
 | `harcama` | Harcama kayıtları, taksitler, kategori limitleri — **sunucuda** | ✅ hazır |
+| `butce` | Tarihli maaş/bütçe, günlük ve kategori payları, rutinler, favoriler | ✅ hazır |
+| `tasarruf` | Aylık tasarruf analizi, rutin fedakârlıkları ve gerçek birikim hareketleri | ✅ hazır |
 | `ozet` | Pano/özet/kategori dağılımı/seri — **kendi koleksiyonu yok**, `harcama`+`kullanici`yi okur | ✅ hazır |
 | `katalog` | Ürün kataloğunun sunucudan güncellenmesi | ✅ hazır |
 | `bildirim` | Hatırlatma/limit bildirimleri | acelesi yok, tasarlanacak |
@@ -71,19 +76,13 @@ bir karardır (ücretli servis onay kapısından geçmiştir — bkz.
 cd projects/trinkow/backend
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
+pip install -r requirements.txt
+# Paket geliştirme kurulumu tercih edilirse eşdeğeri: pip install -e ".[dev]"
 cp .env.example .env      # JWT_SECRET_KEY'i gerçek bir rastgele değerle değiştir
 ```
 
 ### 2. Veritabanı bağlantısı
-Proje **MongoDB Atlas** kullanıyor — `cp .env.example .env` sonrası
-`MONGODB_URI`yi Atlas bağlantı dizesiyle değiştirmen yeterli, ayrıca bir
-kurulum adımı YOK. Bağlantıyı doğrulamak için `mongosh "<Atlas URI'n>"` ya da
-Compass ile bağlan.
-
-> **Dipnot — yerel Mongo alternatifi:** Atlas'a erişimin yoksa (ör. tamamen
-> çevrimdışı geliştirme) yerelde de çalıştırabilirsin, `MONGODB_URI`yi
-> `mongodb://localhost:27017` yapman yeterli:
+Varsayılan yerel bağlantı için MongoDB'yi çalıştır:
 > ```bash
 > # Homebrew ile
 > brew tap mongodb/brew && brew install mongodb-community
@@ -92,6 +91,9 @@ Compass ile bağlan.
 > # ya da Docker ile (repoya Docker dosyası eklenmedi, yalnız yerel bir kısayol)
 > docker run -d --name trinkow-mongo -p 27017:27017 mongo:7
 > ```
+
+Atlas kullanılacaksa `MONGODB_URI`yi Atlas bağlantı dizesiyle değiştirip Compass
+veya `mongosh` ile bağlantıyı doğrula.
 
 ### 3. Uygulamayı çalıştır
 ```bash
@@ -109,7 +111,7 @@ pytest
 ```
 Farklı bir test veritabanı adı/URI'si istersen testten önce ortam değişkeniyle geç:
 ```bash
-MONGODB_DB_NAME=baska_test_db pytest
+TEST_DB_NAME=baska_test pytest
 ```
 
 ## Uç noktalar (`auth` modülü)
@@ -117,17 +119,26 @@ MONGODB_DB_NAME=baska_test_db pytest
 |---|---|---|
 | `/auth/kayit` | POST | E-posta/şifre ile hesap açar, doğrudan token çifti döner (201) |
 | `/auth/giris` | POST | E-posta/şifre doğrularsa token çifti döner |
-| `/auth/token/yenile` | POST | Geçerli yenileme token'ı ile yeni erişim token'ı üretir |
+| `/auth/token/yenile` | POST | Geçerli token'ı tüketip dönen yeni erişim/yenileme token çifti üretir |
 | `/auth/cikis` | POST | Yenileme token'ını iptal eder (204) |
 | `/auth/ben` | GET | `Authorization: Bearer <erişim token>` ile mevcut kullanıcıyı döner |
+| `/auth/sifre/sifirlama-iste` | POST | Hesap varlığını açıklamadan süreli sıfırlama bağlantısı ister |
+| `/auth/sifre/sifirla` | POST | Tek kullanımlık token ile parolayı değiştirip mevcut oturumları geçersiz kılar |
 | `/auth/hesap` | DELETE | Hesabı VE kullanıcıya ait TÜM veriyi (profil, harcama, kategori limiti, gün durumu, limit geçmişi, ürün öğrenme) geri alınamaz biçimde siler (204, App Store zorunluluğu — K-085 Madde 1) |
 
 Hata yanıtları tek biçimdedir: `{"hata_kodu": "...", "mesaj": "..."}` (bkz. `app/core/errors.py`).
 Giriş hatasında hangi alanın (e-posta/şifre) yanlış olduğu **bilerek belirtilmez**.
 
+Parola sıfırlamada `MAIL_MODE=outbox` yerel test postalarını
+`MAIL_OUTBOX_DIR` dizinine yazar. Canlı gönderim için `MAIL_MODE=smtp` ile
+`SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM` ve gerekiyorsa `SMTP_USER`/
+`SMTP_PASSWORD` tanımlanır. Bağlantı `PASSWORD_RESET_URL` kökünü kullanır;
+token tek kullanımlıdır ve 30 dakika geçerlidir.
+
 **Hesap silme sırası (K-085 Madde 1):** Mongo'da tek-belge işlemi (transaction)
 yok, bu yüzden `AuthService.hesabi_sil` önce diğer modüllerin verisini
-(`HarcamaService.kullanici_verisini_sil` · `KullaniciService.kullanici_verisini_sil`
+(`HarcamaService.kullanici_verisini_sil` · `KullaniciService.kullanici_verisini_sil` ·
+`ButceService.kullanici_verisini_sil` · `TasarrufService.kullanici_verisini_sil`
 — servis arayüzü üzerinden, Kural 1 ihlal edilmez), **en son** kimlik kaydını
 (`kullanicilar`) siler. Yarıda kesilirse kullanıcı hâlâ giriş yapıp silmeyi
 TEKRAR deneyebilir; alt adımlar idempotenttir.
@@ -164,7 +175,7 @@ kaydına erişimin yapısal bir yolu yoktur (bulunamayan/başkasına ait kayıt 
 
 | Yol | Yöntem | Ne yapar |
 |---|---|---|
-| `/harcama/` | POST | Tek bir harcama satırı ekler (201); ürün adı verilmişse ürün→kategori öğrenmesini de günceller |
+| `/harcama/` | POST | Tek bir harcama satırı ekler (201); `istemci_id` çift dokunmayı idempotent yapar, rutin/adet ve sabit gider bağlantısı taşıyabilir |
 | `/harcama/` | GET | `gun` / `baslangic_gun`+`bitis_gun` / `kategori` süzgeciyle **sayfalanmış** listeleme (`sayfa`, `sayfa_boyutu` ≤ 200) |
 | `/harcama/{id}` | GET | Tek kayıt okur |
 | `/harcama/{id}` | PATCH | Yalnız gönderilen alanları günceller; taksitli kayıtta `tutar_kurus` gönderilirse 422 |
@@ -179,7 +190,7 @@ kaydına erişimin yapısal bir yolu yoktur (bulunamayan/başkasına ait kayıt 
 | `/harcama/ayar/urun-kategori-ogrenme` | GET | Tüm öğrenilmiş ürün→kategori eşlemelerini döner |
 | `/harcama/ayar/urun-kategori-ogrenme` | PUT | Bir ürün adı için kategoriyi elle öğretir/düzeltir |
 | `/harcama/ayar/en-eski-kayit-gunu` | GET | K-085 Madde 4: kullanıcının ilk harcama kaydının günü (`gun: string \| null`) — istemcinin seri sınırı hesabı için |
-| `/harcama/ayar/tum-veriler` | DELETE | K-085 Madde 3: Ayarlar'daki "Tüm verileri sil" — harcama/kategori limiti/gün durumu/limit geçmişi/ürün öğrenmeyi siler (204); **hesabı ve profili SİLMEZ** (bkz. `/auth/hesap` ile farkı) |
+| `/harcama/ayar/tum-veriler` | DELETE | Ayarlar'daki "Tüm verileri sil" — kimliği korur; profil, harcama, bütçe, rutin ve tasarruf verilerini temizleyip onboarding'i yeniden başlatır (204) |
 
 Para her yerde **kuruş cinsinden integer**. Taksit alanları (`taksit_id`/`taksit_no`/
 `taksit_toplam`) ya birlikte gelir ya hiç gelmez; bir taksit serisi oluşturmak için
@@ -198,6 +209,40 @@ metodu olarak çağırır; `HarcamaService.en_eski_kayit_gunu` ise BE-4b/Madde 4
   kadarki TÜM limit değişiklik geçmişini ARTAN tarihle TEK sorguda döner (Madde 3);
   `ozet` bunu bir kez çekip `efektif_limit_cozucu_olustur` ile bellekte gün gün çözer —
   300+ günlük seri hesabında O(gün) yerine O(1) Mongo sorgusu.
+
+## Uç noktalar (`butce` modülü)
+Hepsi oturum gerektirir. `bugun` istemcinin yerel günüdür; geçmiş okumalarda
+opsiyonel `gun`, o tarihte yürürlükte olan sürümü seçer. Para kuruş cinsindedir.
+
+| Yol | Yöntem | Ne yapar |
+|---|---|---|
+| `/butce` | GET | Tarihte yürürlükte olan gelir, sabit gider, hedef birikim, günlük limit ve kategori paylarını döner |
+| `/butce` | PUT | Bugünden ileri geçerli bütçe sürümünü yazar; aynı günkü sürümü günceller |
+| `/butce/rutinler` | GET | Tarihli rutin harcama alışkanlıklarını döner |
+| `/butce/rutinler/{id}` | PUT | Rutin adını, kategorisini, günlük adetini ve birim fiyatını tarihlendirir |
+| `/butce/rutinler/{id}/vazgecme` | PUT | Gün+rutin bazında idempotent “Bugün almadım” adedini yazar |
+| `/butce/sik-kullanilanlar` | GET | Favorileri ve sunucunun kategori+ürün bazlı sıklık sıralamasını döner |
+| `/butce/sik-kullanilanlar/{id}` | PUT/DELETE | Favoriyi oluşturur, günceller veya siler |
+
+Otomatik günlük limit, gelirden sabit giderler ve hedef birikim çıkarıldıktan
+sonra takvim günlerine deterministik kuruş dağıtımıyla hesaplanır. Manuel limit
+gelir değişikliğinde korunur. Kategori paylarının toplamı günlük limiti aşamaz;
+dağıtılmayan tutar serbest bütçedir.
+
+## Uç noktalar (`tasarruf` modülü)
+Hepsi oturum gerektirir. Hesaplanan tasarruf ile gerçekten kenara ayrılan para
+aynı değer değildir ve ayrı gösterilir.
+
+| Yol | Yöntem | Ne yapar |
+|---|---|---|
+| `/tasarruf/ay` | GET | `ay=YYYY-MM` ve `bugun` için harcanabilir bütçe, harcama, tamamlanan gün tasarrufu, rutin ve kategori kırılımlarını döner |
+| `/tasarruf/birikimler` | GET | İsteğe bağlı ay filtresiyle gerçek birikim hareketlerini ve net toplamı döner |
+| `/tasarruf/birikimler/{id}` | PUT | Pozitif ekleme veya negatif çekme hareketini idempotent kimlikle yazar |
+| `/tasarruf/birikimler/{id}` | DELETE | Gerçek birikim hareketini siler |
+
+İçinde bulunulan ayın gelecekteki bütçesi tasarruf sayılmaz. Rutin fedakârlığı
+ayrıca gösterilir fakat bütçe farkına ikinci kez eklenmez. Borç yüzdesi yalnız
+motivasyon bilgisidir; ödeme hareketi oluşturmaz.
 
 ## Uç noktalar (`ozet` modülü)
 Hepsi oturum gerektirir. Bu modülün **kendi Mongo koleksiyonu YOK** (K-076/BE-5) —

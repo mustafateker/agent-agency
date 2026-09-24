@@ -26,11 +26,17 @@ from dotenv import load_dotenv
 # localhost'a gitmeye çalışır. Bu hata bir kez yaşandı (K-083).
 load_dotenv()
 
+# Temizleyici asla uygulamanın kullandığı veritabanına yönlendirilemez.
+_uygulama_db = os.environ.get("MONGODB_DB_NAME", "trinkow")
+_test_db = os.environ.get("TEST_DB_NAME", "trinkow_test")
+if not _test_db.endswith("_test") or _test_db == _uygulama_db:
+    raise RuntimeError("TEST_DB_NAME uygulama veritabanından farklı olmalı ve _test ile bitmeli.")
+
 os.environ.setdefault("JWT_SECRET_KEY", "test-suit-icin-gizli-anahtar-asla-prod-degil")
 os.environ.setdefault("MONGODB_URI", "mongodb://localhost:27017")
 # Test veritabanı adı HER ZAMAN ayrıdır: `.env`'deki gerçek veritabanı adı
 # ne olursa olsun testler `trinkow_test` üzerinde çalışır, gerçek veriye dokunmaz.
-os.environ["MONGODB_DB_NAME"] = os.environ.get("TEST_DB_NAME", "trinkow_test")
+os.environ["MONGODB_DB_NAME"] = _test_db
 
 import pytest_asyncio  # noqa: E402  (env değişkenlerinden sonra içe aktarılmalı)
 
@@ -38,6 +44,8 @@ from app.core.database import _istemci, get_database, indeksleri_kur  # noqa: E4
 
 
 _TEMIZLENECEK_KOLEKSIYONLAR = (
+    "butce_surumleri", "butce_gocleri", "rutin_surumleri", "rutin_vazgecmeleri", "favori_kalemler", "birikim_defterleri",
+    "auth_hiz_siniri",
     "kullanicilar",
     "yenileme_tokenlari",
     "kullanici_profilleri",
@@ -62,6 +70,10 @@ async def temiz_veritabani() -> None:
     veritabani = get_database()
     for koleksiyon in _TEMIZLENECEK_KOLEKSIYONLAR:
         await veritabani[koleksiyon].delete_many({})
-    yield
-    for koleksiyon in _TEMIZLENECEK_KOLEKSIYONLAR:
-        await veritabani[koleksiyon].delete_many({})
+    try:
+        yield
+    finally:
+        for koleksiyon in _TEMIZLENECEK_KOLEKSIYONLAR:
+            await veritabani[koleksiyon].delete_many({})
+        _istemci().close()
+        _istemci.cache_clear()

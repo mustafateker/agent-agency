@@ -60,7 +60,7 @@ export function ProfilingHost() {
       setSoruId(null);
       return;
     }
-    void aktifProfillemeSorusu(db).then(setSoruId);
+    void aktifProfillemeSorusu(db).then(setSoruId).catch(() => setSoruId(null));
   }, [db, pathname]);
 
   useEffect(() => {
@@ -72,8 +72,12 @@ export function ProfilingHost() {
   if (!soruId) return null;
 
   async function reddet(id: ProfillemeSoruId) {
-    await profillemeReddet(db, id);
-    setSoruId(null);
+    try {
+      await profillemeReddet(db, id);
+      setSoruId(null);
+    } catch {
+      toastGoster({ tur: 'warning', metin: t['hata.okuma.govde'] });
+    }
   }
 
   if (soruId === 'yatirim') {
@@ -155,7 +159,7 @@ export function ProfilingHost() {
 function SecimKart({ etiket, ilk, onPress }: { etiket: string; ilk?: boolean; onPress: () => void }) {
   return (
     <View style={ilk ? undefined : { marginTop: rhythm.group }}>
-      <ClayPressable onPress={onPress} accessibilityLabel={etiket} borderRadius={radius.tile} style={stil.secimSatiri}>
+      <ClayPressable onPress={() => { void Promise.resolve().then(onPress).catch(() => toastGoster({ tur: 'warning', metin: t['hata.okuma.govde'] })); }} accessibilityLabel={etiket} borderRadius={radius.tile} style={stil.secimSatiri}>
         <Txt role="bodyStrong">{etiket}</Txt>
       </ClayPressable>
     </View>

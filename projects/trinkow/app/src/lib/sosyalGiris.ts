@@ -9,6 +9,8 @@
  * Android'de yalnız Google — bkz. `sosyalSaglayicilar()`.
  */
 import { Platform } from 'react-native';
+import { t } from '@/content/metinler';
+import { toastGoster } from '@/lib/toastBus';
 
 export type SosyalSaglayici = 'apple' | 'google';
 
@@ -17,9 +19,9 @@ export function sosyalSaglayicilar(): SosyalSaglayici[] {
 }
 
 export async function appleIleDevamEt(): Promise<void> {
-  // TODO(BE-2d): expo-apple-authentication onaylanınca bağlanacak.
+  toastGoster({ tur: 'info', metin: t['giris.sosyal_yok'] });
 }
 
 export async function googleIleDevamEt(): Promise<void> {
-  // TODO(BE-2d): @react-native-google-signin/google-signin onaylanınca bağlanacak.
+  toastGoster({ tur: 'info', metin: t['giris.sosyal_yok'] });
 }

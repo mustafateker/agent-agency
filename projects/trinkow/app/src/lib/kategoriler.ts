@@ -71,6 +71,13 @@ export const TUM_KATEGORILER: KategoriKodu[] = [
   'diger',
 ];
 
+/** Günlük hızlı ekleme alanı; planlı/sabit ödemeler kendi akışlarında kalır. */
+export const GUNLUK_HARCAMA_KATEGORILERI: KategoriKodu[] = TUM_KATEGORILER.filter(
+  (kod) => !(['abonelik', 'fatura', 'kiraev'] as KategoriKodu[]).includes(kod),
+);
+
+export const SABIT_ODEME_KATEGORILERI: KategoriKodu[] = ['abonelik', 'fatura', 'kiraev'];
+
 export function kategori(kod: string): Kategori {
   return KATEGORILER[kod as KategoriKodu] ?? KATEGORILER.market;
 }

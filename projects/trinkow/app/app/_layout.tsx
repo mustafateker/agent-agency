@@ -6,7 +6,7 @@ import { Montserrat_600SemiBold } from '@expo-google-fonts/montserrat/600SemiBol
 import { Montserrat_700Bold } from '@expo-google-fonts/montserrat/700Bold';
 import { Poppins_600SemiBold } from '@expo-google-fonts/poppins/600SemiBold';
 import { useFonts } from 'expo-font';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useRootNavigationState } from 'expo-router';
 import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -21,84 +21,113 @@ import { gunSiniriOku, kurulumGunuBaslat } from '@/db/ayarTercihleri';
 import { katalogTazele } from '@/db/katalog';
 import { ProfilingHost } from '@/components/ProfilingHost';
 import { ToastHost } from '@/components/ToastHost';
-import { benKimim } from '@/lib/api';
+import { ApiHatasi, benKimim } from '@/lib/api';
 import { oturumDegisimineAbone, oturumOku, oturumSil } from '@/lib/oturumDeposu';
 import { gunSiniriSaatiniAyarla } from '@/lib/tarih';
-import { girisEkraninaDon } from '@/lib/yonlendirme';
+import { ErrorState } from '@/components/ErrorState';
+import { Spinner } from '@/components/Spinner';
+import { Button } from '@/components/Button';
 import { color } from '@/theme/tokens';
 
-/**
- * İlk açılış yönlendirmesi — TEK yer burasıdır (D-2d-3a / D-2c-3 ile
- * genişletildi). Sıra (K-080 — hesap ZORUNLU): açılış → (oturum yoksa)
- * `/giris` → (onboarding tamamlanmadıysa) `/onboarding` → uygulama.
- *
- * Oturum durumu değiştiğinde (giriş/kayıt başarılı, çıkış, hesap silme,
- * `api.ts`'in token yenileme başarısızlığı) `oturumDeposu`'nun mevcut
- * yayın/abone mekanizması (`oturumDegisimineAbone`) bu koruyucuyu yeniden
- * tetikler — ikinci bir yönlendirme mekanizması KURULMADI, tek yer burası.
- */
-function OnboardingYonlendirici() {
+function IlkYonlendirme({ onboarding }: { onboarding: boolean }) {
+  const gezinme = useRootNavigationState();
+  const [tamam, setTamam] = useState(false);
+  useEffect(() => {
+    if (!gezinme?.key || tamam) return;
+    setTamam(true);
+    if (onboarding) router.replace('/onboarding');
+  }, [gezinme?.key, onboarding, tamam]);
+  return null;
+}
+
+/** Ekranlar oturum ve gün sınırı okunmadan API çağırmaya başlamaz. */
+function OturumGezgini() {
   const db = useSQLiteContext();
   const [tetik, setTetik] = useState(0);
+  const [durum, setDurum] = useState<'yukleniyor' | 'hata' | 'kapali' | 'acik'>('yukleniyor');
+  const [ilkEkran, setIlkEkran] = useState('index');
 
-  useEffect(() => oturumDegisimineAbone(() => setTetik((n) => n + 1)), []);
+  useEffect(() => oturumDegisimineAbone(() => {
+    setDurum('yukleniyor');
+    setTetik((n) => n + 1);
+  }), []);
 
   useEffect(() => {
     let iptal = false;
-    (async () => {
-      const kayit = await oturumOku();
-      if (!kayit) {
-        if (!iptal) girisEkraninaDon();
-        return;
-      }
+    async function baslat() {
       try {
-        await benKimim(); // 401 ise api.ts zaten tek seferlik yenilemeyi dener
-      } catch {
-        if (!iptal) {
-          await oturumSil(); // pub/sub bu efekti yeniden tetikler
-          girisEkraninaDon();
+        const kayit = await oturumOku();
+        if (iptal) return;
+        if (!kayit) {
+          gunSiniriSaatiniAyarla(0);
+          setDurum('kapali');
+          return;
         }
-        return;
+        await benKimim();
+        const [saat, tamam] = await Promise.all([gunSiniriOku(db), onboardingTamamlandiMi(db)]);
+        if (iptal) return;
+        gunSiniriSaatiniAyarla(saat);
+        await kurulumGunuBaslat(db);
+        if (iptal) return;
+        setIlkEkran(tamam ? 'index' : 'onboarding');
+        setDurum('acik');
+        void katalogTazele(db).catch(() => {});
+      } catch (hata) {
+        if (iptal) return;
+        if (hata instanceof ApiHatasi && [401, 403, 404].includes(hata.durum)) {
+          await oturumSil();
+        } else {
+          // Geçici ağ hatasında token'ı koru ve yeniden deneme sun.
+          setDurum('hata');
+        }
       }
-      // K-084/2 — kurulum günü write-once: sunucuda zaten varsa sessizce yok
-      // sayılır, bu yüzden her açılışta çağrılabilir (bkz. `ayarTercihleri.ts`).
-      kurulumGunuBaslat(db).catch(() => {
-        // Ağ hatası — bir sonraki açılışta tekrar denenir, akışı bloklamaz.
-      });
-      // BE-6c Madde 4 — katalog ETag ile tazelenir; gömülü 80 kalem varsayılan kalır.
-      katalogTazele(db).catch(() => {
-        // bkz. `db/katalog.ts` — sessiz kalınır.
-      });
-      try {
-        const tamam = await onboardingTamamlandiMi(db);
-        if (!iptal && !tamam) router.replace('/onboarding');
-      } catch {
-        // Okuma başarısızsa onboarding'i zorlamak yerine mevcut ekranda kal.
-      }
-    })();
-    return () => {
-      iptal = true;
-    };
+    }
+    void baslat();
+    return () => { iptal = true; };
   }, [db, tetik]);
 
-  // D-2c-1b — F-15 gün sınırı tercihini `gunAnahtari`nin senkron önbelleğine
-  // yükler; TEK yer (app açılışı). Ayarlar ekranında değişince
-  // `gunSiniriKaydet` zaten anında günceller (bkz. `db/ayarTercihleri.ts`).
-  useEffect(() => {
-    let iptal = false;
-    gunSiniriOku(db)
-      .then((saat) => {
-        if (!iptal) gunSiniriSaatiniAyarla(saat);
-      })
-      .catch(() => {
-        // Okunamazsa varsayılan (gece yarısı) kalır.
-      });
-    return () => {
-      iptal = true;
-    };
-  }, [db]);
+  if (durum === 'yukleniyor' || durum === 'hata') {
+    return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 }}>
+      {durum === 'hata' ? <><ErrorState onRetry={() => { setDurum('yukleniyor'); setTetik((n) => n + 1); }} /><Button label="Çıkış yap" variant="ghost" onPress={() => void oturumSil()} /></> : <Spinner />}
+    </View>;
+  }
 
-  return null;
+  return <>
+    <Stack initialRouteName={durum === 'acik' ? ilkEkran : 'giris'} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.bg } }}>
+      <Stack.Screen name="legal" />
+      <Stack.Screen name="yardim" />
+      <Stack.Screen name="sifremi-unuttum" />
+      <Stack.Screen name="sifre-sifirla" />
+      <Stack.Protected guard={durum === 'kapali'}>
+        <Stack.Screen name="giris" />
+        <Stack.Screen name="kayit" />
+      </Stack.Protected>
+      <Stack.Protected guard={durum === 'acik'}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="tanisma" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="plan" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="harcama-ekle" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="harcama/[id]" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="ayarlar" />
+        <Stack.Screen name="hesap-sil" />
+        <Stack.Screen name="tasarruflar" />
+        <Stack.Screen name="profil" />
+        <Stack.Screen name="rutinler" />
+        <Stack.Screen name="favoriler" />
+        <Stack.Screen name="butce" />
+        <Stack.Screen name="kategori/[kod]" />
+        <Stack.Screen name="ozet" />
+        <Stack.Screen name="limitler" />
+        <Stack.Screen name="kayitlar" />
+        <Stack.Screen name="seri" />
+        <Stack.Screen name="taksitler" />
+        <Stack.Screen name="gun-sec" />
+      </Stack.Protected>
+    </Stack>
+    {durum === 'acik' ? <IlkYonlendirme onboarding={ilkEkran === 'onboarding'} /> : null}
+    {durum === 'acik' ? <ProfilingHost /> : null}
+  </>;
 }
 
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -126,15 +155,7 @@ export default function RootLayout() {
         <StatusBar style="dark" />
         <View style={{ flex: 1, backgroundColor: color.bg }}>
           <SQLiteProvider databaseName={DB_ADI} onInit={semayiKur}>
-            <OnboardingYonlendirici />
-            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.bg } }}>
-              <Stack.Screen name="harcama-ekle" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="harcama/[id]" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
-              <Stack.Screen name="tanisma" options={{ gestureEnabled: false }} />
-              <Stack.Screen name="plan" options={{ gestureEnabled: false }} />
-            </Stack>
-            <ProfilingHost />
+            <OturumGezgini />
             <ToastHost />
           </SQLiteProvider>
         </View>

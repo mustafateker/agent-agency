@@ -1,3 +1,22 @@
+# Trinkow Rev — 2026-09-23
+
+Kullanıcı planı açıkça uygulama için onayladı. Önceki değişiklikler korunacak.
+Aktif aşama: Revizyon kodu ve otomatik QA tamamlandı.
+Kararlar: ayrı tasarruf/birikim; günlük kategori payları; takip serisi; maaş−sabit−hedef birikim takvim ayına bölünür; rutin tasarrufu açık doğrulama; e-posta öncelikli; yerel posta+SMTP; legal taslaklar; push/AI/prod kapsam dışı.
+
+| Görev | Sahip | Durum | Kabul |
+|---|---|---|---|
+| REV-01…07 | ilgili ajanlar + root | tamamlandı | tasarım, backend ve mobil akışlar kodlandı |
+| REV-08 otomatik QA | QA/root | tamamlandı | 139 backend, 14 mobil, doctor, iOS/Android bundle |
+| REV-09 gerçek cihaz kabul matrisi | QA | yayın öncesi | iOS/Android odak, klavye, küçük ekran, sheet |
+| REV-10 SMTP ve legal yayına hazırlık | dış bağımlılık | bekliyor | gönderici bilgisi + işletmeci/hukuk metinleri |
+
+Dış bağımlılıklar: gerçek SMTP/gönderici; legal işletmeci bilgileri/hukuki kontrol. Yerel testleri durdurmaz, prod tamamlandı sayılmaz.
+Sonraki adım: yayın kapsamı açıldığında REV-09 ve REV-10.
+
+---
+Önceki kayıtlar (tarihsel):
+
 # Backlog
 
 ## PROJE: Harcama Takip Uygulaması ("kalori sayacı" mantığı)

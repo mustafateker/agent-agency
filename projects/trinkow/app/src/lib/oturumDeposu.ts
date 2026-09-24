@@ -1,119 +1,89 @@
-/**
- * D-2c-2 — oturum deposu. Erişim + yenileme token'ı ve kullanıcı kimliği
- * TEK YERDEN okunur/yazılır; `src/lib/api.ts` ve ekranlar bu modülün
- * DIŞINDA hiçbir yerde token okumaz/yazmaz.
- *
- * ⚠️ Güvenli saklama (`expo-secure-store`) YENİ BAĞIMLILIK olduğu için
- * onay bekliyor (bkz. görev brifi). Bu yüzden bu tur `expo-sqlite` ile
- * ayrı, izole bir `oturum` tablosuna yazar (uygulamanın harcama
- * veritabanıyla aynı dosya, `db/semasi.ts`'e DOKUNULMADI — bilerek: bu
- * tablo `expo-secure-store` onaylanınca buradan tamamen silinip modülün
- * İÇİ değişecek, `db/semasi.ts`'in sürüm geçmişini kirletmesin).
- * Çağıranlar (`api.ts`, `hesapEylemleri.ts`, ekranlar) yalnız bu dosyanın
- * dışa açtığı fonksiyonları çağırır — o gün tek dosya değişir, çağıranlar
- * DEĞİŞMEZ.
- *
- * NOT (güvenlik sınırı, bilerek kabul edildi): SQLite şifrelenmemiştir;
- * bu yalnız `expo-secure-store` onaylanana kadarki GEÇİCİ bir çözümdür.
- */
-import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
-
-import { DB_ADI } from '@/db';
+/** Kalıcı oturum Keychain/Keystore'da, hatırlanmayan oturum yalnız bellekte. */
+import * as SecureStore from 'expo-secure-store';
+import { openDatabaseAsync } from 'expo-sqlite';
+import { Platform } from 'react-native';
+import { DB_ADI } from '@/db/sabitler';
 
 export type Oturum = {
   erisimTokeni: string;
   yenilemeTokeni: string;
   kullaniciId: string;
   email: string;
-  /** `google` · `apple` · `sifre` — bkz. backend `kimlik_saglayici`. */
   kimlikSaglayici: string;
+  oturumKimligi?: string;
 };
+const ANAHTAR = 'trinkow.oturum.v2';
+let bellek: Oturum | null = null;
+let kalici = false;
+let hazir: Promise<void> | null = null;
+let sira: Promise<unknown> = Promise.resolve();
+const kimlik = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-let dbSozu: Promise<SQLiteDatabase> | null = null;
+async function baslat(): Promise<void> {
+  if (!hazir) hazir = (async () => {
+    const ham = Platform.OS === 'web' ? null : await SecureStore.getItemAsync(ANAHTAR);
+    if (ham) {
+      try { bellek = JSON.parse(ham) as Oturum; kalici = true; }
+      catch { await SecureStore.deleteItemAsync(ANAHTAR); }
+    }
+    // Eski açık SQLite token'larını bir kez taşı ve güvenli yazım sonrası sil.
+    const db = await openDatabaseAsync(DB_ADI);
+    const tablo = await db.getFirstAsync<{ name: string }>("SELECT name FROM sqlite_master WHERE type='table' AND name='oturum'");
+    if (tablo) {
+      const eski = await db.getFirstAsync<{ erisim_tokeni: string; yenileme_tokeni: string; kullanici_id: string; email: string; kimlik_saglayici: string }>('SELECT * FROM oturum WHERE id = 1');
+      if (!bellek && eski) {
+        bellek = { erisimTokeni: eski.erisim_tokeni, yenilemeTokeni: eski.yenileme_tokeni, kullaniciId: eski.kullanici_id, email: eski.email, kimlikSaglayici: eski.kimlik_saglayici, oturumKimligi: kimlik() };
+        kalici = Platform.OS !== 'web';
+        if (kalici) await SecureStore.setItemAsync(ANAHTAR, JSON.stringify(bellek));
+      }
+      await db.execAsync('PRAGMA secure_delete = ON; DELETE FROM oturum;');
+    }
+  })().catch((hata) => { hazir = null; throw hata; });
+  await hazir;
+}
 
-function db(): Promise<SQLiteDatabase> {
-  if (!dbSozu) {
-    dbSozu = openDatabaseAsync(DB_ADI).then(async (d) => {
-      await d.execAsync(
-        `CREATE TABLE IF NOT EXISTS oturum (
-          id                INTEGER PRIMARY KEY CHECK (id = 1),
-          erisim_tokeni     TEXT NOT NULL,
-          yenileme_tokeni   TEXT NOT NULL,
-          kullanici_id      TEXT NOT NULL,
-          email             TEXT NOT NULL,
-          kimlik_saglayici  TEXT NOT NULL
-        )`,
-      );
-      return d;
-    });
+function sirala<T>(islem: () => Promise<T>): Promise<T> {
+  const sonuc = sira.then(async () => { await baslat(); return islem(); });
+  sira = sonuc.catch(() => {});
+  return sonuc;
+}
+async function sakla(oturum: Oturum | null, hatirla: boolean): Promise<void> {
+  if (Platform.OS !== 'web') {
+    if (oturum && hatirla) await SecureStore.setItemAsync(ANAHTAR, JSON.stringify(oturum));
+    else await SecureStore.deleteItemAsync(ANAHTAR);
   }
-  return dbSozu;
+  bellek = oturum;
+  kalici = hatirla && Platform.OS !== 'web';
 }
-
-type Satir = {
-  erisim_tokeni: string;
-  yenileme_tokeni: string;
-  kullanici_id: string;
-  email: string;
-  kimlik_saglayici: string;
-};
-
 export async function oturumOku(): Promise<Oturum | null> {
-  const d = await db();
-  const satir = await d.getFirstAsync<Satir>('SELECT * FROM oturum WHERE id = 1');
-  if (!satir) return null;
-  return {
-    erisimTokeni: satir.erisim_tokeni,
-    yenilemeTokeni: satir.yenileme_tokeni,
-    kullaniciId: satir.kullanici_id,
-    email: satir.email,
-    kimlikSaglayici: satir.kimlik_saglayici,
-  };
+  await baslat();
+  await sira;
+  return bellek ? { ...bellek } : null;
 }
-
-export async function oturumYaz(oturum: Oturum): Promise<void> {
-  const d = await db();
-  await d.runAsync(
-    `INSERT INTO oturum (id, erisim_tokeni, yenileme_tokeni, kullanici_id, email, kimlik_saglayici)
-     VALUES (1, ?, ?, ?, ?, ?)
-     ON CONFLICT(id) DO UPDATE SET
-       erisim_tokeni = excluded.erisim_tokeni,
-       yenileme_tokeni = excluded.yenileme_tokeni,
-       kullanici_id = excluded.kullanici_id,
-       email = excluded.email,
-       kimlik_saglayici = excluded.kimlik_saglayici`,
-    oturum.erisimTokeni,
-    oturum.yenilemeTokeni,
-    oturum.kullaniciId,
-    oturum.email,
-    oturum.kimlikSaglayici,
-  );
+export async function oturumYaz(oturum: Oturum, hatirla = true): Promise<void> {
+  await sirala(() => sakla({ ...oturum, oturumKimligi: kimlik() }, hatirla));
   oturumDegisti();
 }
-
-/** Yalnız `token/yenile` sonrası — yenileme token'ı sabit kalır. */
-export async function oturumErisimTokeniGuncelle(erisimTokeni: string): Promise<void> {
-  const d = await db();
-  await d.runAsync('UPDATE oturum SET erisim_tokeni = ? WHERE id = 1', erisimTokeni);
+export async function oturumErisimTokeniGuncelle(erisimTokeni: string, eskiYenileme: string, yeniYenileme: string): Promise<void> {
+  await sirala(async () => {
+    if (bellek?.yenilemeTokeni === eskiYenileme) await sakla({ ...bellek, erisimTokeni, yenilemeTokeni: yeniYenileme }, kalici);
+  });
 }
-
+export async function oturumGecersizKil(yenilemeTokeni: string): Promise<void> {
+  const degisti = await sirala(async () => {
+    if (bellek?.yenilemeTokeni !== yenilemeTokeni) return false;
+    await sakla(null, false);
+    return true;
+  });
+  if (degisti) oturumDegisti();
+}
 export async function oturumSil(): Promise<void> {
-  const d = await db();
-  await d.runAsync('DELETE FROM oturum WHERE id = 1');
+  await sirala(() => sakla(null, false));
   oturumDegisti();
 }
-
-/**
- * Ekranlar arası "oturum değişti" sinyali (bkz. `lib/veriBus.ts` deseni) —
- * `AccountSection`/Ayarlar bunu dinleyip yeniden okur.
- */
 type Dinleyici = () => void;
 const dinleyiciler = new Set<Dinleyici>();
-
-export function oturumDegisti(): void {
-  for (const d of dinleyiciler) d();
-}
-
+export function oturumDegisti(): void { for (const d of dinleyiciler) d(); }
 export function oturumDegisimineAbone(dinleyici: Dinleyici): () => void {
   dinleyiciler.add(dinleyici);
   return () => dinleyiciler.delete(dinleyici);

@@ -13,7 +13,7 @@ import { IconButton } from '@/components/IconButton';
 import { InfoStrip } from '@/components/InfoStrip';
 import { Skeleton } from '@/components/Skeleton';
 import { Txt } from '@/components/Txt';
-import { CategoryLimitCard, CategoryLimitEmptyCard } from '@/components/pano/CategoryLimitCard';
+import { CategoryQuickAddCard } from '@/components/pano/CategoryQuickAddCard';
 import { HeroCard } from '@/components/pano/HeroCard';
 import { LimitReviewCard } from '@/components/pano/LimitReviewCard';
 import {
@@ -33,6 +33,7 @@ import { gunHarcamasizIsaretle } from '@/db/seri';
 import type { SeriDurumu } from '@/db/seri';
 import { usePano } from '@/db/usePano';
 import { paraYaz } from '@/lib/para';
+import { SABIT_ODEME_KATEGORILERI } from '@/lib/kategoriler';
 import { gunAnahtari, gunlukBaslik } from '@/lib/tarih';
 import { veriDegisti } from '@/lib/veriBus';
 import { color, layout, radius, rhythm } from '@/theme/tokens';
@@ -152,6 +153,10 @@ export function GunlukSayfa({
     yuruyenToplam += h.tutarKurus;
     return { harcama: h, limitDisi: limitKurus !== null && yuruyenToplam > limitKurus };
   });
+  const sabitOdemeSatirlari = satirlar.filter((satir) =>
+    SABIT_ODEME_KATEGORILERI.includes(satir.harcama.kategori as (typeof SABIT_ODEME_KATEGORILERI)[number]),
+  );
+  const altListeSatirlari = bugunMu ? sabitOdemeSatirlari : satirlar;
 
   const bugunBosCTA = bugunMu && bos && limitKurus !== null;
   const seriBugunBaslar = bugunBosCTA && seriDurum && !seriDurum.kapali && seriDurum.mevcutSeri === 0;
@@ -165,16 +170,12 @@ export function GunlukSayfa({
         <View style={stil.pad}>
           <HeroCard
             gunFarki={gunFarki}
-            niyet={veri.niyet}
             harcananKurus={veri.harcananKurus}
             limitKurus={limitKurus}
             bos={bos}
             oncekiPasif={veri.ilkGunMu}
             onOnceki={() => onGunDegistir(-1)}
             onSonraki={() => onGunDegistir(1)}
-            // Nötr "Limit belirle" kapısı (delta-v4.md ekran akışı) — limitsiz kipte
-            // profillemeye (E-25) yönlendirir; limit zaten varsa E-17'de düzenlenir.
-            onLimitPress={() => router.push(limitKurus === null ? '/tanisma' : '/limitler')}
             altMetin={altMetin}
           />
         </View>
@@ -231,31 +232,27 @@ export function GunlukSayfa({
           <>
             <View style={{ height: rhythm.section }} />
             <View style={stil.pad}>
-              {veri.kategoriler.length > 0 ? (
-                <CategoryLimitCard
-                  durumlar={veri.kategoriler}
-                  onSeeAll={() => router.push('/limitler')}
-                  onEkle={(k) => harcamaEkleyeGit(k)}
-                />
-              ) : (
-                <CategoryLimitEmptyCard onSet={() => router.push('/limitler')} />
-              )}
+              <CategoryQuickAddCard
+                harcamalar={veri.harcamalar}
+                onEkle={(kategori) => harcamaEkleyeGit(kategori)}
+                onHarcamaPress={(harcama) => router.push(`/harcama/${harcama.id}`)}
+              />
             </View>
           </>
         ) : null}
 
-        {veri.harcamalar.length > 0 ? (
+        {altListeSatirlari.length > 0 ? (
           <>
             <View style={{ height: rhythm.section }} />
             <View style={[stil.pad, stil.listeBasligi]}>
-              <Txt role="h2">{bugunMu ? t['pano.liste_baslik'] : t['gunluk.liste_baslik.gecmis']}</Txt>
+              <Txt role="h2">{bugunMu ? 'Planlı ödemeler' : t['gunluk.liste_baslik.gecmis']}</Txt>
               <Txt role="label" tone={color.text2}>
                 {gunToplamEtiketi(paraYaz(veri.harcananKurus))}
               </Txt>
             </View>
             <View style={{ height: rhythm.group }} />
             <View style={stil.pad}>
-              {satirlar.map((s, i) => (
+              {altListeSatirlari.map((s, i) => (
                 <View key={s.harcama.id}>
                   {i > 0 ? <View style={{ height: rhythm.group }} /> : null}
                   <ExpenseRow

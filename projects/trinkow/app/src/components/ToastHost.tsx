@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ClaySurface } from '@/components/ClaySurface';
 import { Txt } from '@/components/Txt';
-import { toastAbone, type ToastGirdi, type ToastVaryant } from '@/lib/toastBus';
+import { t } from '@/content/metinler';
+import { toastAbone, toastGoster, type ToastGirdi, type ToastVaryant } from '@/lib/toastBus';
 import { a11y, color, radius, rhythm } from '@/theme/tokens';
 
 /**
@@ -61,7 +62,9 @@ export function ToastHost() {
                 hitSlop={a11y.minTarget}
                 style={stil.eylem}
                 onPress={() => {
-                  toast.onEylem?.();
+                  void Promise.resolve().then(() => toast.onEylem?.()).catch(() => {
+                    toastGoster({ tur: 'warning', metin: t['hata.okuma.govde'] });
+                  });
                   if (zamanlayici.current) clearTimeout(zamanlayici.current);
                   setToast(null);
                 }}>

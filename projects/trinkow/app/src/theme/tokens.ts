@@ -355,8 +355,8 @@ export const gauge = {
   overGlossColor: 'rgba(255,255,255,0.32)',
   /** iç alan genişliği — uzun tutar kuralının ölçüldüğü yer */
   innerWidth: 156,
-  /** §7.5 — sayı 6+ karakterse rol bir basamak iner */
-  heroDigitLimit: 6,
+  /** §7.5 — 1.000 gibi dört haneli tutarlar iç daireye sığması için küçülür. */
+  heroDigitLimit: 5,
   /** §7.8 boş durum illüstrasyonu */
   emptyDiameter: 176,
   emptyTrackRadius: 70,

@@ -156,3 +156,67 @@ docstring'ler genelde değişiklikle senkron, tek istisna yukarıdaki `profil.ts
 **Aşama 4 geçti** — iki blocker (B1, B2) kapandı, kanıtlı. Bir ÖNEMLİ (bloklayıcı
 olmayan) bulgu var: ölü kod + yanlış docstring (`limitler.ts:101-103`,
 `profil.ts:40`) — küçük temizlik, sonraki turda yapılabilir, yayını engellemez.
+
+
+# 2026-09-22 — çalışma zamanı / geçici test girişi
+
+## Kanıt
+- Mevcut Atlas bağlantısında gerçek test çalıştırması: TLS el sıkışması hatası,
+  `ServerSelectionTimeoutError`; üç test fixture aşamasında durdu. Atlas üzerinde
+  bu tur başarılı doğrulama YOK. Mevcut `.env` ve Atlas verileri değiştirilmedi.
+- Ayrı yerel MongoDB 8.0.30, port 27018, `trinkow_test` üzerinde tam pytest:
+  **128 passed in 4.21s** (önceki 123 + 5 yeni test).
+- `npm test`: **8 passed**. API adres çözümü, geliştirme/üretim giriş ayrımı,
+  eşzamanlı 401 tek yenileme, ağ/503 hatasında oturumu koruma, ikinci 401'de
+  çıkış, eski isteğin yeni hesabı kapatamaması, oturumsuz istek ve katalog 304.
+- `npm run typecheck`: 0 hata. iOS ve Android Metro export başarılı.
+- Yeni ASGI entegrasyon testi: rastgele `abc` / `x` → JWT → ben → profil →
+  onboarding → 12345 kuruş harcama → pano toplamı → kayıt silme → hesap silme.
+- iOS 26.5 / iPhone 17 Pro Max / Expo Go: giriş, onboarding yönlendirmesi,
+  günlük, kayıtlar, özet ve ayarlar açılışları kontrol edildi. API istekleri
+  200/304 döndü. Test oturumu geçici olarak SQLite'a yerleştirildi; formun
+  klavye/dokunma akışı otomatik sürülmedi. Expo Go tanıtım penceresi ekranın
+  altını örttüğünden bu kontrol tam görsel veya uçtan uca UI onayı değildir.
+  Geçici hesap silindi ve önceki cihaz oturumu geri yüklendi.
+- Android cihaz/emülatör etkileşim testi yapılmadı; Android paketleme geçti.
+
+## Düzeltilenler
+- Expo ile backend'in ayrı süreçler olması görünür kılındı; `npm run dev`
+  yerel MongoDB + API + Expo'yu birlikte başlatır. Veriler `.local/data`da kalıcı.
+- Telefonda localhost hatası: Expo host adresi; Android emülatöründe 10.0.2.2.
+- Açılışta oturum kontrolü ve gün sınırı yükleme sırası, yönlendirme yarışları,
+  giriş/kayıt sonrası çift oturum yayını ve çıkış sonrası korunan rota geçmişi.
+- Geçici ağ hatasında oturumun silinmesi; eşzamanlı token yenilemeleri;
+  yenilenmiş token tekrar 401 döndüğünde kapanmayan oturum.
+- Oturum deposunun DB barrel import döngüsü ve başarısız açılışı tekrar deneyememesi.
+- Günlük sınırı, harcama detayı, kaydırarak sil/tekrarla, taksit silme, toast geri alma,
+  ayarlar ve profilleme işlemlerinde yakalanmayan Promise hataları.
+- Gün sınırı yazımı başarısız olduğunda yalnız cihazdaki günün değişmesi.
+- Kayıt yarışında Mongo DuplicateKeyError'ın 500 yerine 409'a çevrilmesi.
+- Gerçek e-posta göndermeyen şifre sıfırlamanın sahte başarı ekranı kaldırıldı;
+  henüz bağlı olmayan Apple/Google girişleri sessiz kalmak yerine bilgi verir.
+
+## 2026-09-22 tarihsel sınırlar
+
+Bu bölüm önceki çalışma turunun kaydıdır. Aşağıdaki parola sıfırlama ve güvenli
+depo maddeleri, 2026-09-23 kabul turunda kapatıldı; güncel durum bir sonraki
+bölümdedir.
+- Backend test girişi varsayılan kapalı; `TRINKOW_DEV_LOGIN=1` gerekir.
+  `dev.py` bunu yalnız ayrı yerel geliştirme DB'siyle açar. Normal giriş değişmedi.
+  İstemci üretim derlemesinde test ucunu çağırmaz. Demo şifreleri saklanmaz.
+- Atlas erişimi/TLS sorunu dış ortamda hâlâ çözülmeli; yerel geliştirme çalışıyor.
+- Apple/Google entegrasyonu, gerçek şifre sıfırlama, bildirim izinleri ve güvenli
+  token deposu mevcut açık işlerdir. Bu tur bunları tamamlanmış saymaz.
+- Yerel oturum açılışlarını ve API entegrasyonlarını doğrulamak bütün cihazlarda
+  her etkileşimin hatasız olduğu anlamına gelmez. Yayın onayı verilmedi.
+
+## 2026-09-23 — Trinkow Rev kabul kanıtı
+
+- Backend: ayrı yerel Mongo test DB'sinde **139/139** geçti.
+- Mobil: TypeScript temiz; **14/14** test geçti. Dönen token yarışları, hatırlanan/hatırlanmayan oturum, SQLite→SecureStore göçü, para virgül/nokta/yapıştırma ve negatif biçim kapsandı.
+- Finans: Şubat kuruş dağılımı, tarihli bütçe, manuel limit, kategori toplamı, rutin alım/vazgeçme, gelecekteki bütçenin tasarruf sayılmaması, ayrı birikim defteri ve hesap silme koleksiyonları doğrulandı.
+- Seri: ilk harcama, ikinci harcamanın aynı günü tekrar saymaması, limit aşımı, son kaydın silinmesi, boş bugün ve kaçırılmış gün senaryoları geçti.
+- HTTP smoke: ayrı `trinkow_smoke` DB ve yerel outbox ile kayıt → bütçe → rutin → harcama → tasarruf → reset e-postası → eski oturum iptali → yeni giriş → hesap silme geçti.
+- Paket: Expo Doctor **21/21**; iOS ve Android Metro export başarıyla üretildi.
+- Native simülatör bundle açıldı ve kırmızı hata ekranı oluşmadı. Expo Go ilk kullanım turu dokunma otomasyonunu örttüğü için gerçek cihaz odak/klavye/küçük ekran matrisi yayın öncesi manuel görev olarak kaldı.
+- `npm audit --omit=dev`: high/critical yok; Expo araç zincirinde 14 moderate transitif bulgu var. Audit'in sunduğu çözüm Expo 46'ya uyumsuz düşürme olduğu için uygulanmadı.

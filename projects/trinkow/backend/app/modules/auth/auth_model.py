@@ -11,7 +11,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Literal
 
-KimlikSaglayici = Literal["eposta", "google", "apple"]
+KimlikSaglayici = Literal["eposta", "google", "apple", "demo"]
 
 
 class KullaniciBelgesi:

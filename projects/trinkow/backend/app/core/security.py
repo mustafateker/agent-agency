@@ -30,30 +30,31 @@ def sifre_dogrula(duz_sifre: str, hashli_sifre: str) -> bool:
     return _sifre_baglami.verify(duz_sifre, hashli_sifre)
 
 
-def erisim_tokeni_olustur(kullanici_id: str, gecerlilik: timedelta | None = None) -> str:
+def erisim_tokeni_olustur(kullanici_id: str, gecerlilik: timedelta | None = None, surum: int = 0) -> str:
     """Kısa ömürlü erişim token'ı üretir (varsayılan ömür ayarlardan gelir)."""
     ayarlar = get_settings()
     sure = gecerlilik if gecerlilik is not None else timedelta(minutes=ayarlar.erisim_token_dakika)
-    return _token_olustur(kullanici_id, sure, "erisim")
+    return _token_olustur(kullanici_id, sure, "erisim", surum=surum)
 
 
 def yenileme_tokeni_olustur(
-    kullanici_id: str, jti: str | None = None, gecerlilik: timedelta | None = None
+    kullanici_id: str, jti: str | None = None, gecerlilik: timedelta | None = None, surum: int = 0
 ) -> tuple[str, str]:
     """Uzun ömürlü yenileme token'ı üretir; iptal edilebilmesi için benzersiz `jti` taşır."""
     ayarlar = get_settings()
     sure = gecerlilik if gecerlilik is not None else timedelta(days=ayarlar.yenileme_token_gun)
     token_kimligi = jti or str(uuid.uuid4())
-    token = _token_olustur(kullanici_id, sure, "yenileme", token_kimligi)
+    token = _token_olustur(kullanici_id, sure, "yenileme", token_kimligi, surum=surum)
     return token, token_kimligi
 
 
-def _token_olustur(kullanici_id: str, gecerlilik: timedelta, tur: TokenTuru, jti: str | None = None) -> str:
+def _token_olustur(kullanici_id: str, gecerlilik: timedelta, tur: TokenTuru, jti: str | None = None, surum: int = 0) -> str:
     ayarlar = get_settings()
     simdi = datetime.now(timezone.utc)
     yuk: dict[str, Any] = {
         "sub": kullanici_id,
         "tur": tur,
+        "ver": surum,
         "iat": simdi,
         "exp": simdi + gecerlilik,
     }

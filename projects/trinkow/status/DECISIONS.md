@@ -3076,3 +3076,23 @@ K-064/1 sınıfı hata sessizce döner. → küçük temizlik turu (QA-1e kalın
 **Aşama 4 çıkış kriteri karşılandı** (testler geçiyor, blocker yok) → Aşama 5 (DevOps/Yayın)
 kapısına gelindi. Ama Mustafa "prod barındırma gerek yok" dedi (K-081/4) ve yayın öncesi
 borç listesi henüz önceliklendirilmedi → **Aşama 5 açılmadan önce Mustafa kararı gerekiyor.**
+
+
+## 2026-09-22 — Mustafa direktifi: geçici rastgele giriş
+Mustafa: “Giriş kısmında şimdilik random bilgi girse bile giriş yapabilsin.”
+Uygulama: geliştirme istemcisi ayrı `/auth/gelistirme-giris` ucunu kullanır;
+backend yalnız `TRINKOW_DEV_LOGIN=1` ile bu ucu açar. Normal giriş değişmez.
+Her etiket ayrı demo kimliğine dönüşür; gerçek hesaba şifresiz erişim verilmez.
+Atlas TLS bağlantısı başarısız olduğu için yerel test/geliştirme komutu eklendi;
+mevcut Atlas verileri ve `.env` değiştirilmedi. Bu geçici mod yayın kararı değildir.
+
+
+## REV-20260923 — plan uygulaması onaylandı
+Kullanıcı "PLEASE IMPLEMENT THIS PLAN" ile tüm revizyonu ve ajan çalışmasını yetkilendirdi. Mevcut marka korunur; iç tasarım denetimi sürer. Gerçek e-posta giriş varsayılan, demo ayrı; telefon klavyesi tüm alanlarda; Kayıtlar → Tasarruflar; günlük alt kategori payları; tarihli bütçe; rutin doğrulama; ayrı birikim defteri; takip serisi. Önceki bu kapsamla çelişen kararlar revizyon kapsamı içinde geçersizdir. Ücretli servis/prod/push/AI yok.
+
+## REV-20260923 — uygulama kapanış kararları
+- Tasarım delta incelemesi PASS: “hesaplanan tasarruf” ve “gerçek birikim” ayrı kart/hesap; rutin vazgeçişi bütçe farkına tekrar eklenmez.
+- Google/Apple gerçek sağlayıcı bağlantısı, push ve AI bu turun dışında kaldı; sosyal düğmeler formların altında ve kullanılamadığı açık.
+- Expo SDK 57 uyumlu küçük sürümlere getirildi; `expo-secure-store` eklendi. Expo Doctor 21/21 geçti.
+- `npm audit` yalnız Expo araç zincirindeki 14 moderate transitif bulguyu raporluyor; önerilen otomatik çözüm SDK 57'yi desteklenmeyen Expo 46'ya düşürdüğü için uygulanmadı. High/critical yok.
+- Gerçek SMTP ve nihai legal metinler dış bilgi gerektirir. Yerel outbox tam akışı geçti; uygulama canlıya alınmadı.

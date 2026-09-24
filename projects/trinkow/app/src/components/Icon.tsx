@@ -47,6 +47,11 @@ export const icons = {
   ],
   /** sekme: Özet */
   chart: [p('M18 20V10'), p('M12 20V4'), p('M6 20v-6')],
+  /** sekme: Profil */
+  user: [
+    { t: 'c', cx: 12, cy: 8, r: 4 } as Sekil,
+    p('M4 22a8 8 0 0 1 16 0'),
+  ],
 
   // --- kategori ikonları (§1.4) ---
   'shopping-basket': [

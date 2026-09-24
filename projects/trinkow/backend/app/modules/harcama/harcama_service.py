@@ -10,6 +10,10 @@ yanıtına çevirir (kullanici_service.py ile aynı desen, K-068/3). Her sorgu
 """
 from __future__ import annotations
 
+from fastapi import HTTPException
+from pymongo.errors import DuplicateKeyError
+from app.modules.butce.butce_service import ButceService, gun_dogrula
+
 from bson import ObjectId
 from bson.errors import InvalidId
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -60,6 +64,7 @@ class HarcamaService:
     """Harcama kayıtları ve ilişkili tabloların (limit/gün durumu/öğrenme) işlemlerini yürütür."""
 
     def __init__(self, veritabani: AsyncIOMotorDatabase) -> None:
+        self._veritabani = veritabani
         self._harcamalar = veritabani[HARCAMALAR_KOLEKSIYONU]
         self._kategori_limitleri = veritabani[KATEGORI_LIMITLERI_KOLEKSIYONU]
         self._gun_durumlari = veritabani[GUN_DURUMLARI_KOLEKSIYONU]
@@ -111,9 +116,15 @@ class HarcamaService:
         taksit_id: str | None = None,
         taksit_no: int | None = None,
         taksit_toplam: int | None = None,
+        rutin_id: str | None = None,
+        adet: int = 1,
+        sabit_gider_kodu: str | None = None,
+        istemci_id: str | None = None,
     ) -> HarcamaBelgesi:
         """Tek bir harcama satırı ekler; ürün adı verilmişse öğrenme tablosunu da günceller (F-18)."""
+        await self._baglantilari_dogrula(kullanici_id, gun, rutin_id, adet, sabit_gider_kodu)
         belge = HarcamaBelgesi(
+            rutin_id=rutin_id, adet=adet, sabit_gider_kodu=sabit_gider_kodu,
             kullanici_id=kullanici_id,
             tutar_kurus=tutar_kurus,
             kategori=kategori,
@@ -126,13 +137,45 @@ class HarcamaService:
             taksit_no=taksit_no,
             taksit_toplam=taksit_toplam,
         )
-        sonuc = await self._harcamalar.insert_one(belge.belgeye_cevir())
+        yazilacak = belge.belgeye_cevir()
+        if istemci_id:
+            yazilacak['istemci_id'] = istemci_id
+            onceki = await self._harcamalar.find_one({'kullanici_id': kullanici_id, 'istemci_id': istemci_id})
+            if onceki:
+                if any(onceki.get(k) != v for k, v in yazilacak.items()):
+                    raise HTTPException(409, 'Bu işlem kimliği farklı bir harcamada kullanılmış.')
+                return HarcamaBelgesi.belgeden_olustur(onceki)
+        try:
+            sonuc = await self._harcamalar.insert_one(yazilacak)
+        except DuplicateKeyError:
+            if not istemci_id:
+                raise
+            onceki = await self._harcamalar.find_one({'kullanici_id': kullanici_id, 'istemci_id': istemci_id})
+            if not onceki or any(onceki.get(k) != v for k, v in yazilacak.items() if k != '_id'):
+                raise HTTPException(409, 'Bu işlem kimliği farklı bir harcamada kullanılmış.') from None
+            return HarcamaBelgesi.belgeden_olustur(onceki)
         belge.id = sonuc.inserted_id
 
         if urun_adi:
             await self.urun_kategori_ogren(kullanici_id, urun_adi, kategori)
 
         return belge
+
+    async def _baglantilari_dogrula(self, kullanici_id: str, gun: str, rutin_id: str | None, adet: int, sabit_gider_kodu: str | None) -> None:
+        gun_dogrula(gun)
+        if not isinstance(adet, int) or adet <= 0:
+            raise HTTPException(422, 'Pozitif adet gerekli.')
+        if rutin_id and sabit_gider_kodu:
+            raise HTTPException(422, 'Rutin ve sabit ödeme aynı kayda bağlanamaz.')
+        if rutin_id:
+            # Read the historical definition without initializing tracking on the
+            # expense date (users may enter old transactions).
+            rutin = await self._veritabani.rutin_surumleri.find_one(
+                {'kullanici_id': kullanici_id, 'id': rutin_id, 'yururluk_gunu': {'$lte': gun}}, sort=[('yururluk_gunu', -1)])
+            if not rutin or not rutin['aktif']:
+                raise HTTPException(404, 'Bu gün için rutin bulunamadı.')
+        if sabit_gider_kodu and sabit_gider_kodu not in ('kira', 'fatura', 'ulasim', 'kredi'):
+            raise HTTPException(422, 'Bilinmeyen sabit gider.')
 
     async def harcama_getir(self, kullanici_id: str, harcama_id: str) -> HarcamaBelgesi:
         """Tek kayıt okur (E-12 detay ekranı); bulunamazsa/başka kullanıcıya aitse `HarcamaBulunamadi`."""
@@ -197,6 +240,8 @@ class HarcamaService:
         if not alanlar:
             return mevcut
 
+        birlesik = mevcut.belgeye_cevir() | alanlar
+        await self._baglantilari_dogrula(kullanici_id, birlesik['gun'], birlesik.get('rutin_id'), birlesik.get('adet', 1), birlesik.get('sabit_gider_kodu'))
         await self._harcamalar.update_one(
             {"_id": _nesne_kimligi(harcama_id), "kullanici_id": kullanici_id}, {"$set": alanlar}
         )

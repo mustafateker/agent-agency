@@ -15,6 +15,8 @@ listesini burada sabitlemek iki modülü gizlice birbirine bağlar.
 from __future__ import annotations
 
 from typing import Literal
+from datetime import date
+from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -33,6 +35,10 @@ class HarcamaEkleIstegi(BaseModel):
     AÇILMADI (Madde 3 uç nokta listesinde de yok).
     """
 
+    istemci_id: UUID | None = None
+    rutin_id: str | None = None
+    adet: int = Field(default=1, gt=0, strict=True)
+    sabit_gider_kodu: Literal["kira", "fatura", "ulasim", "kredi"] | None = None
     tutar_kurus: int = Field(gt=0)
     kategori: str = Field(min_length=1)
     urun_adi: str | None = None
@@ -64,6 +70,9 @@ class HarcamaGuncellemeIstegi(BaseModel):
     ayrımı yapılamaz çünkü mevcut kaydı bilmeden karar verilemez.
     """
 
+    rutin_id: str | None = None
+    adet: int | None = Field(default=None, gt=0, strict=True)
+    sabit_gider_kodu: Literal["kira", "fatura", "ulasim", "kredi"] | None = None
     tutar_kurus: int | None = Field(default=None, gt=0)
     kategori: str | None = Field(default=None, min_length=1)
     urun_adi: str | None = None
@@ -74,6 +83,9 @@ class HarcamaGuncellemeIstegi(BaseModel):
 
 
 class HarcamaYaniti(BaseModel):
+    rutin_id: str | None = None
+    adet: int = 1
+    sabit_gider_kodu: str | None = None
     id: str
     tutar_kurus: int
     kategori: str
