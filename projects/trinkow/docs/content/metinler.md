@@ -46,6 +46,7 @@
 | Kullanılır | Kullanılmaz |
 |---|---|
 | limit dışı | aşım, taşma, ihlal, eksi bakiye, borç (limit için) |
+| **bütçe dışı** | aşım, eksi, borç, negatif bakiye — **ve** "limit dışı". İki terim aynı şey değildir ve birbirinin yerine geçmez: *limit dışı* **günlük limitin** üstüne çıkmaktır (E-10, bir günün hesabı); *bütçe dışı* **ayın harcanabilir bütçesinin** üstüne çıkmaktır (E-27, ayın hesabı). Bir gün limit dışı olup ay bütçe içinde kalabilir; tersi de olur. Görsel dil ikisinde de aynı (`warning-ink` / `warning-soft`), sözcük farklı (K-063) |
 | kalan | bakiye, kalan bütçe |
 | harcama | işlem, gider, masraf |
 | kayıt | veri, entry |
@@ -719,7 +720,7 @@ prototip `06-harcama-detay.html` · `ekran-envanteri.md` E-13.
 |---|---|
 | `taksit.bu_ay_etiket` | Bu ay |
 | `taksit.gelecek_baslik` | Önümüzdeki aylar |
-| `taksit.seriler_baslik` | Süren seriler |
+| `taksit.seriler_baslik` | **Süren taksitler** (REV3'te değişti, PM onaylı — bkz. §30.1) |
 | `taksit.seri_adet` | {adet} seri |
 | `taksit.her_ay` | her ay |
 | `taksit.son_taksit` | Son taksit bu ay |
@@ -868,7 +869,7 @@ prototip `06-harcama-detay.html` · `ekran-envanteri.md` E-13.
 | `gunsec.alt.acik_gun` | Açık gün {g} {Ay} |
 | `gunsec.lejant.altinda` / `.disinda` / `.kayit_yok` | limit altı · limit dışı · kayıt yok |
 | `gunsec.lejant.bugun` | Kutunun altındaki nokta bugünü gösterir. |
-| `gunsec.sinir.baslangic` | Trinkow'a {g} {Ay}'ta başladın. Daha öncesi yok. |
+| `gunsec.sinir.baslangic` | Trinkow'a {g} {AyLokatif} başladın. Daha öncesi yok. | (ek tablosu §28.1)
 | `gunsec.bos.baslik` | Bu ayda kayıt yok |
 | `gunsec.bos.govde` | Kayıt yazdığın günler burada işaretlenir. Bugünden başlayabilirsin. |
 | `gunsec.ozet.baslik` | {Ay} özeti |
@@ -1096,7 +1097,351 @@ prototip `06-harcama-detay.html` · `ekran-envanteri.md` E-13.
 
 
 
+## 28. E-27 Tasarruf · E-28 Profil — rev2
+
+> Kaynak: `docs/design/rev2-tasarruf-profil.md` (REV2-r1).
+> Sözlük ayrımı korunur: **hesaplanan tasarruf** · **gerçek birikim** ·
+> **rutin tasarrufu** — üçü hiçbir yerde toplanmaz.
+
+### 28.1 E-27 Tasarruf
+
+**Ay adı kuralı (zorunlu iki varyant).** Seçili ay **içinde bulunulan ay** ise
+"bu ay …" kalıbı; **geçmiş ay** ise ay adıyla "Ağustos'ta …" kalıbı kullanılır.
+Geçmiş aya bakarken "bu ay" yazmak yanlış bilgidir. Anahtar adı `.buAy` /
+`.gecmisAy` ile ikiye ayrılır ve **ikisi de** çeviri dosyasında bulunur.
+
+**Bulunma hâli eki tabloyla verilir — kalıpta sabitlenemez.** Türkçe'de
+bulunma eki ünlü uyumu (-da/-de) **ve** ünsüz benzeşmesi (-ta/-te) ile
+değişir; `{Ay}'ta` ya da `{Ay}'de` yazan tek bir kalıp 12 ayın 8'inde yanlış
+üretir ("Eylül'ta", "Ağustos'de"). Bu yüzden ay adının ekli biçimi **hazır
+dize** olarak tutulur ve metinlere `{AyLokatif}` yer tutucusuyla girer.
+Çalışma zamanında ek hesaplanmaz, tablodan okunur.
+
+| Ay | `{Ay}` | `{AyLokatif}` |
+|---|---|---|
+| 1 | Ocak | Ocak'ta |
+| 2 | Şubat | Şubat'ta |
+| 3 | Mart | Mart'ta |
+| 4 | Nisan | Nisan'da |
+| 5 | Mayıs | Mayıs'ta |
+| 6 | Haziran | Haziran'da |
+| 7 | Temmuz | Temmuz'da |
+| 8 | Ağustos | Ağustos'ta |
+| 9 | Eylül | Eylül'de |
+| 10 | Ekim | Ekim'de |
+| 11 | Kasım | Kasım'da |
+| 12 | Aralık | Aralık'ta |
+
+`{Ay}` (eksiz) yalnız ek almayan yerlerde kalır: `tasarruf.ustSatir.*`
+("Eylül 2026"), `tasarruf.butce.aralik` ("1–30 Eylül"),
+`a11y.tasarruf.hareket` ("23 Eylül"). Ek gereken her satır `{AyLokatif}`
+kullanır — aşağıdaki tabloda tek tek yazılı.
+
+| Anahtar | Metin |
+|---|---|
+| `tasarruf.baslik` | Tasarruf |
+| `tasarruf.ustSatir.devam` / `.kapandi` | {Ay} {yıl} · ay devam ediyor · {Ay} {yıl} · ay kapandı |
+| `tasarruf.kip.cip` | Tasarruf |
+| `tasarruf.butce.cip` / `.cipYok` | Bütçe {tutar} · Bütçe yok |
+| `tasarruf.gosterge.etiket` | bu ay biriken |
+| `tasarruf.gosterge.etiketDisinda` | bütçe dışı |
+| `tasarruf.gosterge.cumle.buAy` | Kaydettiğin gelir ve harcamalara göre {n} gün hesaplandı. |
+| `tasarruf.gosterge.cumle.gecmisAy` | {AyLokatif} kaydettiğin gelir ve harcamalara göre {n} gün hesaplandı. |
+| `tasarruf.gosterge.disinda.buAy` | Bu ay harcaman bütçenin {tutar} üzerinde. |
+| `tasarruf.gosterge.disinda.gecmisAy` | {AyLokatif} harcaman bütçenin {tutar} üzerinde. |
+| `tasarruf.gosterge.ayYeni` | Ay yeni başladı. İlk tamamlanan günle hesap başlar. |
+| `tasarruf.gosterge.hesaplaniyor` | Hesaplanıyor |
+| `tasarruf.gelirYok.baslik` / `.alt` / `.btn` | Gelirini ekle · Aylık gelirini yazınca bu ayın payını hesaplarız. · Bütçeyi düzenle |
+| `tasarruf.motivasyon.birikim` | Bu tutarı birikim hedefin için ayırmayı düşünebilirsin. |
+| `tasarruf.motivasyon.borc` | Bu tutar borcunun %{n}'ine denk geliyor. |
+| `tasarruf.butce.baslik.buAy` / `.gecmisAy` | Bu ayın bütçesi · Ayın bütçesi |
+| `tasarruf.butce.aralik` | {n}–{n} {Ay} |
+| `tasarruf.butce.harcanabilir` / `.harcanan` / `.kalan` / `.disinda` | Harcanabilir · Harcanan · Kalan · Bütçe dışı |
+| `tasarruf.butce.sabit` | Sabit ödemeler dahil toplam {tutar} |
+| `tasarruf.butce.gunSayaci` / `.gunDeger` | Tamamlanan gün · {n}/{n} gün |
+| `tasarruf.butce.kumulatif` | Takip başından beri biriken {tutar} |
+| `tasarruf.butce.eksikGun` | {n} günün geliri eksik. O günler hesaba katılmadı. |
+| `tasarruf.butce.takipBasi` | Takip {n} {AyLokatif} başladı. Ayın {n} günü hesaplanacak. |
+| `tasarruf.birikim.baslik` | Gerçek birikim |
+| `tasarruf.birikim.ayEkleme.buAy` / `.gecmisAy` | Bu ay {tutar} eklendi · {AyLokatif} {tutar} eklendi |
+| `tasarruf.birikim.ayCekme.buAy` / `.gecmisAy` | Bu ay {tutar} çekildi · {AyLokatif} {tutar} çekildi |
+| `tasarruf.birikim.ayYok.buAy` / `.gecmisAy` | Bu ay kayıt yok · {AyLokatif} kayıt yok |
+| `tasarruf.birikim.hedef` / `.hedefYok` / `.hedefBtn` | Hedef {tutar} · Hedef koymadın · Hedef koy |
+| `tasarruf.birikim.ekleBtn` | Birikim hareketi ekle |
+| `tasarruf.hareket.baslik` / `.sayi` | Birikim hareketleri · {n} kayıt |
+| `tasarruf.hareket.eklendi` / `.cekildi` / `.cekildiEtiket` | Birikime eklendi · Birikimden çekildi · çekildi |
+| `tasarruf.hareket.tumu` | Tüm hareketler |
+| `tasarruf.hareket.bos.baslik` | Birikim kaydı yok |
+| `tasarruf.hareket.bos.alt.buAy` | Kenara para ayırdığında buraya yazarsın. |
+| `tasarruf.hareket.bos.alt.gecmisAy` | {AyLokatif} kenara ayırdığın para yok. |
+| `tasarruf.hareket.silindiToast` | {tutar} silindi · Geri al |
+| `tasarruf.hareket.kaydedildiToast` | {tutar} birikime eklendi · Geri al |
+| `tasarruf.kategori.baslik` / `.harcanan` | Kategori dağılımı · Harcanan {tutar} |
+| `tasarruf.kategori.pay` / `.rutin` | payı %{n} · rutin {tutar} |
+| `tasarruf.kategori.tumu` | Tümünü gör |
+| `tasarruf.kategori.bos.buAy` | Bu ay henüz harcama yazmadın. |
+| `tasarruf.kategori.bos.gecmisAy` | {AyLokatif} harcama yazmamışsın. |
+| `tasarruf.kategori.bos.alt` | İlk kaydından sonra kategori payları burada görünür. |
+| `tasarruf.rutin.baslik` / `.toplam` | Rutin tasarrufu · {tutar} |
+| `tasarruf.rutin.alt` | Vazgeçtiğin rutinler. Bütçedeki kalana eklenmez. |
+| `tasarruf.rutin.bos.buAy` / `.gecmisAy` | Bu ay vazgeçtiğin rutin yok. · {AyLokatif} vazgeçtiğin rutin yok. |
+| `tasarruf.rutin.hicYok` | Rutin eklemedin. Vazgeçtiğin harcamalar burada toplanır. |
+| `tasarruf.rutin.btn` | Rutinleri aç |
+| `tasarruf.hata.baslik` / `.alt` / `.btn` | Bilgiler yüklenemedi · Bağlantını kontrol edip yeniden dene. · Yeniden dene |
+
+**Birikim hareketi sheet'i**
+
+| Anahtar | Metin |
+|---|---|
+| `birikimSheet.baslik.ekle` / `.duzenle` | Birikim hareketi · Hareketi düzenle |
+| `birikimSheet.segment.ekle` / `.cek` | Ekledim · Çektim |
+| `birikimSheet.tutar` / `.tarih` / `.not` / `.notPlaceholder` | Tutar · Tarih · Not · İsteğe bağlı |
+| `birikimSheet.kaydet` / `.kaydediliyor` / `.sil` | Kaydet · Kaydediliyor · Sil |
+| `birikimSheet.hata.tutarBos` | Tutar boş kalamaz. |
+| `birikimSheet.hata.bakiye` | Birikimin bu kadar düşmez. Tutarı azalt. |
+| `birikimSheet.hata.ileriTarih` | Tarih ileri bir gün olamaz. |
+| `birikimSheet.hata.ag` | Kaydedilemedi. Yeniden dene. |
+
+**Erişilebilirlik etiketleri (E-27)**
+
+| Anahtar | Metin |
+|---|---|
+| `a11y.tasarruf.gosterge` | Bu ayın biriken payı |
+| `a11y.tasarruf.gostergeDisinda` | Bütçe dışı {tutar} |
+| `a11y.tasarruf.kipCip` | Kip: Tasarruf. Değiştirmek için ayarları aç |
+| `a11y.tasarruf.butceCip` | Bütçe {tutar}. Bütçeyi aç |
+| `a11y.tasarruf.oncekiAy` / `.sonrakiAy` | Önceki ay · Sonraki ay |
+| `a11y.tasarruf.hareket` | {yön}, {gün} {Ay}, {tutar}, not: {not} |
+| `a11y.tasarruf.hareketSil` | Bu hareketi sil |
+| `a11y.tasarruf.gunSayaci` | Ayın tamamlanan günleri: {n} / {n} |
+
+### 28.2 E-28 Profil
+
+| Anahtar | Metin |
+|---|---|
+| `profil.baslik` / `.ustSatir` | Profil · Hesabın ve planın |
+| `profil.kimlik.saglayici.google` / `.apple` | Google ile oturum açıldı · Apple ile oturum açıldı |
+| `profil.kimlik.hesapsiz.baslik` / `.alt` / `.btn` | Hesapsız kullanıyorsun · Harcamaların telefonunda kalır. · Oturum aç |
+| `profil.kimlik.hata.baslik` / `.alt` / `.btn` | Hesap bilgisi açılamadı · Ayarların ve yasal metinler açık kalır. · Yeniden dene |
+| `profil.grup.plan` / `.kayit` / `.takip` / `.uygulama` | Planın · Kayıt kolaylıkları · Takip · Uygulama |
+| `profil.satir.butce` / `.butceDeger` | Maaş ve bütçe · Aylık net gelir {tutar} · {n} sabit gider |
+| `profil.satir.limitler` / `.limitlerDeger` | Limitler · Günlük {tutar} · {n} kategori limiti |
+| `profil.satir.limitlerBos` | Günlük ve kategori limitlerini belirle |
+| `profil.satir.rutinler` / `.rutinlerDeger` | Rutinler · {n} rutin · bu ay {tutar} tasarruf |
+| `profil.satir.favoriler` / `.favorilerDeger` | Favoriler · {n} ürün, son fiyatlarıyla |
+| `profil.satir.taksitler` / `.taksitlerDeger` | Taksitler · {n} seri · bu ay {tutar} |
+| `profil.satir.ozet` / `.ozetDeger` | Aylık özet · Kategori payları ve haftalık ritim |
+| `profil.satir.seri` / `.seriDeger` | Seri · {n} gün · en uzun {n} gün |
+| `profil.satir.ayarlar` / `.ayarlarDeger` | Tüm ayarlar · Hesap, bildirim, gün sınırı, yasal |
+| `profil.satir.yardim` / `.yardimDeger` | Yardım · Sık sorulan sorular |
+| `profil.alt.surum` | Trinkow · sürüm {n} |
+| `profil.alt.sartlar` / `.gizlilik` | Kullanım şartları · Gizlilik |
+
+**Kimlik panelinin olgu şeridi** (Ö7 takviyesi · yalnız `signed-in`). İki
+satır: `label` olgu + `caption` bağlam. Veri **ekranda zaten olan** seri
+değerinden gelir (`profil.satir.seriDeger` ile aynı kaynak) — yeni alan yok.
+Üç varyant, üçü de doludur; şerit asla boş çizilmez.
+
+| Durum | Anahtar | Metin |
+|---|---|---|
+| seri = 0 | `profil.kimlik.serit.yok` / `.yokAlt` | Seri henüz başlamadı · İlk kaydınla ilk gün sayılır. |
+| seri ≥ 1, en uzun = seri | `profil.kimlik.serit.gun` / `.altRekor` | {n} gündür kayıt giriyorsun · En uzun serin bu. |
+| seri ≥ 1, en uzun > seri | `profil.kimlik.serit.gun` / `.altEnUzun` | {n} gündür kayıt giriyorsun · En uzun {n} gün. |
+
+> Şerit `signed-out`, `error` ve `skeleton` durumlarında **metin taşımaz**
+> (bkz. `design/rev2-tasarruf-profil.md` §4.2): o üç durumda panelin işi
+> sırasıyla hesap daveti, hata + yeniden dene ve iskelettir; şeridin yerini
+> o blok alır. Övgü cümlesi yasak — "harika", "tebrikler", ünlem yok.
+
+**Erişilebilirlik etiketleri (E-28)**
+
+| Anahtar | Metin |
+|---|---|
+| `a11y.profil.kimlik` | Hesabını aç. {e-posta}, {sağlayıcı} |
+| `a11y.profil.kimlikSerit` | Hesabını aç. {e-posta}, {sağlayıcı}. {olgu}, {bağlam} |
+| `a11y.profil.ayarlar` | Ayarları aç |
+| `a11y.profil.satir` | {başlık}. {değer} |
+| `a11y.profil.sartlar` / `.gizlilik` | Kullanım şartlarını aç · Gizlilik metnini aç |
+
+> **İkincil satır asla boş kalmaz:** değer varsa değer, yoksa tanım yazılır
+> (`profil.satir.limitler` ↔ `.limitlerBos`). "…" gösterilmez.
+
+
+### 28.3 E-27 Tasarruf — **akordiyon başlıkları ve özetleri (REV3)**
+
+> Kaynak: `docs/design/rev2-tasarruf-profil.md` §3.12. Özet **kapalı**
+> bölümün sağında durur; bölüm açıkken görsel olarak çizilmez ama ekran
+> okuyucu etiketinde kalır. Özet asla boş değildir ve "Henüz veri yok"
+> yazmaz. `{AyLokatif}` eki §28.1'deki tablodan okunur.
+
+| Anahtar | Metin |
+|---|---|
+| `tasarruf.bolum.butce` / `.butceGecmis` | Bu ayın bütçesi · Ayın bütçesi |
+| `tasarruf.bolum.birikim` / `.kategori` / `.rutin` | Gerçek birikim · Kategori dağılımı · Rutin tasarrufu |
+| `tasarruf.ozet.butce` | Kalan {tutar} |
+| `tasarruf.ozet.butceDisinda` | Bütçe dışı {tutar} |
+| `tasarruf.ozet.butceGelirYok` | Gelir eksik |
+| `tasarruf.ozet.birikim` | {tutar} · hedefin %{n}'i |
+| `tasarruf.ozet.birikimAyYok.buAy` / `.gecmisAy` | {tutar} · bu ay kayıt yok · {tutar} · {AyLokatif} kayıt yok |
+| `tasarruf.ozet.birikimHedefYok` | {tutar} · hedef koymadın |
+| `tasarruf.ozet.kategori` | Harcanan {tutar} |
+| `tasarruf.ozet.kategoriYok` | Harcama yok |
+| `tasarruf.ozet.rutin` | {tutar} · {n} rutin |
+| `tasarruf.ozet.rutinYok` | Rutin eklemedin |
+| `tasarruf.ozet.acilamadi` | Açılamadı |
+| `tasarruf.bolum.sonHareketler` | Son hareketler |
+| `tasarruf.butce.gelirYokSatir` | Gelirini yazınca harcanabilir, harcanan ve kalan burada görünür. |
+| `tasarruf.birikim.acilamadi` | Birikim kayıtları açılamadı. |
+| `tasarruf.rutin.tutarEtiket` | Vazgeçtiğin rutinler |
+| `tasarruf.rutin.kural` | Bütçedeki kalana eklenmez. |
+| `a11y.tasarruf.bolum` | {başlık}. {özet} |
+
+> **Silinen anahtar:** `tasarruf.butce.aralik` ("1–30 Eylül") — ekran
+> başlığı ayı, gün sayacı gün sayısını söylüyor (§3.4 REV3 notu).
+> `tasarruf.hareket.baslik` artık bölüm başlığı değil, `tasarruf.bolum.sonHareketler`
+> ile değişti; `.sayi` ("{n} kayıt") aynı satırın sağında kalıyor.
+
+---
+
+## 29. E-10 Günlük — **rutin hızlı eylem satırı (REV3)**
+
+> Kaynak: `docs/design/rev3-gunluk-rutin.md`. Satırda yalnız ad, günlük
+> mali değer ve iki eylem vardır. Etiketler **gün-nötrdür** ("Bugün aldım"
+> değil "Aldım"): aynı satır geçmiş günde de kullanılıyor ve günü bölüm
+> başlığı taşıyor. Övgü yok, ünlem yok, emoji yok.
+
+| Anahtar | Metin |
+|---|---|
+| `gunlukRutin.baslik` | Rutinler |
+| `gunlukRutin.ozet` | {n} rutin · {n} işaretsiz |
+| `gunlukRutin.ozetHepsi` | {n} rutin · hepsi işaretli |
+| `gunlukRutin.ozetHicbiri` | {n} rutin · işaretlenmedi |
+| `gunlukRutin.ozetHata` | {n} rutin · işaret bekliyor |
+| `gunlukRutin.aldim` / `.almadim` | Aldım · Almadım |
+| `gunlukRutin.durum.aldim` | Yazıldı · {saat} |
+| `gunlukRutin.durum.almadim` | Vazgeçtin · rutin tasarrufu |
+| `gunlukRutin.tumu` | Tüm rutinler |
+| `gunlukRutin.toast.aldim` | {ad} {tutar} yazıldı. |
+| `gunlukRutin.toast.almadim` | {ad} almadın olarak işaretlendi. |
+| `gunlukRutin.toast.geriAl` | Geri al |
+| `gunlukRutin.hata.isaret` | İşaret kaydedilemedi. Yeniden dene. |
+| `a11y.gunlukRutin.bolum` | Rutinler. {özet} |
+| `a11y.gunlukRutin.aldim` | {ad} aldım olarak işaretle, {tutar} |
+| `a11y.gunlukRutin.almadim` | {ad} almadım olarak işaretle, {tutar} rutin tasarrufu |
+| `a11y.gunlukRutin.yaziliyor` | {ad} yazılıyor |
+| `a11y.gunlukRutin.isaretleniyor` | {ad} işaretleniyor |
+| `a11y.gunlukRutin.bolumGecmis` | Rutinler. {gün}. {özet} |
+| `a11y.gunlukRutin.aldimGecmis` | {ad}, {gün}. Aldım olarak işaretle, {tutar} |
+| `a11y.gunlukRutin.almadimGecmis` | {ad}, {gün}. Almadım olarak işaretle, {tutar} rutin tasarrufu |
+| `a11y.bolumYukleniyor` | {başlık}. Yükleniyor |
+
+> **Geçmiş gün (B3).** Görünür etiketler gün-nötr kalır ("Aldım" · "Almadım");
+> günü **yalnız** bölüm başlığı (görsel) ve erişilebilirlik etiketleri (sesli)
+> taşır. Sebep: ekran okuyucu kullanıcısı bölüm başlığını duymadan doğrudan
+> bir düğmeye odaklanabilir, o yüzden eylemin kapsamı düğmenin kendi
+> etiketinde de olmalı. Geçmiş gün etiketleri cümle başı yapılır ("Aldım
+> olarak işaretle"), çünkü araya giren "{gün}." noktası cümleyi bitirir.
+
+> **Yükleniyor (Ö5).** `a11y.bolumYukleniyor` **paylaşılan** anahtardır: özeti
+> henüz olmayan bir bölüm başlığı "{başlık}. " diye yarım kalmaz. İki yerde
+> kullanılır — E-10 rutin bölümü (`{başlık}` = "Rutinler") ve E-27 Tasarruf
+> akordiyonunun dört bölümü ("Bu ayın bütçesi" · "Gerçek birikim" ·
+> "Kategori dağılımı" · "Rutin tasarrufu"). Görünür karşılığı **yoktur**:
+> ekranda o yerde 104×18 çukur blok durur, "Yükleniyor" yazısı çizilmez.
+
+> **Rutini olmayan kullanıcıda bölüm hiç çizilmez**, bu yüzden Günlük için
+> bir rutin boş durumu metni **üretilmedi** (gerekçe: `rev3-gunluk-rutin.md`
+> §5/1). Kurulum metinleri `/rutinler` ekranında ve onboarding'de duruyor.
+
+> **`rutinler.tsx`'ten kalkan metinler:** "+ Harcama ekle" ·
+> "Bugün vazgeçtiğim adet" · "Bugün almadım" · "Bugünkü vazgeçişi geri al" ·
+> "Bugünkü vazgeçişin kaydedildi. Bu işlem birikim hesabına para eklemez."
+> Yönetim metinleri (ekle/düzenle/kaldır, "Rutin değişiklikleri bugünden
+> itibaren geçerlidir.") **o ekranda kalıyor.**
+
+
 ## 2026-09-22 — geçici geliştirme girişi ve kullanılamayan yöntemler
 - `giris.test_modu`: Test modu: herhangi bir ad ve şifreyle giriş yapabilirsin. Aynı ad, aynı test hesabını açar.
 - `giris.sifirlama_yok`: Şifre sıfırlama henüz kullanıma açık değil.
 - `giris.sosyal_yok`: Bu giriş yöntemi henüz kullanıma açık değil. E-posta alanıyla devam edebilirsin.
+
+---
+
+## 30. E-18 Taksitler — **kategori ve ürün kırılımı (REV3)**
+
+> Kaynak: `docs/design/rev3-taksitler.md`. §22.3'teki E-18 anahtarları
+> **kaldırılmadı**; aşağıda yalnız yeni anahtarlar ve **tek** metin
+> değişikliği var. Ton denetimi: ünlem yok · emoji yok · övgü yok · en uzun
+> arayüz cümlesi 9 kelime · teknik sözcük yok.
+
+### 30.1 Değişen tek anahtar — **PM onayladı**
+
+| Anahtar | Eski (§22.3) | Yeni | Gerekçe |
+|---|---|---|---|
+| `taksit.seriler_baslik` | Süren seriler | **Süren taksitler** | Bölüm artık kategori → ürün kırılımı taşıyor; "taksit" kullanıcının kendi sözcüğü (ekran adı da o). **REV3-r2:** yalnız **çok kategorili** düzende basılır — tek kategoride başlığın `h2`'si kategori adı olur ve bu dize **çizilmez** (rev3-taksitler.md §4.2) |
+
+> §22.3'teki satır da **aynı değere güncellendi**: aynı anahtar için iki
+> farklı metin taşıyan bir sözlük, ilk çelişkide kaybedilen turdur.
+
+### 30.2 Yeni anahtarlar
+
+| Anahtar | Değer | Nerede |
+|---|---|---|
+| `taksit.ozet_kategorili` | **{kategori} kategori · {adet} ürün** | Bölüm başlığının sağı — iki ve daha çok kategori ("3 kategori · 6 ürün") |
+| `taksit.ozet_tek_kategori` | **{adet} ürün** | Bölüm başlığının sağı — tek kategori, akordiyon kurulmaz ("8 ürün"). **REV3-r2:** bu düzende başlığın `h2`'si kategori adının kendisi olduğu için (rev3-taksitler.md §4.2) özet yalnız sayıyı taşır; eski değer "{kategori} · {adet} ürün" adı iki kez yazıyordu |
+| `taksit.kategori_ozet` | {tutar} · {adet} ürün | Kapalı kategori akordiyonunun özeti |
+| `taksit.seri_kalan` | {mevcut}/{toplam} · kalan {tutar} | Ürün satırının ikincil satırı |
+| `taksit.urun_yok` | {kategori} taksidi | Ürün adı boş kaydedilmiş serinin satır başlığı |
+| `taksit.tumunu_goster` | Tümünü göster | Kategoride 6'dan fazla ürün varsa tek yönlü açma düğmesi |
+| `taksit.seri_bitti_urun` | {urun} taksidi {ay} ayında bitti. Aylık yük {tutar} düştü. | Geçen ay biten seri şeridi — ürün adı varsa bu kullanılır |
+| `taksit.seri_bitti` (mevcut) | {kategori} serisi {ay} ayında bitti. Aylık yük {tutar} düştü. | Ürün adı yoksa yedek olarak kalır |
+| `hata.okuma.taksit` | Taksitler açılamadı | E-18 hata başlığı (`hata.okuma.govde` ve `hata.okuma.eylem` aynen kullanılır) |
+
+### 30.3 Aynen korunan anahtarlar
+
+`taksit.baslik` · `taksit.bu_ay_etiket` · `taksit.aciklama` ·
+`taksit.gelecek_baslik` · `taksit.kalan_toplam` · `taksit.son_taksit`
+("Son taksit bu ay" — metni aynı, **rengi** `warning-ink` → `primary-text`
+düzeltildi, bkz. rev3-taksitler.md K-T6) · `bos.taksit.baslik` ·
+`bos.taksit.govde` · `detay.taksit_bilgi` · `detay.sil_taksit` ·
+`sil.baslik` · `sil.govde_taksit` · `toast.taksit_silindi`.
+
+**Düşen anahtarlar:**
+- `taksit.her_ay` ("her ay") — ürün satırının ikincil satırı artık
+  `taksit.seri_kalan` taşıyor; kartın etiketi zaten "Bu ay".
+- `taksit.seri_adet` ("{adet} seri") — E-18'de **kullanılmıyor**. §22.3'te
+  duruyor ama bu ekrandaki hiçbir yüzey onu çağırmıyor; yerine
+  `taksit.ozet_kategorili` / `taksit.ozet_tek_kategori` geldi.
+
+### 30.2.1 Sayma birimi kuralı — **"ürün", "seri" değil** (REV3-r1)
+
+Bölüm başlığı ile kategori özetleri **aynı niceliği aynı sözcükle** söyler;
+8px arayla iki farklı ad kullanmak kullanıcıya iki farklı şey sayıldığını
+düşündürür:
+
+```
+Süren taksitler        3 kategori · 6 ürün
+  Diğer                1.820 ₺ · 3 ürün
+  Giyim                780 ₺ · 2 ürün
+  Sağlık               520 ₺ · 1 ürün        3 + 2 + 1 = 6
+```
+
+**"Seri" sözcüğü arayüzde yalnız silme/detay bağlamında kalır** —
+`detay.sil_taksit` ("Taksit serisini sil"), `sil.baslik`, `sil.govde_taksit`,
+`toast.taksit_silindi`. Orada silinen şey gerçekten tek bir ay değil
+serinin tamamıdır; sözcük bu farkı taşımak için gerekli. Listede, özette
+ve başlıkta kullanıcının sözcüğü geçer: **ürün**.
+
+### 30.4 Erişilebilirlik etiketleri (E-18 · REV3)
+
+| Anahtar | Değer |
+|---|---|
+| `a11y.taksit.kategori` | {kategori}. {tutar}, {adet} ürün |
+| `a11y.taksit.seri` | {urun}. Bu ay {tutar}. {mevcut}. taksit, {toplam} taksitten. Kalan {kalan}. Ayrıntıyı aç |
+| `a11y.taksit.seri_son` | {urun}. Bu ay {tutar}. Son taksit. Ayrıntıyı aç |
+| `a11y.taksit.tumunu_goster` | {adet} ürünün tamamını göster |
+| `a11y.taksit.geri` | Geri dön |
+
+Satırın sağındaki 20pt `chevron-right` **dekoratiftir**
+(`importantForAccessibility="no"`): "Ayrıntıyı aç" zaten `a11y.taksit.seri`
+etiketinin sonunda geçiyor, ok ikinci kez okunmaz.

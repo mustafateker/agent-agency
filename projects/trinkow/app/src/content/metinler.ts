@@ -21,48 +21,89 @@ export const t = {
   'eylem.simdi_degil': 'Şimdi değil',
   'eylem.devam': 'Devam',
 
-  // §2 Katman 1 — Onboarding (E-01…E-03 · K-053, 3 soru · D-2d-3a)
-  'ob.adim': 'Adım 1/3',
-  'ob.adim2': 'Adım 2/3',
-  'ob.adim3': 'Adım 3/3',
+  // §2 Kurulum (onboarding 1-4) — rev2-onboarding-kayit.md §8 (REV2-r1)
+  'ob.sayac': '{adim}/4',
   'a11y.kurulum_ilerlemesi': 'Kurulum ilerlemesi',
-  'ob.niyet.baslik': 'Neden buradasın',
-  'ob.niyet.aciklama': 'Sonra değiştirebilirsin.',
-  'ob.niyet.takip': 'Param nereye gidiyor',
-  'ob.niyet.takip.alt': 'Günlük harcamanı görmek istiyorsun.',
-  'ob.niyet.tasarruf': 'Bütçe yaratmak',
-  'ob.niyet.tasarruf.alt': 'Her ay bir miktar ayırmak istiyorsun.',
-  'ob.niyet.borc': 'Borç kapatmak',
-  'ob.niyet.borc.alt': 'Kalan borcu eritmek istiyorsun.',
-  'ob.onizleme.etiket': 'Panondaki büyük sayı',
-  'ob.gelir.baslik': 'Aylık net gelirin ne kadar',
-  'ob.gelir.aciklama': 'Planı buna göre kuruyoruz. İstemezsen atla.',
-  'ob.gelir.etiket': 'Aylık net gelir',
-  'ob.gelir.net': 'Eline geçen tutar. Kesintiden sonrası.',
-  'ob.gelir.bos': 'Kesin olması gerekmiyor. Yaklaşık yeter.',
-  'ob.gelir.mahremiyet': 'Gelirin hesabında kalır.',
-  'ob.gelir.atlarsan': 'Atlarsan günlük limiti sen yazarsın.',
-  'ob.gelir.atla': 'Atla',
-  'a11y.ob.gelir_atla': 'Gelir sorusunu atla',
-  'ob.maas.baslik': 'Maaşın hangi gün yatıyor',
-  'ob.maas.aciklama': 'Günlük limit maaş dönemine bölünür.',
+  'a11y.onceki_adim': 'Önceki adıma dön',
+  'ob.devam': 'Devam',
+  // 1/4 niyet
+  'ob.niyet.baslik': 'Hadi başlayalım',
+  'ob.niyet.aciklama': 'Neyi hedefliyorsun? Günlük harcama limitini buna göre kuruyoruz.',
+  'ob.niyet.tasarruf': 'Birikim yapmak',
+  'ob.niyet.tasarruf.alt': 'Her ay kenara bir pay ayıracaksın.',
+  'ob.niyet.takip': 'Paramı kontrol altına almak',
+  'ob.niyet.takip.alt': 'Günün nereye gittiğini net göreceksin.',
+  'ob.niyet.borc': 'Borcumu bitirmek',
+  'ob.niyet.borc.alt': 'Kalan borcu adım adım eriteceksin.',
+  'ob.niyet.ipucu': 'Birini seçince devam edebilirsin.',
+  // 2/4 gelir ve gider
+  'ob.butce.baslik': 'Gelir ve gider',
+  'ob.butce.aciklama': 'Gelirini ve giderlerini inceleyip sana en uygun planı kuruyoruz. Hedefine en kısa yoldan ulaşırsın.',
+  'ob.butce.gelir_bolum': 'Gelirin',
+  'ob.butce.gider_bolum': 'Sabit giderlerin',
+  'ob.butce.hedef_bolum': 'Hedefin',
+  'alan.gelir': 'Aylık net gelir',
+  'alan.gelir.not': 'Eline geçen tutar, kesintiden sonrası.',
+  'alan.kira': 'Kira ya da aidat',
+  'alan.fatura': 'Sabit faturalar',
+  'alan.ulasim': 'Zorunlu ulaşım',
+  'alan.kredi': 'Kredi ve taksitler',
+  'alan.hedef.tasarruf': 'Aylık hedef birikim',
+  'alan.hedef.borc': 'Aylık hedef borç kapatma',
+  'alan.hedef.takip': 'Aylık kenara ayırmak istediğin tutar',
+  'alan.hedef.not': "Zorunlu değil. Sonra Profil'den değiştirebilirsin.",
+  'alan.borc': 'Kalan toplam borç',
+  'alan.borc.not': 'Borcun yoksa boş bırakabilirsin.',
+  'hata.gelir_bos': 'Planı kurmak için gelirini yazman gerekiyor.',
+  'ob.butce.mesgul': 'Plan kuruluyor',
+  'hata.butce_yazma': 'Plan kaydedilemedi.',
+  'hata.butce_yazma.ek': 'Yazdıkların duruyor, yeniden deneyebilirsin.',
+  'genel.yeniden_dene': 'Yeniden dene',
+  // 3/4 rutinler
+  'ob.rutin.baslik': 'Günlük rutinlerin',
+  'ob.rutin.aciklama': 'Kahve, sigara, ulaşım gibi her gün tekrar edenler. Ekledikçe planın gerçeğe yaklaşır.',
+  'ob.rutin.bolum': 'Eklediklerin',
+  'ob.rutin.bos': 'Eklediğin rutinler burada sıralanır.',
+  'ob.rutin.ekle': 'Rutin ekle',
+  'ob.rutin.yok': 'Rutin harcamam yok',
+  'ob.rutin.devam': 'Plan özetine geç',
+  'ob.rutin.sheet_baslik': 'Rutin ekle',
+  'ob.rutin.sheet_baslik.duzenle': 'Rutini düzenle',
+  'ob.rutin.ad': 'Ne?',
+  'ob.rutin.ad_ph': 'Sabah kahvesi',
+  'ob.rutin.kategori': 'Kategori',
+  'ob.rutin.adet': 'Günlük adet',
+  'ob.rutin.fiyat': 'Birim fiyat',
+  'ob.rutin.sheet_eylem': 'Rutini ekle',
+  'ob.rutin.sheet_eylem.duzenle': 'Değişikliği kaydet',
+  'ob.rutin.kaldir': 'Rutini kaldır',
+  /** `MirrorWell`in sabit sol etiketi — `ob.rutin.ayna` ("Ayda {tutar}") şablonunun değişmeyen sözcüğü, iki sütunlu satır için ayrıştırıldı. */
+  'ob.rutin.ayna_baslik': 'Ayda',
+  'hata.rutin_fiyat_bos': 'Rutini kaydetmek için birim fiyat gerekiyor.',
+  'ob.rutin.sonra': "Rutinleri sonra Profil → Rutinlerim'den değiştirebilirsin.",
+  'hata.rutin_yazma': 'Rutinler kaydedilemedi.',
+  'hata.rutin_yazma.ek': 'Yazdıkların duruyor, yeniden deneyebilirsin.',
+  // 4/4 plan özeti
+  'ob.ozet.baslik': 'Planın hazır',
+  'ob.ozet.aciklama.tasarruf': 'Bu limitin altında kaldığın her gün birikimin büyür.',
+  'ob.ozet.aciklama.borc': 'Bu limitin altında kaldığın her gün borcun küçülür.',
+  'ob.ozet.aciklama.takip': 'Bu limitin altında kaldığın her gün planın tutar.',
+  'ob.ozet.limit_etiket': 'Günlük harcama limitin',
+  'ob.ozet.hesaplaniyor': 'Hesaplanıyor',
+  'ob.ozet.amac': 'Amacın',
+  'ob.ozet.gelir': 'Aylık gelirin',
+  'ob.ozet.gider': 'Sabit giderlerin',
+  'ob.ozet.rutin': 'Günlük rutinlerin',
+  'ob.ozet.hedef.takip': 'Aylık kenara ayırdığın',
+  'ob.ozet.nasil': 'Gelirinden sabit giderlerini ve hedefini çıkarıp 30 güne bölüyoruz.',
+  'ob.ozet.rutin_not': 'Rutinlerin bu limitin içinden harcanır.',
+  'ob.ozet.degistir': "Limitini Profil → Bütçe ve rutinler'den her zaman değiştirebilirsin.",
+  'ob.ozet.eylem': "Trinkow'u kullanmaya başla",
+  'hata.kurulum': 'Kurulum tamamlanamadı.',
+  'hata.kurulum.ek': 'Yeniden deneyebilirsin.',
+  // Ayarlar > Plan ve profil "Maaş günü" satırı hâlâ bu iki anahtarı kullanır (kurulum artık maaş günü sormuyor).
   'ob.maas.duzensiz': 'Düzensiz geliyor',
   'ob.maas.duzensiz.not': 'Dönem 30 gün sayılır. Maaş günü değişirse ayarlardan düzeltebilirsin.',
-  'ob.bitir': 'Başla',
-  'ob.ozet.limit_yok': 'Henüz yok',
-  'ob.ozet.limit_not': 'Günlük limiti plan kurunca ya da elle yazınca belirlersin.',
-  'onboarding.ozet.limitSatiri': 'Gelirini yazdığın için sana bir günlük limit önerebiliriz. Kabul etmek zorunda değilsin.',
-  /**
-   * `ob.ozet.*_label` ve `ob.ozet.maas_duzensiz` metinler.md'nin "Katman 1
-   * özeti" tablosunda henüz ayrı anahtar olarak yok; satır etiketleri
-   * ("Niyet" · "Maaş günü" · "Günlük limit") ve "Düzensiz" değeri onaylı
-   * prototipten (03-onboarding.html) birebir alındı. PM'e bildirildi.
-   */
-  'ob.ozet.baslik': 'Kurulum özeti',
-  'ob.ozet.niyet_label': 'Niyet',
-  'ob.ozet.maas_label': 'Maaş günü',
-  'ob.ozet.limit_label': 'Günlük limit',
-  'ob.ozet.maas_duzensiz': 'Düzensiz',
 
   // §27.2 Günlük limit önerisi (Katman 1 çıkışı · K-059/5 · D-2d-3a)
   'oneri.baslik': 'Günlük limit önerimiz',
@@ -105,7 +146,7 @@ export const t = {
   'gunluk.harcamasiz.eylem': 'Harcamasız işaretle',
   'gunluk.harcamasiz.isaretli': 'Harcamasız gün. Seriye sayıldı.',
   'gunluk.seri_baslar.baslik': 'Seri bugün başlar',
-  'gunluk.seri_baslar.govde': 'Günü limit altında kapatırsan seri 1 gün olur.',
+  'gunluk.seri_baslar.govde': 'Bugün bir kayıt eklersen seri 1 gün olur.',
 
   // §23.4 kategoriler kartı (yalnız Bugün sayfası)
   'gunluk.grup.baslik': 'Kategoriler',
@@ -116,7 +157,7 @@ export const t = {
   'seri.baslik': 'Seri',
   'seri.hero.birim': 'gün',
   'seri.kirildi': 'Seri dün kırıldı. Bugün yeniden başlıyor.',
-  'seri.bos.govde': 'Seri henüz başlamadı. Bugünü limit altında kapat.',
+  'seri.bos.govde': 'Seri henüz başlamadı. Bugüne bir kayıt ekle.',
   'seri.en_uzun': 'En uzun seri',
   'seri.en_uzun_bos': 'Henüz yok',
   'seri.duraklar': 'Duraklar',
@@ -125,7 +166,7 @@ export const t = {
   'seri.lejant.disinda': 'limit dışı',
   'seri.lejant.kayit_yok': 'kayıt yok',
   'seri.kural.baslik': 'Seri nasıl işler',
-  'seri.kural.1': 'Günü günlük limitin altında kapatırsan seri sürer.',
+  'seri.kural.1': 'Her gün kayıt girdiğin sürece seri sürer. Limiti aşman seriyi bozmaz.',
   'seri.kural.2': 'Kayıt yazmadığın gün sayılmaz. Harcamasız geçtiyse işaretle.',
   'seri.kapali.baslik': 'Seri kapalı',
   'seri.kapali.govde': 'Seri için günlük limit gerekir.',
@@ -176,7 +217,8 @@ export const t = {
   'ekle.tutar.alt.katalogdan': 'Tutarı sen yaz. Fiyat tahmini yapmıyoruz.',
   'ekle.tutar.alt.kategori': 'Kategori üründen geldi. Değiştirebilirsin.',
   'ekle.hata.tutar': 'Tutar sıfırdan büyük olmalı.',
-  'ekle.hata.kategori': 'Bir kategori seç.',
+  // REV2 — 'ekle.hata.kategori' kaldırıldı: harcama-ekle'de kategori artık
+  // seçilemiyor, dolayısıyla "kategori seçilmedi" hatası oluşamaz.
   'ekle.hata.yazilamadi': 'Kayıt yazılamadı. Yeniden dene.',
   'a11y.ekle.arama': 'Ürün ara, isteğe bağlı',
   'a11y.ekle.aramaTemizle': 'Aramayı temizle',
@@ -253,6 +295,8 @@ export const t = {
   // §13 boş durumlar — E-10 ilk gün
   'bos.pano.baslik': 'Bugün boş',
   'bos.pano.govde': 'Bugün henüz bir şey yazmadın. İlk kahve iyi bir başlangıç.',
+  // CTA artık formu kategorisiz açmıyor, aşağıdaki kategori listesine kaydırıyor.
+  'bos.pano.eylem': 'Kategori seç',
 
   // diğer ekranlardan ödünç alınan, E-10'da geçen dizeler
   'limitler.kategori_aciklama': 'Aylık. Boş bırakırsan takip edilmez.',
@@ -308,11 +352,14 @@ export const t = {
   'taksit.bu_ay_etiket': 'Bu ay',
   'taksit.aciklama': 'Taksitler girildiği güne değil, ait olduğu aya yazılır.',
   'taksit.gelecek_baslik': 'Önümüzdeki aylar',
-  'taksit.seriler_baslik': 'Süren seriler',
-  'taksit.her_ay': 'her ay',
+  // REV3 (rev3-taksitler.md §9/§30) — çok kategorili düzende bölüm başlığı;
+  // tek kategoride düşer (§4.2). "seri" yerine kullanıcının sözcüğü "ürün".
+  'taksit.seriler_baslik': 'Süren taksitler',
   'taksit.son_taksit': 'Son taksit bu ay',
+  'taksit.tumunu_goster': 'Tümünü göster',
   'bos.taksit.baslik': 'Taksitli işlem yok',
   'bos.taksit.govde': 'Kartla taksitli harcama girdiğinde burada listelenir.',
+  'hata.okuma.taksit': 'Taksitler açılamadı',
 
   // §26/§27 D-2d-3b · Katman 2 "Seni tanıyalım" (E-25)
   'tan.baslik': 'Seni tanıyalım',
@@ -408,7 +455,7 @@ export const t = {
   'plan.pay.birikim': 'Birikim',
   'plan.limit.baslik': 'Günlük limit',
   'plan.limit.pano': 'Panodaki büyük sayı bu olur.',
-  'plan.limit.pano.alt': 'Her maaş döneminde yeniden bölünür.',
+  'plan.limit.pano.alt': 'Her gelir döneminde yeniden bölünür.',
   'plan.denklem.sosyal': 'sosyal pay',
   'plan.denklem.kalan_gun': 'kalan gün',
   'plan.denklem.gunluk': 'günlük',
@@ -491,6 +538,7 @@ export const t = {
   'ayar.plan.aciklama': 'Plan cevaplarından çıkar. İstediğin an değiştir.',
   'ayar.plan.gelir': 'Aylık net gelir',
   'ayar.plan.gelir_girilmedi': 'Girilmedi',
+  // "Maaş günü" bilinçli tutuldu: burada gelirin GÜNÜ soruluyor, "gelir günü" ifadesi kavramı bulanıklaştırır.
   'ayar.plan.maas_gunu': 'Maaş günü',
   'ayar.plan.gelirsiz': 'Gelirini girmedin. Plan onsuz kurulmuyor.',
   'ayar.plan.tanit': 'Seni tanıyalım',
@@ -507,9 +555,10 @@ export const t = {
   'ayar.hesap.kapali': 'Hesap zorunlu. Kayıtların hesabında kalır.',
   'ayar.hesap.kapali_kapi': 'Oturum aç ya da hesap oluştur',
 
-  // §25 D-2c-2 · E-22 Oturum aç · E-23 Hesap oluştur (metinler.md §25)
-  'hesap.mahremiyet': 'Harcamaların hesabında kalır. Hesap yalnız seni tanır.',
-  'hesap.mahremiyet.ek': 'Yedekleme sonraki sürümlerde.',
+  // §25 D-2c-2 · E-22 Oturum aç · E-23/E-16 Hesap oluştur (metinler.md §25)
+  // `hesap.mahremiyet` / `.ek` / `kayit.yasal` REV2'de kaldırıldı (§7 delta
+  // tablosu — Mustafa kararı, PM onaylı): mahremiyet şeridi düştü, tek
+  // pasif onay cümlesi yerine iki ayrı `Checkbox` geldi.
   'giris.ayirac': 'ya da',
   'giris.hesapsiz': 'Hesapsız devam et',
   'giris.sosyal.apple': 'Apple ile Devam Et',
@@ -525,6 +574,7 @@ export const t = {
   'giris.test_modu': 'Test modu: herhangi bir ad ve şifreyle giriş yapabilirsin. Aynı ad, aynı test hesabını açar.',
   'giris.sifirlama_yok': 'Şifre sıfırlama henüz kullanıma açık değil.',
   'giris.sosyal_yok': 'Bu giriş yöntemi henüz kullanıma açık değil. E-posta alanıyla devam edebilirsin.',
+  'giris.oturum_dogrulanamadi': 'Bağlantı kurulamadı. Yeniden giriş yapmayı dene.',
   'giris.eylem': 'Oturum aç',
   'giris.mesgul': 'Oturum açılıyor',
   'giris.unuttum': 'Şifremi unuttum',
@@ -543,11 +593,24 @@ export const t = {
   'kayit.mesgul': 'Hesap oluşturuluyor',
   'kayit.sifre_kural': 'En az 8 karakter.',
   'kayit.sifre_kural_tamam': 'Uzunluk yeterli.',
-  'kayit.yasal': 'Hesap oluşturarak **Kullanım şartları** ve **Gizlilik politikasını** kabul ediyorsun.',
+  'alan.sifre_tekrar': 'Şifre tekrar',
+  'alan.sifre_tekrar_ph': 'Şifreyi yeniden yaz',
+  'hata.sifre_eslesmiyor': 'İki şifre aynı değil. Yeniden yaz.',
+  'kayit.onay.kosullar': 'Kullanım şartlarını okudum, kabul ediyorum.',
+  'kayit.onay.gizlilik': 'Gizlilik politikasını okudum, kabul ediyorum.',
+  'kayit.belge.kosullar': 'Kullanım şartları',
+  'kayit.belge.gizlilik': 'Gizlilik politikası',
+  'kayit.onay.ipucu': 'İki onayı da işaretleyince hesabını oluşturabilirsin.',
+  'a11y.onay.kosullar': 'Kullanım şartlarını kabul et',
+  'a11y.onay.gizlilik': 'Gizlilik politikasını kabul et',
+  'a11y.belge.kosullar': 'Kullanım şartları belgesini aç',
+  'a11y.belge.gizlilik': 'Gizlilik politikası belgesini aç',
+  'hata.onay_gerekli': 'Devam etmek için iki onay da gerekiyor.',
   'kayit.giris_kapisi.soru': 'Hesabın var mı',
   'kayit.giris_kapisi.aksiyon': 'Oturum aç',
   'hata.eposta_kayitli': 'Bu e-posta ile hesap var. Oturum aç.',
   'hata.baglanti.kayit': 'Hesap açmak için bağlantı gerekir.',
+  'hata.baglanti.kayit.ek': 'Yazdıkların duruyor.',
 
   'hesapsil.baslik': 'Hesabın silinecek',
   'hesapsil.govde': 'Geri alınamaz. Bu e-posta ile bir daha oturum açamazsın.',
@@ -573,6 +636,150 @@ export const t = {
   'prof.simdi_degil': 'Şimdi değil',
   'prof.degisti': 'Cevabına göre eklendi. Ayarlardan kaldırabilirsin.',
   'a11y.prof.kapat': 'Profilleme sorusunu kapat',
+
+  // §28 rev2-tasarruf-profil.md — E-27 Tasarruf (28.1)
+  'tasarruf.baslik': 'Tasarruf',
+  /** Prototipte var, §28.1 tablosunda anahtarsız kalmış (PM'e raporlanmıştır). */
+  'tasarruf.ustSatir.hata': 'Tasarruf verisi',
+  'tasarruf.kip.cip': 'Tasarruf',
+  'tasarruf.gosterge.etiket': 'bu ay biriken',
+  'tasarruf.gosterge.etiketDisinda': 'bütçe dışı',
+  'tasarruf.gosterge.ayYeni': 'Ay yeni başladı. İlk tamamlanan günle hesap başlar.',
+  'tasarruf.gosterge.hesaplaniyor': 'Hesaplanıyor',
+  'tasarruf.gelirYok.baslik': 'Gelirini ekle',
+  'tasarruf.gelirYok.alt': 'Aylık gelirini yazınca bu ayın payını hesaplarız.',
+  'tasarruf.gelirYok.btn': 'Bütçeyi düzenle',
+  'tasarruf.motivasyon.birikim': 'Bu tutarı birikim hedefin için ayırmayı düşünebilirsin.',
+  'tasarruf.butce.baslik.buAy': 'Bu ayın bütçesi',
+  'tasarruf.butce.baslik.gecmisAy': 'Ayın bütçesi',
+  'tasarruf.butce.harcanabilir': 'Harcanabilir',
+  'tasarruf.butce.harcanan': 'Harcanan',
+  'tasarruf.butce.kalan': 'Kalan',
+  'tasarruf.butce.disinda': 'Bütçe dışı',
+  'tasarruf.butce.gunSayaci': 'Tamamlanan gün',
+  'tasarruf.birikim.baslik': 'Gerçek birikim',
+  'tasarruf.birikim.ayYok.buAy': 'Bu ay kayıt yok',
+  'tasarruf.birikim.hedefYok': 'Hedef koymadın',
+  'tasarruf.birikim.hedefBtn': 'Hedef koy',
+  'tasarruf.birikim.ekleBtn': 'Birikim hareketi ekle',
+  'tasarruf.hareket.baslik': 'Birikim hareketleri',
+  'tasarruf.hareket.eklendi': 'Birikime eklendi',
+  'tasarruf.hareket.cekildi': 'Birikimden çekildi',
+  'tasarruf.hareket.cekildiEtiket': 'çekildi',
+  'tasarruf.hareket.tumu': 'Tüm hareketler',
+  'tasarruf.hareket.bos.baslik': 'Birikim kaydı yok',
+  'tasarruf.hareket.bos.alt.buAy': 'Kenara para ayırdığında buraya yazarsın.',
+  'tasarruf.kategori.baslik': 'Kategori dağılımı',
+  'tasarruf.kategori.tumu': 'Tümünü gör',
+  'tasarruf.kategori.bos.buAy': 'Bu ay henüz harcama yazmadın.',
+  'tasarruf.kategori.bos.alt': 'İlk kaydından sonra kategori payları burada görünür.',
+  'tasarruf.rutin.baslik': 'Rutin tasarrufu',
+  'tasarruf.rutin.alt': 'Vazgeçtiğin rutinler. Bütçedeki kalana eklenmez.',
+  'tasarruf.rutin.bos.buAy': 'Bu ay vazgeçtiğin rutin yok.',
+  'tasarruf.rutin.hicYok': 'Rutin eklemedin. Vazgeçtiğin harcamalar burada toplanır.',
+  'tasarruf.rutin.btn': 'Rutinleri aç',
+  'tasarruf.hata.baslik': 'Bilgiler yüklenemedi',
+  'tasarruf.hata.alt': 'Bağlantını kontrol edip yeniden dene.',
+  'tasarruf.hata.btn': 'Yeniden dene',
+
+  'birikimSheet.baslik.ekle': 'Birikim hareketi',
+  'birikimSheet.baslik.duzenle': 'Hareketi düzenle',
+  'birikimSheet.segment.ekle': 'Ekledim',
+  'birikimSheet.segment.cek': 'Çektim',
+  'birikimSheet.tutar': 'Tutar',
+  'birikimSheet.tarih': 'Tarih',
+  'birikimSheet.not': 'Not',
+  'birikimSheet.notPlaceholder': 'İsteğe bağlı',
+  'birikimSheet.kaydet': 'Kaydet',
+  'birikimSheet.kaydediliyor': 'Kaydediliyor',
+  'birikimSheet.sil': 'Sil',
+  'birikimSheet.hata.tutarBos': 'Tutar boş kalamaz.',
+  'birikimSheet.hata.bakiye': 'Birikimin bu kadar düşmez. Tutarı azalt.',
+  'birikimSheet.hata.ileriTarih': 'Tarih ileri bir gün olamaz.',
+  'birikimSheet.hata.ag': 'Kaydedilemedi. Yeniden dene.',
+
+  'a11y.tasarruf.gosterge': 'Bu ayın biriken payı',
+  'a11y.tasarruf.kipCip': 'Kip: Tasarruf. Değiştirmek için ayarları aç',
+  'a11y.tasarruf.oncekiAy': 'Önceki ay',
+  'a11y.tasarruf.sonrakiAy': 'Sonraki ay',
+  'a11y.tasarruf.hareketSil': 'Bu hareketi sil',
+
+  // §28.3 rev2-tasarruf-profil.md §3.12 — E-27 akordiyon başlıkları/özetleri (REV3)
+  'tasarruf.bolum.butce': 'Bu ayın bütçesi',
+  'tasarruf.bolum.butceGecmis': 'Ayın bütçesi',
+  'tasarruf.bolum.birikim': 'Gerçek birikim',
+  'tasarruf.bolum.kategori': 'Kategori dağılımı',
+  'tasarruf.bolum.rutin': 'Rutin tasarrufu',
+  'tasarruf.ozet.butceGelirYok': 'Gelir eksik',
+  'tasarruf.ozet.kategoriYok': 'Harcama yok',
+  'tasarruf.ozet.rutinYok': 'Rutin eklemedin',
+  'tasarruf.ozet.acilamadi': 'Açılamadı',
+  'tasarruf.bolum.sonHareketler': 'Son hareketler',
+  'tasarruf.butce.gelirYokSatir': 'Gelirini yazınca harcanabilir, harcanan ve kalan burada görünür.',
+  'tasarruf.birikim.acilamadi': 'Birikim kayıtları açılamadı.',
+  'tasarruf.rutin.tutarEtiket': 'Vazgeçtiğin rutinler',
+  'tasarruf.rutin.kural': 'Bütçedeki kalana eklenmez.',
+
+  // §29 rev3-gunluk-rutin.md — E-10 Günlük rutin hızlı eylem satırı (REV3)
+  'gunlukRutin.baslik': 'Rutinler',
+  'gunlukRutin.aldim': 'Aldım',
+  'gunlukRutin.almadim': 'Almadım',
+  'gunlukRutin.durum.almadim': 'Vazgeçtin · rutin tasarrufu',
+  'gunlukRutin.tumu': 'Tüm rutinler',
+  'gunlukRutin.toast.geriAl': 'Geri al',
+  'gunlukRutin.hata.isaret': 'İşaret kaydedilemedi. Yeniden dene.',
+
+  // §28.2 — E-28 Profil
+  'profil.baslik': 'Profil',
+  'profil.ustSatir': 'Hesabın ve planın',
+  'profil.kimlik.saglayici.google': 'Google ile oturum açıldı',
+  'profil.kimlik.saglayici.apple': 'Apple ile oturum açıldı',
+  /** Spesifikasyonda tanımsız (yalnız google/apple yazıyor) — aynı kalıbın
+   * e-posta/şifre hesabına genellemesi; PM'e raporlanmıştır. */
+  'profil.kimlik.saglayici.eposta': 'E-posta ile oturum açıldı',
+  'profil.kimlik.hesapsiz.baslik': 'Hesapsız kullanıyorsun',
+  'profil.kimlik.hesapsiz.alt': 'Harcamaların telefonunda kalır.',
+  'profil.kimlik.hesapsiz.btn': 'Oturum aç',
+  'profil.kimlik.hata.baslik': 'Hesap bilgisi açılamadı',
+  'profil.kimlik.hata.alt': 'Ayarların ve yasal metinler açık kalır.',
+  'profil.kimlik.hata.btn': 'Yeniden dene',
+  'profil.kimlik.serit.yok': 'Seri henüz başlamadı',
+  'profil.kimlik.serit.yokAlt': 'İlk kaydınla ilk gün sayılır.',
+  'profil.kimlik.serit.altRekor': 'En uzun serin bu.',
+  /** Kapanış QA düzeltmesi — `ayarVerisi` ağ hatasında (data===null) Planın/
+   * Kayıt kolaylıkları grupları tek `ErrorState` ile değişir; boş-durum
+   * metinleriyle karıştırılmaz (`ayarGorunumu.ts`). */
+  'profil.ayarlar.hata.baslik': 'Ayar bilgilerin açılamadı',
+  'profil.ayarlar.hata.alt': 'Bağlantını kontrol edip yeniden dene.',
+  'profil.grup.plan': 'Planın',
+  'profil.grup.kayit': 'Kayıt kolaylıkları',
+  'profil.grup.takip': 'Takip',
+  'profil.grup.uygulama': 'Uygulama',
+  'profil.satir.butce': 'Gelir ve bütçe',
+  'profil.satir.limitler': 'Limitler',
+  'profil.satir.limitlerBos': 'Günlük ve kategori limitlerini belirle',
+  /** Yalnız veri okunamadığında (ağ hatası) — spesifikasyonda tanımsız üç
+   * satır için inferred fallback, PM'e raporlanmıştır. */
+  'profil.satir.butceBos': 'Aylık gelirini ve bütçeni belirle',
+  'profil.satir.rutinlerBos': 'Vazgeçtiğin rutinleri buradan yönet',
+  'profil.satir.favorilerBos': 'Sık kullandığın harcamaları kaydet',
+  'profil.satir.taksitlerBos': 'Taksitli harcamalarını buradan takip et',
+  'profil.satir.rutinler': 'Rutinler',
+  'profil.satir.favoriler': 'Favoriler',
+  'profil.satir.taksitler': 'Taksitler',
+  'profil.satir.ozet': 'Aylık özet',
+  'profil.satir.ozetDeger': 'Kategori payları ve haftalık ritim',
+  'profil.satir.seri': 'Seri',
+  'profil.satir.ayarlar': 'Tüm ayarlar',
+  'profil.satir.ayarlarDeger': 'Hesap, bildirim, gün sınırı, yasal',
+  'profil.satir.yardim': 'Yardım',
+  'profil.satir.yardimDeger': 'Sık sorulan sorular',
+  'profil.alt.sartlar': 'Kullanım şartları',
+  'profil.alt.gizlilik': 'Gizlilik',
+
+  'a11y.profil.ayarlar': 'Ayarları aç',
+  'a11y.profil.sartlar': 'Kullanım şartlarını aç',
+  'a11y.profil.gizlilik': 'Gizlilik metnini aç',
 } as const;
 
 /** `Bugün {harcanan}. Limitinin {fark} altındasın.` */
@@ -593,6 +800,31 @@ export function altDisinda(fark: string): string {
 /** `pano.limitsiz.ozet` — "Bugün {adet} kayıt yazdın. Limit koymadığın için kalan gösterilmiyor." */
 export function panoLimitsizOzet(adet: number): string {
   return `Bugün ${adet} kayıt yazdın. Limit koymadığın için kalan gösterilmiyor.`;
+}
+
+/** `ob.sayac` — "{adim}/4" (kurulum başlık çubuğunun tek metni, §2.1). */
+export function obSayac(adim: number, toplam: number): string {
+  return `${adim}/${toplam}`;
+}
+
+/** `ob.rutin.gunluk_toplam` — "Günlük {tutar}" (3/4 bölüm başlığının sağı). */
+export function obRutinGunlukToplam(tutar: string): string {
+  return `Günlük ${tutar}`;
+}
+
+/** `ob.rutin.satir_alt` — "Her gün {adet} × {fiyat}" (`RoutineRow` alt yazısı). */
+export function obRutinSatirAlt(adet: number, fiyat: string): string {
+  return `Her gün ${adet} × ${fiyat}`;
+}
+
+/** `ob.rutin.ayna` — "Ayda {tutar}" (`MirrorWell` üst satırı). */
+export function obRutinAyna(tutar: string): string {
+  return `Ayda ${tutar}`;
+}
+
+/** `ob.rutin.ayna_formul` — "Her gün {adet} × {fiyat} × 30 gün" (`MirrorWell` formülü). */
+export function obRutinAynaFormul(adet: number, fiyat: string): string {
+  return `Her gün ${adet} × ${fiyat} × 30 gün`;
 }
 
 /** `Günlük limit {tutar}` — kahraman kartın sağ üst etiketi (prototip). */
@@ -799,24 +1031,64 @@ export function taksitGelecek(ay: string, tutar: string): string {
   return `${ay} ayında ${tutar}`;
 }
 
-/** `taksit.seri` — "{kategori} · {mevcut}/{toplam}" */
-export function taksitSeri(kategoriAdi: string, mevcut: number, toplam: number): string {
-  return `${kategoriAdi} · ${mevcut}/${toplam}`;
-}
-
-/** `taksit.bitis` — "{ay} {yil} tarihinde bitiyor" (ay parametresi zaten "Mayıs 2027" biçiminde). */
-export function taksitBitis(ayYil: string): string {
-  return `${ayYil} tarihinde bitiyor`;
-}
-
 /** `taksit.kalan_toplam` — "Kalan toplam {tutar}. Sonuncusu {ayYil} tarihinde bitiyor." */
 export function taksitKalanToplam(tutar: string, ayYil: string): string {
   return `Kalan toplam ${tutar}. Sonuncusu ${ayYil} tarihinde bitiyor.`;
 }
 
-/** `taksit.seri_bitti` — "{kategori} serisi {ay} ayında bitti. Aylık yük {tutar} düştü." */
+/** `taksit.seri_bitti` — ürün adı yoksa yedek: "{kategori} serisi {ay} ayında bitti. Aylık yük {tutar} düştü." */
 export function taksitSeriBitti(kategoriAdi: string, ay: string, tutar: string): string {
   return `${kategoriAdi} serisi ${ay} ayında bitti. Aylık yük ${tutar} düştü.`;
+}
+
+/** REV3 §30.2 `taksit.seri_bitti_urun` — "{urun} taksidi {ay} ayında bitti. Aylık yük {tutar} düştü." */
+export function taksitSeriBittiUrun(urunAdi: string, ay: string, tutar: string): string {
+  return `${urunAdi} taksidi ${ay} ayında bitti. Aylık yük ${tutar} düştü.`;
+}
+
+/** REV3 §30.2 `taksit.ozet_kategorili` — çok kategorili bölüm başlığının sağı: "{n} kategori · {n} ürün". */
+export function taksitOzetKategorili(kategoriSayisi: number, urunSayisi: number): string {
+  return `${kategoriSayisi} kategori · ${urunSayisi} ürün`;
+}
+
+/** REV3 §30.2 `taksit.ozet_tek_kategori` — tek kategoride bölüm başlığının sağı: "{n} ürün". */
+export function taksitOzetTekKategori(urunSayisi: number): string {
+  return `${urunSayisi} ürün`;
+}
+
+/** REV3 §30.2 `taksit.kategori_ozet` — kapalı kategori akordiyonunun özeti: "{tutar} · {n} ürün". */
+export function taksitKategoriOzet(tutar: string, urunSayisi: number): string {
+  return `${tutar} · ${urunSayisi} ürün`;
+}
+
+/** REV3 §30.2 `taksit.seri_kalan` — ürün satırının ikincil satırı: "{mevcut}/{toplam} · kalan {tutar}". */
+export function taksitSeriKalan(mevcut: number, toplam: number, kalanTutar: string): string {
+  return `${mevcut}/${toplam} · kalan ${kalanTutar}`;
+}
+
+/** REV3 §30.2 `taksit.urun_yok` — ürün adı boş kaydedilmiş serinin satır başlığı: "{Kategori} taksidi". */
+export function taksitUrunYok(kategoriAdi: string): string {
+  return `${kategoriAdi} taksidi`;
+}
+
+/** REV3 §30.4 `a11y.taksit.kategori` — "{kategori}. {tutar}, {n} ürün". */
+export function a11yTaksitKategori(kategoriAdi: string, tutar: string, urunSayisi: number): string {
+  return `${kategoriAdi}. ${tutar}, ${urunSayisi} ürün`;
+}
+
+/** REV3 §30.4 `a11y.taksit.seri` — "{urun}. Bu ay {tutar}. {mevcut}. taksit, {toplam} taksitten. Kalan {kalan}. Ayrıntıyı aç" */
+export function a11yTaksitSeri(urunAdi: string, tutar: string, mevcut: number, toplam: number, kalanTutar: string): string {
+  return `${urunAdi}. Bu ay ${tutar}. ${mevcut}. taksit, ${toplam} taksitten. Kalan ${kalanTutar}. Ayrıntıyı aç`;
+}
+
+/** REV3 §30.4 `a11y.taksit.seri_son` — "{urun}. Bu ay {tutar}. Son taksit. Ayrıntıyı aç" */
+export function a11yTaksitSeriSon(urunAdi: string, tutar: string): string {
+  return `${urunAdi}. Bu ay ${tutar}. Son taksit. Ayrıntıyı aç`;
+}
+
+/** REV3 §30.4 `a11y.taksit.tumunu_goster` — "{n} ürünün tamamını göster" */
+export function a11yTaksitTumunuGoster(urunSayisi: number): string {
+  return `${urunSayisi} ürünün tamamını göster`;
 }
 
 /* --------------------------------------------------- v4 · E-10 Günlük */
@@ -862,9 +1134,9 @@ export function gunlukA11yGrubaEkle(kategoriAdi: string): string {
 
 /* --------------------------------------------------------- v4 · E-21 Seri */
 
-/** `seri.aktif.govde` — "{n} gündür limit altında kapatıyorsun." */
+/** `seri.aktif.govde` — "{n} gündür kayıt giriyorsun." */
 export function seriAktifGovde(n: number): string {
-  return `${n} gündür limit altında kapatıyorsun.`;
+  return `${n} gündür kayıt giriyorsun.`;
 }
 
 /** `seri.durak.kalan` — "{n} gün kaldı" */
@@ -961,11 +1233,6 @@ export function a11yEkleGun(gun: string): string {
   return `Gün seç, şu an ${gun}`;
 }
 
-/** `a11y.ekle.kategoriDeger` — "Kategori {ad}, değiştirmek için dokun" */
-export function a11yEkleKategoriDeger(ad: string): string {
-  return `Kategori ${ad}, değiştirmek için dokun`;
-}
-
 /** `a11y.ekle.oneriCip` — "Geçen sefer ödediğin {tutar} tutarını kullan" */
 export function a11yEkleOneriCip(tutar: string): string {
   return `Geçen sefer ödediğin ${tutar} tutarını kullan`;
@@ -1004,9 +1271,9 @@ export function oneriNasil1(tutar: string): string {
   return `Aylık net gelirin ${tutar}.`;
 }
 
-/** `oneri.nasil.3` — "Sosyal ve keyfi pay {tutar} oldu, maaş döneminde kalan {n} güne bölündü." */
+/** `oneri.nasil.3` — "Sosyal ve keyfi pay {tutar} oldu, gelir döneminde kalan {n} güne bölündü." */
 export function oneriNasil3(tutar: string, gunSayisi: number): string {
-  return `Sosyal ve keyfi pay ${tutar} oldu, maaş döneminde kalan ${gunSayisi} güne bölündü.`;
+  return `Sosyal ve keyfi pay ${tutar} oldu, gelir döneminde kalan ${gunSayisi} güne bölündü.`;
 }
 
 /** `oneri.denklem.kalan_gun` değeri — "{n} gün" */
@@ -1172,4 +1439,376 @@ export function ayarVeriSilOzet(adet: number, ayYil: string): string {
 /** `prof.gun` — "{n}. gün" */
 export function profGun(n: number): string {
   return `${n}. gün`;
+}
+
+/* ------------------------------------------- REV2 · E-27 Tasarruf · E-28 Profil */
+
+/**
+ * §28.1 H1 — Türkçe bulunma hâli eki (-da/-de/-ta/-te) ünlü uyumu VE ünsüz
+ * benzeşmesiyle değişir; `{Ay}'ta` gibi TEK bir kalıp 12 ayın 8'inde yanlış
+ * üretir ("Eylül'ta", "Ağustos'de"). Ek burada TEK yerden, hazır dize
+ * olarak okunur — çalışma zamanında hesaplanmaz (K-040 deseni).
+ */
+export const AY_LOKATIF: readonly string[] = [
+  "Ocak'ta", "Şubat'ta", "Mart'ta", "Nisan'da", "Mayıs'ta", "Haziran'da",
+  "Temmuz'da", "Ağustos'ta", "Eylül'de", "Ekim'de", "Kasım'da", "Aralık'ta",
+];
+
+/** 1-12 ay indeksinden `{AyLokatif}` okur — "9" → "Eylül'de". */
+export function ayLokatif(ay: number): string {
+  return AY_LOKATIF[((ay - 1) % 12 + 12) % 12];
+}
+
+/** `tasarruf.ustSatir.devam` / `.kapandi` — "{Ay} {yıl} · ay devam ediyor" / "· ay kapandı" */
+export function tasarrufUstSatir(ayYil: string, kapandiMi: boolean): string {
+  return `${ayYil} · ay ${kapandiMi ? 'kapandı' : 'devam ediyor'}`;
+}
+
+/** `tasarruf.butce.cip` / `.cipYok` — "Bütçe {tutar}" · "Bütçe yok" */
+export function tasarrufButceCip(tutar: string | null): string {
+  return tutar ? `Bütçe ${tutar}` : 'Bütçe yok';
+}
+
+/** `tasarruf.gosterge.cumle.buAy` — "Kaydettiğin gelir ve harcamalara göre {n} gün hesaplandı." */
+export function tasarrufGostergeCumleBuAy(gunSayisi: number): string {
+  return `Kaydettiğin gelir ve harcamalara göre ${gunSayisi} gün hesaplandı.`;
+}
+
+/** `tasarruf.gosterge.cumle.gecmisAy` — "{AyLokatif} kaydettiğin gelir ve harcamalara göre {n} gün hesaplandı." */
+export function tasarrufGostergeCumleGecmisAy(ayLokatifDeger: string, gunSayisi: number): string {
+  return `${ayLokatifDeger} kaydettiğin gelir ve harcamalara göre ${gunSayisi} gün hesaplandı.`;
+}
+
+/** `tasarruf.gosterge.disinda.buAy` — "Bu ay harcaman bütçenin {tutar} üzerinde." */
+export function tasarrufGostergeDisindaBuAy(tutar: string): string {
+  return `Bu ay harcaman bütçenin ${tutar} üzerinde.`;
+}
+
+/** `tasarruf.gosterge.disinda.gecmisAy` — "{AyLokatif} harcaman bütçenin {tutar} üzerinde." */
+export function tasarrufGostergeDisindaGecmisAy(ayLokatifDeger: string, tutar: string): string {
+  return `${ayLokatifDeger} harcaman bütçenin ${tutar} üzerinde.`;
+}
+
+/** `tasarruf.motivasyon.borc` — "Bu tutar borcunun %{n}'ine denk geliyor." */
+export function tasarrufMotivasyonBorc(yuzde: number): string {
+  return `Bu tutar borcunun %${yuzde}'ine denk geliyor.`;
+}
+
+/** `tasarruf.butce.aralik` — "{n}–{n} {Ay}" */
+export function tasarrufButceAralik(baslangicGun: number, bitisGun: number, ay: string): string {
+  return `${baslangicGun}–${bitisGun} ${ay}`;
+}
+
+/** `tasarruf.butce.sabit` — "Sabit ödemeler dahil toplam {tutar}" */
+export function tasarrufButceSabit(tutar: string): string {
+  return `Sabit ödemeler dahil toplam ${tutar}`;
+}
+
+/** `tasarruf.butce.gunDeger` — "{n}/{n} gün" */
+export function tasarrufButceGunDeger(tamamlanan: number, toplam: number): string {
+  return `${tamamlanan}/${toplam} gün`;
+}
+
+/** `tasarruf.butce.kumulatif` — "Takip başından beri biriken {tutar}" */
+export function tasarrufButceKumulatif(tutar: string): string {
+  return `Takip başından beri biriken ${tutar}`;
+}
+
+/** `tasarruf.butce.eksikGun` — "{n} günün geliri eksik. O günler hesaba katılmadı." */
+export function tasarrufButceEksikGun(gunSayisi: number): string {
+  return `${gunSayisi} günün geliri eksik. O günler hesaba katılmadı.`;
+}
+
+/** `tasarruf.butce.takipBasi` — "Takip {n} {AyLokatif} başladı. Ayın {n} günü hesaplanacak." */
+export function tasarrufButceTakipBasi(gun: number, ayLokatifDeger: string, hesaplanacakGun: number): string {
+  return `Takip ${gun} ${ayLokatifDeger} başladı. Ayın ${hesaplanacakGun} günü hesaplanacak.`;
+}
+
+/** `tasarruf.birikim.ayEkleme.buAy` — "Bu ay {tutar} eklendi" */
+export function tasarrufBirikimAyEklemeBuAy(tutar: string): string {
+  return `Bu ay ${tutar} eklendi`;
+}
+
+/** `tasarruf.birikim.ayEkleme.gecmisAy` — "{AyLokatif} {tutar} eklendi" */
+export function tasarrufBirikimAyEklemeGecmisAy(ayLokatifDeger: string, tutar: string): string {
+  return `${ayLokatifDeger} ${tutar} eklendi`;
+}
+
+/** `tasarruf.birikim.ayCekme.buAy` — "Bu ay {tutar} çekildi" */
+export function tasarrufBirikimAyCekmeBuAy(tutar: string): string {
+  return `Bu ay ${tutar} çekildi`;
+}
+
+/** `tasarruf.birikim.ayCekme.gecmisAy` — "{AyLokatif} {tutar} çekildi" */
+export function tasarrufBirikimAyCekmeGecmisAy(ayLokatifDeger: string, tutar: string): string {
+  return `${ayLokatifDeger} ${tutar} çekildi`;
+}
+
+/** `tasarruf.birikim.ayYok.gecmisAy` — "{AyLokatif} kayıt yok" */
+export function tasarrufBirikimAyYokGecmisAy(ayLokatifDeger: string): string {
+  return `${ayLokatifDeger} kayıt yok`;
+}
+
+/** `tasarruf.birikim.hedef` — "Hedef {tutar}" */
+export function tasarrufBirikimHedef(tutar: string): string {
+  return `Hedef ${tutar}`;
+}
+
+/** `tasarruf.hareket.sayi` — "{n} kayıt" */
+export function tasarrufHareketSayi(adet: number): string {
+  return `${adet} kayıt`;
+}
+
+/** `tasarruf.hareket.bos.alt.gecmisAy` — "{AyLokatif} kenara ayırdığın para yok." */
+export function tasarrufHareketBosAltGecmisAy(ayLokatifDeger: string): string {
+  return `${ayLokatifDeger} kenara ayırdığın para yok.`;
+}
+
+/** `tasarruf.hareket.silindiToast` — "{tutar} silindi · Geri al" (eylem etiketi ayrı geçilir, bkz. toastGoster) */
+export function tasarrufHareketSilindiToast(tutar: string): string {
+  return `${tutar} silindi`;
+}
+
+/** `tasarruf.hareket.kaydedildiToast` — "{tutar} birikime eklendi" */
+export function tasarrufHareketKaydedildiToast(tutar: string): string {
+  return `${tutar} birikime eklendi`;
+}
+
+/** `tasarruf.kategori.harcanan` — "Harcanan {tutar}" */
+export function tasarrufKategoriHarcanan(tutar: string): string {
+  return `Harcanan ${tutar}`;
+}
+
+/** `tasarruf.kategori.pay` — "payı %{n}" (işaret önce, boşluksuz) */
+export function tasarrufKategoriPay(yuzde: number): string {
+  return `payı %${yuzde}`;
+}
+
+/** `tasarruf.kategori.rutin` — "rutin {tutar}" */
+export function tasarrufKategoriRutin(tutar: string): string {
+  return `rutin ${tutar}`;
+}
+
+/** `tasarruf.kategori.bos.gecmisAy` — "{AyLokatif} harcama yazmamışsın." */
+export function tasarrufKategoriBosGecmisAy(ayLokatifDeger: string): string {
+  return `${ayLokatifDeger} harcama yazmamışsın.`;
+}
+
+/** `tasarruf.rutin.bos.gecmisAy` — "{AyLokatif} vazgeçtiğin rutin yok." */
+export function tasarrufRutinBosGecmisAy(ayLokatifDeger: string): string {
+  return `${ayLokatifDeger} vazgeçtiğin rutin yok.`;
+}
+
+// §28.3 — E-27 akordiyon özetleri (REV3)
+
+/** `tasarruf.ozet.butce` — "Kalan {tutar}" */
+export function tasarrufOzetButce(tutar: string): string {
+  return `Kalan ${tutar}`;
+}
+
+/** `tasarruf.ozet.butceDisinda` — "Bütçe dışı {tutar}" */
+export function tasarrufOzetButceDisinda(tutar: string): string {
+  return `Bütçe dışı ${tutar}`;
+}
+
+/** `tasarruf.ozet.birikim` — "{tutar} · hedefin %{n}'i" */
+export function tasarrufOzetBirikim(tutar: string, yuzde: number): string {
+  return `${tutar} · hedefin %${yuzde}'i`;
+}
+
+/** `tasarruf.ozet.birikimAyYok.buAy` — "{tutar} · bu ay kayıt yok" */
+export function tasarrufOzetBirikimAyYokBuAy(tutar: string): string {
+  return `${tutar} · bu ay kayıt yok`;
+}
+
+/** `tasarruf.ozet.birikimAyYok.gecmisAy` — "{tutar} · {AyLokatif} kayıt yok" */
+export function tasarrufOzetBirikimAyYokGecmisAy(tutar: string, ayLokatifDeger: string): string {
+  return `${tutar} · ${ayLokatifDeger} kayıt yok`;
+}
+
+/** `tasarruf.ozet.birikimHedefYok` — "{tutar} · hedef koymadın" */
+export function tasarrufOzetBirikimHedefYok(tutar: string): string {
+  return `${tutar} · hedef koymadın`;
+}
+
+/** `tasarruf.ozet.kategori` — "Harcanan {tutar}" */
+export function tasarrufOzetKategori(tutar: string): string {
+  return `Harcanan ${tutar}`;
+}
+
+/** `tasarruf.ozet.rutin` — "{tutar} · {n} rutin" */
+export function tasarrufOzetRutin(tutar: string, rutinSayisi: number): string {
+  return `${tutar} · ${rutinSayisi} rutin`;
+}
+
+/** `a11y.tasarruf.bolum` — "{başlık}. {özet}" */
+export function a11yTasarrufBolum(baslik: string, ozet: string): string {
+  return `${baslik}. ${ozet}`;
+}
+
+// §29 — E-10 Günlük rutin hızlı eylem satırı (REV3)
+
+/** `gunlukRutin.ozet` — "{n} rutin · {n} işaretsiz" */
+export function gunlukRutinOzet(toplam: number, isaretsiz: number): string {
+  return `${toplam} rutin · ${isaretsiz} işaretsiz`;
+}
+
+/** `gunlukRutin.ozetHepsi` — "{n} rutin · hepsi işaretli" */
+export function gunlukRutinOzetHepsi(toplam: number): string {
+  return `${toplam} rutin · hepsi işaretli`;
+}
+
+/** `gunlukRutin.ozetHicbiri` — "{n} rutin · işaretlenmedi" */
+export function gunlukRutinOzetHicbiri(toplam: number): string {
+  return `${toplam} rutin · işaretlenmedi`;
+}
+
+/** `gunlukRutin.ozetHata` — "{n} rutin · işaret bekliyor" */
+export function gunlukRutinOzetHata(toplam: number): string {
+  return `${toplam} rutin · işaret bekliyor`;
+}
+
+/**
+ * §3.1 (rev3-gunluk-rutin.md) — kapalı bölümün özet metni. `hataMi` daima
+ * önce sorulur (§3.12.5/Ö4 ile aynı desen): hata varken özet toplamı
+ * söylemez, kullanıcının yapması gerekeni söyler.
+ */
+export function gunlukRutinOzetSec(toplam: number, isaretsiz: number, hataMi: boolean): string {
+  if (hataMi) return gunlukRutinOzetHata(toplam);
+  if (isaretsiz === 0) return gunlukRutinOzetHepsi(toplam);
+  if (isaretsiz === toplam) return gunlukRutinOzetHicbiri(toplam);
+  return gunlukRutinOzet(toplam, isaretsiz);
+}
+
+/** `gunlukRutin.durum.aldim` — "Yazıldı · {saat}" */
+export function gunlukRutinDurumAldim(saat: string): string {
+  return `Yazıldı · ${saat}`;
+}
+
+/** `gunlukRutin.toast.aldim` — "{ad} {tutar} yazıldı." */
+export function gunlukRutinToastAldim(ad: string, tutar: string): string {
+  return `${ad} ${tutar} yazıldı.`;
+}
+
+/** `gunlukRutin.toast.almadim` — "{ad} almadın olarak işaretlendi." */
+export function gunlukRutinToastAlmadim(ad: string): string {
+  return `${ad} almadın olarak işaretlendi.`;
+}
+
+/** `a11y.gunlukRutin.bolum` — "Rutinler. {özet}" */
+export function a11yGunlukRutinBolum(ozet: string): string {
+  return `${t['gunlukRutin.baslik']}. ${ozet}`;
+}
+
+/** `a11y.gunlukRutin.bolumGecmis` — "Rutinler. {gün}. {özet}" */
+export function a11yGunlukRutinBolumGecmis(gun: string, ozet: string): string {
+  return `${t['gunlukRutin.baslik']}. ${gun}. ${ozet}`;
+}
+
+/** `a11y.gunlukRutin.aldim` — "{ad} aldım olarak işaretle, {tutar}" */
+export function a11yGunlukRutinAldim(ad: string, tutar: string): string {
+  return `${ad} aldım olarak işaretle, ${tutar}`;
+}
+
+/** `a11y.gunlukRutin.almadim` — "{ad} almadım olarak işaretle, {tutar} rutin tasarrufu" */
+export function a11yGunlukRutinAlmadim(ad: string, tutar: string): string {
+  return `${ad} almadım olarak işaretle, ${tutar} rutin tasarrufu`;
+}
+
+/** `a11y.gunlukRutin.yaziliyor` — "{ad} yazılıyor" */
+export function a11yGunlukRutinYaziliyor(ad: string): string {
+  return `${ad} yazılıyor`;
+}
+
+/** `a11y.gunlukRutin.isaretleniyor` — "{ad} işaretleniyor" */
+export function a11yGunlukRutinIsaretleniyor(ad: string): string {
+  return `${ad} işaretleniyor`;
+}
+
+/** `a11y.gunlukRutin.aldimGecmis` — "{ad}, {gün}. Aldım olarak işaretle, {tutar}" */
+export function a11yGunlukRutinAldimGecmis(ad: string, gun: string, tutar: string): string {
+  return `${ad}, ${gun}. Aldım olarak işaretle, ${tutar}`;
+}
+
+/** `a11y.gunlukRutin.almadimGecmis` — "{ad}, {gün}. Almadım olarak işaretle, {tutar} rutin tasarrufu" */
+export function a11yGunlukRutinAlmadimGecmis(ad: string, gun: string, tutar: string): string {
+  return `${ad}, ${gun}. Almadım olarak işaretle, ${tutar} rutin tasarrufu`;
+}
+
+/**
+ * `a11y.bolumYukleniyor` — "{başlık}. Yükleniyor". Ö5 — E-10 rutin bölümü VE
+ * E-27 akordiyonunun dört bölümü PAYLAŞIR (aynı anahtar, farklı `baslik`).
+ */
+export function a11yBolumYukleniyor(baslik: string): string {
+  return `${baslik}. Yükleniyor`;
+}
+
+/** `a11y.tasarruf.gostergeDisinda` — "Bütçe dışı {tutar}" */
+export function a11yTasarrufGostergeDisinda(tutar: string): string {
+  return `Bütçe dışı ${tutar}`;
+}
+
+/** `a11y.tasarruf.butceCip` — "Bütçe {tutar}. Bütçeyi aç" */
+export function a11yTasarrufButceCip(tutar: string | null): string {
+  return tutar ? `Bütçe ${tutar}. Bütçeyi aç` : 'Bütçe tanımlı değil. Bütçeyi aç';
+}
+
+/** `a11y.tasarruf.hareket` — "{yön}, {gün} {Ay}, {tutar}, not: {not}" */
+export function a11yTasarrufHareket(yon: string, gun: number, ay: string, tutar: string, notMetni?: string): string {
+  return `${yon}, ${gun} ${ay}, ${tutar}${notMetni ? `, not: ${notMetni}` : ''}`;
+}
+
+/** `a11y.tasarruf.gunSayaci` — "Ayın tamamlanan günleri: {n} / {n}" */
+export function a11yTasarrufGunSayaci(tamamlanan: number, toplam: number): string {
+  return `Ayın tamamlanan günleri: ${tamamlanan} / ${toplam}`;
+}
+
+/** `profil.satir.butceDeger` — "Aylık net gelir {tutar} · {n} sabit gider" */
+export function profilSatirButceDeger(tutar: string, sabitGiderSayisi: number): string {
+  return `Aylık net gelir ${tutar} · ${sabitGiderSayisi} sabit gider`;
+}
+
+/** `profil.satir.limitlerDeger` — "Günlük {tutar} · {n} kategori limiti" */
+export function profilSatirLimitlerDeger(gunlukTutar: string, kategoriLimitSayisi: number): string {
+  return `Günlük ${gunlukTutar} · ${kategoriLimitSayisi} kategori limiti`;
+}
+
+/** `profil.satir.rutinlerDeger` — "{n} rutin · bu ay {tutar} tasarruf" */
+export function profilSatirRutinlerDeger(rutinSayisi: number, tutar: string): string {
+  return `${rutinSayisi} rutin · bu ay ${tutar} tasarruf`;
+}
+
+/** `profil.satir.favorilerDeger` — "{n} ürün, son fiyatlarıyla" */
+export function profilSatirFavorilerDeger(urunSayisi: number): string {
+  return `${urunSayisi} ürün, son fiyatlarıyla`;
+}
+
+/** `profil.satir.taksitlerDeger` — "{n} seri · bu ay {tutar}" */
+export function profilSatirTaksitlerDeger(seriSayisi: number, tutar: string): string {
+  return `${seriSayisi} seri · bu ay ${tutar}`;
+}
+
+/** `profil.satir.seriDeger` — "{n} gün · en uzun {n} gün" */
+export function profilSatirSeriDeger(mevcutSeri: number, enUzunSeri: number): string {
+  return `${mevcutSeri} gün · en uzun ${enUzunSeri} gün`;
+}
+
+/** `profil.alt.surum` — "Trinkow · sürüm {n}" */
+export function profilAltSurum(surum: string): string {
+  return `Trinkow · sürüm ${surum}`;
+}
+
+/** `profil.kimlik.serit.gun` — "{n} gündür kayıt giriyorsun" */
+export function profilKimlikSeritGun(mevcutSeri: number): string {
+  return `${mevcutSeri} gündür kayıt giriyorsun`;
+}
+
+/** `profil.kimlik.serit.altEnUzun` — "En uzun {n} gün." */
+export function profilKimlikSeritAltEnUzun(enUzunSeri: number): string {
+  return `En uzun ${enUzunSeri} gün.`;
+}
+
+/** `a11y.profil.satir` — "{başlık}. {değer}" */
+export function a11yProfilSatir(baslik: string, deger: string): string {
+  return `${baslik}. ${deger}`;
 }

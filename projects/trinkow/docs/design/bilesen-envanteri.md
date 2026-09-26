@@ -1,4 +1,4 @@
-# Trinkow — Bileşen Envanteri (P-7) · **v4.0 · Claymorphism**
+# Trinkow — Bileşen Envanteri (P-7) · **v4.1 · Claymorphism (REV2 senkronu)**
 
 > **Amaç:** Tasarım ve kodun **aynı ismi** kullanması. Buradaki isimler
 > `src/components/<İsim>.tsx` dosya adı olarak birebir kullanılır.
@@ -17,9 +17,20 @@
 > `selected` durumunun tek dili yazıldı (K-061/2). §6'nın kapsam-dışı
 > listesi K-054/3'e göre düzeltildi.
 >
+> **v4.1 senkronu (2026-09-25, hijyen turu):** yeni tasarım kararı
+> **üretilmedi**; dosya Rev ve REV2 turlarında kodlanan gerçekle hizalandı.
+> Geçersiz kalan maddeler: çubuktaki `Fab` · `OptionCard`'ın "2pt iç çizgi"
+> seçili hâli · `ClayKeypad` · `LegalConsentText` · `AccountSection`'ın
+> "hesap hiçbir özelliği kilitlemez" cümlesi (K-080). REV2 bileşenleri
+> §1-§5'e dağıtıldı, sayım §6'da güncellendi. Otorite:
+> `projects/trinkow/docs/design/rev2-onboarding-kayit.md` §10 +
+> `projects/trinkow/docs/design/rev2-tasarruf-profil.md` §5.
+>
 > Kapsam: **Faz 1** · React Native (Expo, New Architecture) · tek tema: açık.
 > Çizili karşılığı: `projects/trinkow/docs/design/prototip-v4/`
-> (**18 sayfa · 122 yüzey**; `_uret/denetim.py` → 0 bulgu).
+> (**18 sayfa · 122 yüzey**; `_uret/denetim.py` → 0 bulgu) ve REV2'nin iki
+> yüzey seti: `prototip-rev2/onboarding-kayit.html` ·
+> `prototip-rev2/tasarruf-profil.html`.
 > v3 karşılığı `prototip-v3/` arşiv olarak durur.
 
 ---
@@ -126,6 +137,19 @@ açıkken `grad.action` + `clay.action`), topuz 24pt daire (`surface` +
 Durumlar: `on` / `off` / `pressed` / `disabled`.
 **Dokunma hedefi satırın tamamıdır** (`SettingRow`, ≥68pt).
 
+### `Checkbox` (yeni — REV2 · hesap oluştur)
+Yasal onayın tek dili. Kutu **32×32** · radius 16 · satır min **44**
+(dokunma hedefi **satırın tamamı**, `hitSlop` dikey 8) · kutu ↔ metin 12 ·
+20pt `check` glifi. Etiket `caption`/`text` ve **bağlantı taşımaz** —
+belgeler grubun altındaki iki `ghost` satırından açılır.
+Durumlar: `unchecked` (`well` + `clay.sunken`, glif yok) / `checked` (düz
+`primary-deep` + `clay.raised` + beyaz glif; gradyan yok · K-062) /
+`pressed` (iki hâl) / `focused` (2pt `primary-text` halka) / `error`
+(2pt `danger`; hata **iki kutuya birlikte** uygulanır, ilk dokunuşta kalkar) /
+`disabled` (`disabled-bg`, opaklık yok).
+Küçük kontrolde §5.4 "seçili = çukur" dilinden bilinçli sapmanın gerekçesi:
+`rev2-onboarding-kayit.md` §7.1.
+
 ---
 
 ### `SocialAuthButton` (yeni — E-22 · E-23)
@@ -174,6 +198,25 @@ tokens.md §7.4 + §7.11. **Sistem klavyesi açılmaz.**
 
 Durumlar: `empty` (0, `text-3`) / `typing` / `error` / `overflow-preview`.
 
+> **Rev/REV2: `ClayKeypad` kullanımdan düştü.** Para girişi RN'in kendi
+> `TextInput`'uyla yapılır (`decimal-pad`, virgül/nokta, yapıştırma, veri
+> integer kuruş); kil tuş takımı hiçbir ekranda çağrılmıyor. `AmountWell`
+> native girdinin çukur kabuğu olarak yaşar; "Kaydet" tuş takımının değil
+> `KeyboardAvoidingView`'in üstünde sabit durur. Yukarıdaki tuş takımı
+> satırları **tarihsel kayıttır**, ölçü kaynağı değildir.
+
+### `MoneyField` (yeni — REV2 · kurulum 2/4 · sheet'ler)
+Tam genişlik para alanı: `TextField` ölçüsü (56 · radius 16 · `well` +
+`clay.sunken`) + native `decimal-pad`, tabular rakam, sağda sabit birim.
+Durumlar: `empty` / `focused` / `filled` / `error` / `disabled`.
+Ayrıntı: `rev2-onboarding-kayit.md` §4.2.
+
+### `MoneyRow` (yeni varyant — REV2)
+`ValueWellRow`un **düzenlenebilir** ikizi: çukur satırın içinde etiket +
+native girdi. `birim` parametresi **zorunlu** (`"₺"` | `""`);
+`fontScale > 1.3`'te dikey düzene döner. Durumlar: `dolu` / `bos` /
+`focused` / `error`. Ayrıntı: `rev2-onboarding-kayit.md` §4.3.
+
 ### `PasswordField` (yeni — E-22 · E-23)
 `TextField`'ın **sağ yuvalı (trailing slot)** varyantı; yeni bileşen değil,
 alanın varyantıdır. Yuva 44pt ikon düğmesi alır, alanın sağ iç boşluğu
@@ -212,6 +255,10 @@ opaklık değişmez).
 Frekansa göre sıralı çip listesi; ilk 6 görünür, altında `ghost` "Tüm
 kategoriler" → 3 sütunlu kutu ızgarası (`flexWrap`, grid yok).
 Durumlar: `default` / `selected` / `expanded` / `empty` (ilk gün sabit sıra).
+**REV2: harcama ekleme ekranında kullanılmaz** — kategori route param'ından
+ya da seçilen üründen gelir ve orada **salt okunur göstergedir**. Bileşen
+`RoutineSheet` (yatay çip şeridi), limitler, favoriler ve harcama detayında
+yaşamaya devam eder.
 
 ### `InstallmentPicker`
 Taksit sayısı (F-7). Yalnız **Kart** seçiliyken görünür. **+2 dokunuş**
@@ -304,6 +351,13 @@ tokens.md §7.3. **Her satır ayrı kabarık yüzeydir** (radius 16,
 | `installment` | İkincil satırda "3/12 taksit" · ikon değişmez |
 | Uzun metin | Birincil satır 1 satır kırpılır; **tutar asla kırpılmaz** |
 
+### `RoutineRow` (yeni varyant — REV2 · kurulum 3/4 · Rutinler)
+`SpendRow` ölçüleri (kabarık satır, radius 16, sol 44 kategori kabı) +
+sağda `pencil`: eklenmiş bir rutini gösterir ve düzenlemeye açar. İkincil
+satır "Her gün {adet} × {fiyat}". Durumlar: `default` / `pressed` /
+`empty` (satır çizilmez, bölüm "Eklediğin rutinler burada sıralanır." der).
+Ayrıntı: `rev2-onboarding-kayit.md` §5.1.
+
 ### `DayBox` (E-15 · v4'te E-21 / E-24 / E-03)
 44×44 kutu: gün sayısı (`label`) + ay kısaltması (`micro`).
 `SpendRow`'un sol sütununda kategori kabının **yerine** geçer — kategori
@@ -367,6 +421,26 @@ Kategori grubu satırı: ikon + ad + **aylık toplam / aylık limit** +
 `limit dışı` / `+ pressed`. Halka yerine **çubuk** kullanılır: halka bu
 ekranda kahraman göstergenin dilidir.
 
+### `CategoryShareRow` (yeni bileşim — REV2 · Tasarruf)
+Ayın kategori dağılımı satırı: 44 kategori kabı · ad + tutar · 12pt kategori
+çubuğu · altında pay ve rutin farkı satırı. `CategoryLimitBar` +
+`MonthLoadRow` geometrisinden kuruldu, **yeni ölçü açmaz**. Çubuk
+dokunulamaz (bilgi), payı ayrıca yazıyla okunur.
+Durumlar: `default` / `rutin farkı var` / `skeleton`.
+
+### `SavingsMovementRow` (yeni varyant — REV2 · Tasarruf · /birikimler)
+`SpendRow`'un birikim hareketi hâli: sol sütun **`DayBox`** (`.gun-kutu`
+deseni — ikon kabı değil), birincil satırda yön metni, sağ altta "çekildi",
+sola kaydır → Sil. Not yoksa ikincil satır **çizilmez**.
+Durumlar: `default` / `pressed` / `çekildi` / `swipe` / `skeleton`.
+
+### `IdentityPanel` (yeni — REV2 · Profil)
+Profil'in kahraman paneli: radius 32 · `primary-soft` · `clay.raised-lg` ·
+iç boşluk 16 · 48pt çukur ikon kutusu + iki satır + `chevron-right`.
+`signed-in` hâlinde içine `FactStrip` girer (panel 156pt).
+Durumlar: `signed-in` / `signed-out` / `error` / `skeleton` — dördü de
+**aynı paneldir**: durum değişince aksan kaybolmaz.
+
 ### `SearchResultRow` (`sonuc-satiri`, yeni — E-11)
 `default` / `pressed` / `"… olarak ekle"` (nötr kap). **Sağda tutar
 sütunu yoktur** — olmayan bir fiyat otoritesi ima edilmez; kullanıcının
@@ -423,14 +497,26 @@ sağda tek `IconButton`. Alt çizgi yok. Kaydırınca başlık küçülmez.
 ortada `h1` (tek satır, kırpılır), sağda isteğe bağlı eylem ya da 44pt boş
 denge kutusu. Geri oku iOS kenar kaydırmasının görünür karşılığıdır.
 
-### `TabBar` + `TabItem` + `Fab`
+### `SetupShell` (yeni — REV2 · kurulum 1/4…4/4)
+Kurulumun kendi kabuğu; bu akışta `RevScreen` **kullanılmaz**. Üstte
+**sabit** bölge (44 geri oku + `StepIndicator`, kaydırma alanının dışında),
+ortada `ScrollView`, altta sabit birincil düğme bloğu. "Kurulum · 1/4"
+kocaman başlığı **yoktur** — adım numarası ekranın en büyük tipografik
+öğesi değildir. Durumlar: `adim=1..4` / `geri yok` (ilk adım) /
+`klavye açık` / `busy` (düğme `loading`). Ayrıntı:
+`rev2-onboarding-kayit.md` §2.
+
+### `TabBar` + `TabItem`
 tokens.md §7.7. **Yüzen** çubuk: yükseklik 68, radius 999, `clay.raised-lg`,
-alttan `insets.bottom + 8`, yanlardan 16. Faz 1: **3 sekme**.
+alttan `insets.bottom + 8`, yanlardan 16. Faz 1: **3 sekme** —
+**Günlük · Tasarruf · Profil** (REV2), `space-around` ile eşit dağılır.
 `TabItem`: `active` (ikon arkasında 40pt çukur `primary-soft` daire +
 `primary-text` + SemiBold) / `inactive` / `pressed`. Etiketsiz ikon yok,
 rozet yok.
-`Fab`: 64pt daire, `grad.action` + `clay.action`, bardan **16 yukarı** taşar,
-sağdan 8. `pressed`: `primary-press` + `clay.action-pressed`.
+**`Fab` kaldırıldı (REV2).** Çubukta büyük `+` yoktur; harcama ekleme girişi
+Günlük'teki kategori satırının `+` düğmesidir. Taşan FAB'ın yer açtığı
+`.sekme-alan` (84) yerine düz `.sekme-cubugu` (68) kullanılır
+(`rev2-tasarruf-profil.md` §1.1).
 **İtilen ekranlarda ve sheet açıkken çubuk düşer.**
 
 ### `DayPager` (yeni — E-10)
@@ -456,8 +542,24 @@ kontrastı 1.08 — sayfa zemininde hairline görünmez (tokens §1.9).
 Üst köşeler **32**, zemin `bg`, gölge `clay.raised-lg`, scrim
 `rgba(28,57,142,0.38)`, 250ms. Üstte 44×4 tutamak (`line`).
 Ekranın tamamını kaplamaz — arkadaki yüzey görünür kalır.
-Durumlar: `open` / `closing`. `keyboard-open` **yoktur**: tutar girişinde
-sistem klavyesi açılmaz (`ClayKeypad`).
+Durumlar: `open` / `closing` / `keyboard-open`.
+**REV2:** "`keyboard-open` yoktur" hükmü düştü — tutar girişi artık native
+`TextInput` olduğu için sistem klavyesi açılır ve sheet klavyeye göre
+yükselir (`trinkow-rev.md` "Native para girişi").
+
+### `RoutineSheet` (yeni — REV2 · kurulum 3/4 · Rutinler)
+`BottomSheet`'in **üç bölgeli** varyantı: tutamak · kayan form (ad ·
+kategori çip şeridi · günlük adet · birim fiyat · `MirrorWell` ayna kuyusu) ·
+sabit alt blok (birincil düğme). Durumlar: `open` / `keyboard-open` /
+`filled` / `error` / `edit` (başlık değişir + `ghost` "Rutini kaldır") /
+`closing`. Ölçüler: `rev2-onboarding-kayit.md` §5.2.
+
+### `SavingsSheet` (yeni — REV2 · Tasarruf)
+Birikim hareketi girişi: `SegmentedControl` (ekle/çek) + native
+`AmountWell` + `DateField` + `NoteField` + birincil düğme. İki kip:
+`mode="create"` / `mode="edit"`; `edit` kipinde başlık değişir ve `ghost`
+"Sil" eklenir. Form **sayfada değil sheet'tedir**
+(`rev2-tasarruf-profil.md` §3.7).
 
 ### `Dialog`
 **Yalnız yüksek etkili, geri alınamaz işlem için** (K-029): taksit serisi
@@ -466,9 +568,18 @@ Yapı: çukur `danger-soft` ikon kabı → `h2` başlık → tek satır sonuç �
 silineceğinin özeti → dikey butonlar: üstte "Sil" (`danger`), altında
 "Vazgeç" (`ghost`). Limit aşımı **asla** dialog ile bildirilmez.
 
+### `AppFooter` (yeni — REV2 · Profil)
+Kaydırmanın sonunu kapatan alt bilgi: sürüm satırı (`micro`/`text-2`) +
+iki yasal bağlantı (44pt `ghost` satırları). Kart değildir, gölge taşımaz.
+Durumlar: `default` / `pressed` (bağlantı satırı).
+
 ### `StepIndicator`
-"Adım 1/3" (`micro`) + 3 oluk; tamamlanan oluk `grad.action` dolgulu.
+Sayaç metni (`micro`) + oluklar; tamamlanan oluk `grad.action` dolgulu.
 Oluk `well` + `clay.sunken`, yükseklik 8, radius 999. Yüzde yazılmaz.
+**REV2 deltası:** kurulumda `toplam=4` · sayaç metni **bileşenin dışında**
+yaşar · dolum animasyonlu · **dolu oluğun renkli gölgesi kaldırıldı** ·
+bileşen `SetupShell`'in **sabit** bölgesinde durur
+(`rev2-onboarding-kayit.md` §2.1).
 
 ---
 
@@ -514,15 +625,27 @@ Cevaptan sonra **panoda ne değiştiği gösterilir** (bilgi şeridi + yeni kart
 Durumlar: `default` / `pressed` / `dismissed` / `hidden`.
 
 ### `OptionCard`
-Tam genişlik seçim kartı (onboarding + profilleme): `secim-kart`.
-`default` kabarık · `selected` çukur + 2pt `primary-text` iç çizgi ·
-`pressed`. Seçenekler **eşit ağırlıktadır** — "Söylemek istemiyorum"
+Tam genişlik seçim kartı (kurulum + profilleme): `secim-kart`.
+`default` kabarık · `selected` **çukur yüzey** (`clay.sunken` +
+`primary-soft`; ikon kabı varsa tersine kabarır) · `pressed`.
+**İç çizgi/halka yoktur** — v4.0'daki "2pt `primary-text` iç çizgi" cümlesi
+K-061/2 öncesine aitti ve düzeltildi (tokens §5.4 · REV2 ·
+`rev2-onboarding-kayit.md` §3.1). Kurulum 1/4'te **varsayılan seçim yoktur**:
+üç kart da `default` ile açılır.
+Seçenekler **eşit ağırlıktadır** — "Söylemek istemiyorum"
 küçültülmez, griye çekilmez, en alta sürülmez.
 
 ### `InfoStrip`
 Çukur bilgi şeridi: ikon + 1-2 satır `caption`. Varyantlar: `info`
 (`primary-soft`) · `warning` (`warning-soft`) · `danger` (`danger-soft`,
 yalnız `Dialog` içinde). Yargı içermez, sonucu söyler.
+
+### `FactStrip` (yeni varyant — REV2 · Profil)
+`InfoStrip`'in **nötr ve dokunulamaz** kipi: zemin `well` (`primary-soft`
+değil), 20pt ikon + `label` olgu + `caption` bağlam. Yeni ölçü/renk/ikon
+açmaz; tek kullanıcısı `IdentityPanel`'in `signed-in` hâlidir
+(`rev2-tasarruf-profil.md` §4.2.1). Ayrı odak almaz.
+Durumlar: `default` / `skeleton`.
 
 ### `MilestoneOverlay` (yeni — E-10 · seri durağı)
 Üst banda `absolute` tek kart (96pt disk + radius 32 + `clay.raised-lg`).
@@ -540,12 +663,20 @@ Harcamasız gün işaretleme: ikincil buton → işaretlendikten sonra yerini
 
 ### `AccountSection` (yeni — E-19)
 `signed-in` (e-posta çukuru + sağlayıcı satırı + Çıkış yap + Hesabı sil)
-/ `signed-out` (tek nötr satır). **Hesap hiçbir özelliği kilitlemez**
-(K-052); uygulamada hesap için tek davet budur.
+/ `signed-out` (tek nötr satır).
+**K-080 düzeltmesi:** v4.0'daki "hesap hiçbir özelliği kilitlemez" (K-052)
+cümlesi **geçersiz** — hesap zorunludur, "hesapsız devam et" kaldırıldı ve
+uygulama giriş ekranıyla açılır. Bölüm artık bir davet değil, var olan
+hesabın yönetim yüzeyidir; Profil'de karşılığı `IdentityPanel`'dir.
 
-### `LegalConsentText` (yeni — E-23)
-`default` / `pressed` (bağlantı rengi `primary-press`). RN: iç içe `Text`
-+ `accessibilityRole="link"` + `hitSlop`.
+### `LegalConsentText` — **kullanımdan düştü (REV2)**
+Yasal onay artık **iki `Checkbox`**'tır; onay cümlesi bağlantı taşımayan düz
+`caption`, belgeler grubun altındaki iki 44pt `ghost` satırından açılır.
+İç içe `Text onPress` çözümü RN'de 44pt dokunma hedefi üretemediği için
+inşa edilemezdi (`rev2-onboarding-kayit.md` §7.0). Dosya
+(`LegalConsentText.tsx`) repoda duruyor ama **hiçbir ekranda çağrılmıyor**;
+silinip silinmeyeceği PM kararıdır (`rev2-onboarding-kayit.md` §12/6).
+Yaşayan bileşen sayımına **girmez**.
 
 ### `NeutralIconBox` (yeni — E-25 · E-26)
 48×48 · radius 16 · `primary-soft` + `primary-text`. **Kare, daire
@@ -571,7 +702,15 @@ sayı tutulmaz (K-040).
 |---|---|
 | v1.0 | 27 |
 | v3.1 (Tur E) | 41 (metinde "34" yazıyordu — sayım yöntemi yazılı değildi) |
-| **v4.0** | **70** (+30 yeni · `Divider` kaldırıldığı için sayılmaz) |
+| v4.0 | 70 (+30 yeni · `Divider` kaldırıldığı için sayılmaz) |
+| **v4.1 (REV2 senkronu)** | **81** (+12 yeni başlık · `LegalConsentText` kullanımdan düştüğü için sayılmaz; `Divider` de sayılmaz) |
+
+v4.1'de eklenenler (12): `Checkbox` · `SetupShell` · `MoneyField` ·
+`MoneyRow` · `RoutineSheet` · `SavingsSheet` · `RoutineRow` ·
+`SavingsMovementRow` · `CategoryShareRow` · `IdentityPanel` · `FactStrip` ·
+`AppFooter`. Hepsi kodda mevcuttur (`app/src/components/`).
+`ClayKeypad` ve `LegalConsentText` **çağrılmıyor**; dosyaları silinene kadar
+repoda durur, sayıma girmez (`Fab` ise çubuktan kaldırıldı).
 
 v4'te eklenenler (30): `SocialAuthButton` · `Slider` · `FrequencyChips` ·
 `PasswordField` · `PasswordRuleLine` · `SearchField` · `ValueWellRow` ·
@@ -586,7 +725,18 @@ Kendi başlığı olmayan **varyantlar** (yeni bileşen değil, kayıt için):
 `TextField` sağ yuvası · `DayBox` sayı-only + `pasif` · `Chip` metin
 varyantı · `CategoryPicker`'ın değer satırı hâli · `Skeleton`'ın arama
 iskeleti · `BottomSheet`'in limit önerisi yüzeyi · `SectionHeader`'ın
-arama grup başlığı · tutar kuyusu içindeki `gun-btn`.
+arama grup başlığı · tutar kuyusu içindeki `gun-btn` ·
+**REV2:** `LimitGauge`'ın `mod="birikim"` kipi · `MonthPager` (`DayPager`ın
+ay karşılığı, kendi dosyası yok) · `SettingRow`'un gezinme kipi (sol nötr
+ikon kabı + `chevron-right` + değer satırı) · `RevScreen`'in
+`header?` / `contentGap?: 0 | 24` prop'ları (`contentGap: 0` **yalnız**
+Tasarruf ve Profil'de).
+
+**Ekran parçası bileşim dosyaları** (`src/components/tasarruf/`, REV2 ·
+kendi başlıkları yok çünkü yeni primitif değil, yukarıdaki bileşenlerin
+ekran düzeyinde birleşimi): `SavingsHeroCard` · `BudgetCard` ·
+`RealSavingsCard` · `MovementsSection` · `CategoryDistributionCard` ·
+`RoutineSavingsCard` · `SavingsSkeleton`.
 
 Faz 1'de **üretilmeyecekler** (istenirse PM'e sorulur): grafik kütüphanesi
 tabanlı pasta/çizgi grafik, filtre paneli, avatar, **rozet/başarım/puan/

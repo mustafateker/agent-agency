@@ -28,6 +28,7 @@ export function TextField({
   autoCapitalize,
   autoComplete,
   textContentType,
+  placeholderTone,
 }: {
   label?: string;
   value: string;
@@ -43,6 +44,8 @@ export function TextField({
   autoCapitalize?: TextInputProps['autoCapitalize'];
   autoComplete?: TextInputProps['autoComplete'];
   textContentType?: TextInputProps['textContentType'];
+  /** rev2-tasarruf-profil.md §3.7 (B2) — `well` zemininde `text-3` AA altı kalıyor; bu ekranlarda `text-2` verilir. Verilmezse eski `text-3` korunur. */
+  placeholderTone?: string;
 }) {
   const [odakli, setOdakli] = useState(false);
   const kalan = maxLength !== undefined ? maxLength - value.length : null;
@@ -69,7 +72,7 @@ export function TextField({
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={color.text3}
+          placeholderTextColor={placeholderTone ?? color.text3}
           maxLength={maxLength}
           numberOfLines={1}
           keyboardType={keyboardType}

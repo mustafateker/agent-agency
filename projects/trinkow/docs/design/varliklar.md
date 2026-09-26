@@ -137,6 +137,19 @@ ikonsuz kurulur; başka hiçbir ekran etkilenmez.
 > Dayanak: K-057/2 (ilk dördü) · K-050 (`search`). **Yeni set yok, yeni
 > boyut yok, yeni çizgi kalınlığı yok** (tokens §9: 20/22/24/28pt · 2.0).
 
+### 1.2e REV3 — **yeni glif YOK**, iki glife ikinci bağlam
+
+| İş | Lucide adı | Nerede | Not |
+|---|---|---|---|
+| Bugün almadım (rutin) | `circle-slash` | E-10 rutin satırının ikinci eylemi | §1.2c'deki "Limiti kaldır" glifinin ta kendisi; uygulamada `Icon.tsx`'te **`limit-kaldir`** adıyla zaten gömülü. İki bağlamda da anlam aynı ailede: *bu yok / iptal*. Etiketi ("Almadım") glifin yanında **görünür** durur, yani anlam ikona bırakılmaz |
+| Bölümü aç / kapat | `chevron-down` | E-27 akordiyon başlığı · E-10 rutin bölümü | Açık bölümde aynı glif **180° döner**. `chevron-up` bu listede yoktur ve **eklenmedi** |
+
+> Reddedilenler (rutin "almadım" eylemi için): `x` (BottomSheet'in "Kapat"
+> glifi — aynı ekranda ikinci anlam), `check` ("Seçili" için ayrılmış ve
+> "aldım" ile karışır), `trash-2` (silme; vazgeçmek bir silme değil),
+> `triangle-alert` / `circle-alert` (§1.3 — marka uyarı ikonu kullanmaz).
+> Dayanak: `design/rev3-gunluk-rutin.md` §4.1.
+
 **Toplam Faz 1 ikon sayısı: 45** (prototip v4'te fiilen çizilen glif
 sayısı; kaynak `prototip-v4/_uret/lib.py` ikon sözlüğü — sayım mekanik
 olarak doğrulanabilir, iki yerde tutulmaz). Hepsi Lucide'dir.

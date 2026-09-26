@@ -58,17 +58,17 @@ def gun_izgara_durumu(harcanan_kurus: int, kayit_adedi: int, limit_kurus: int | 
     return "altinda"
 
 
-def gun_seriye_sayilir_mi(
-    harcanan_kurus: int, kayit_adedi: int, harcamasiz_isaretli: bool, limit_kurus: int
-) -> bool:
-    """K-048 hile kapısı — istemcideki `db/seri.ts#gunSeriyeSayilirMi` ile birebir aynı kural.
+def gun_seriye_sayilir_mi(kayit_adedi: int, harcamasiz_isaretli: bool) -> bool:
+    """NİHAİ SERİ KURALI (Mustafa direktifi, 2026-09) — istemcideki
+    `db/seri.ts#gunSeriyeSayilirMi` ile birebir aynı kural.
 
-    Bir gün seriye ancak (a) o gün en az bir kayıt varsa YA DA (b)
-    "harcamasız gün" işaretlenmişse VE harcanan tutar o günün limitini
-    aşmıyorsa sayılır.
+    Bir gün seriye ancak (a) o gün en az bir harcama kaydı varsa YA DA (b)
+    "harcamasız gün" işaretlenmişse sayılır — günlük limitin aşılıp
+    aşılmadığının seriye HİÇBİR etkisi yoktur (limit aşımı yalnız ızgarada
+    "disinda" olarak GÖRÜNÜR, bkz. `gun_izgara_durumu`, seriyi kırmaz).
+    Seriyi kıran TEK şey o güne hiç kayıt girilmemiş olmasıdır.
     """
-    kayitli_ya_da_isaretli = kayit_adedi > 0 or harcamasiz_isaretli
-    return kayitli_ya_da_isaretli
+    return kayit_adedi > 0 or harcamasiz_isaretli
 
 
 def sonraki_durak(mevcut_seri: int) -> int | None:
@@ -246,11 +246,15 @@ _KAPALI_SERI_SONUCU = SeriSonucu(
 )
 
 
-def seri_hesapla(nitelikler: list[GunNitelik], limitsiz_mi: bool) -> SeriSonucu:
+def seri_hesapla(nitelikler: list[GunNitelik]) -> SeriSonucu:
     """K-048/§14.5 seri hesabı — istemcideki `db/seri.ts#seriDurumuHesapla`nın saf çekirdeği.
 
-    `limitsiz_mi=True` ise (K-048: "limitsiz kipte seri kapalıdır") günlük
-    veri hiç değerlendirilmez — `nitelikler` boş geçilebilir. `nitelikler`
+    Seri artık limitten TAMAMEN bağımsızdır (Mustafa direktifi, 2026-09):
+    bir gün seriyi yalnız `gun_seriye_sayilir_mi` kararına göre sürdürür ya
+    da kırar (bkz. o fonksiyonun dosctring'i). Bu yüzden eski `limitsiz_mi`
+    parametresi (limit tanımsızken seriyi kapalı sayan özel yol) kaldırıldı
+    — limitli/limitsiz kullanıcı artık AYNI hesaba tabidir, `efektif_limit_kurus`
+    yalnızca ızgaranın "disinda" görselleştirmesi için taşınır. `nitelikler`
     ARTAN gün sırasıyla (en eski → bugün) verilmelidir; her günün
     `efektif_limit_kurus`ü ÇAĞIRAN tarafından zaten çözülmüş olmalıdır
     (K-064/1 — geçmiş gün kendi yürürlükteki limitiyle değerlendirilir).
@@ -264,8 +268,7 @@ def seri_hesapla(nitelikler: list[GunNitelik], limitsiz_mi: bool) -> SeriSonucu:
         return replace(_KAPALI_SERI_SONUCU, kapali=False)
 
     sayilir_mi_dizisi = [
-        gun_seriye_sayilir_mi(n.harcanan_kurus, n.kayit_adedi, n.harcamasiz_isaretli, n.efektif_limit_kurus)
-        for n in nitelikler
+        gun_seriye_sayilir_mi(n.kayit_adedi, n.harcamasiz_isaretli) for n in nitelikler
     ]
 
     mevcut_seri = 0
@@ -504,7 +507,7 @@ class OzetService:
             ilk_gun = bugun_gun
 
         nitelikler = await self._gun_nitelikleri_hesapla(kullanici_id, ilk_gun, bugun_gun, guncel_limit or 0)
-        seri_sonucu = seri_hesapla(nitelikler, limitsiz_mi=False)
+        seri_sonucu = seri_hesapla(nitelikler)
 
         yeni_en_uzun, yeni_bitis, guncellenmeli_mi = en_uzun_seri_ratchet(
             profil.en_uzun_seri, profil.en_uzun_seri_bitis_gunu, seri_sonucu.en_uzun_seri, seri_sonucu.en_uzun_seri_bitis_gunu
@@ -553,7 +556,7 @@ class OzetService:
             gun_durumu = await self._harcama.gun_durumu_getir(kullanici_id, gun)
             harcamasiz_isaretli = gun_durumu.harcamasiz
 
-        seriye_sayildi_mi = gun_seriye_sayilir_mi(harcanan_kurus, kayit_adedi, harcamasiz_isaretli, limit_kurus or 0)
+        seriye_sayildi_mi = gun_seriye_sayilir_mi(kayit_adedi, harcamasiz_isaretli)
 
         ilk_gun_mu = profil.kurulum_gunu is not None and gun <= profil.kurulum_gunu
 

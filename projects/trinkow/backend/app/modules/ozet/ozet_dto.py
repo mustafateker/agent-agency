@@ -100,7 +100,7 @@ class SeriYaniti(BaseModel):
     mevcut_seri: int
     en_uzun_seri: int
     en_uzun_seri_bitis_gunu: str | None
-    # Limitsiz kipte True (K-048: "limitsiz kipte seri kapalıdır").
+    # Geriye dönük uyumluluk alanı — seri artık hiçbir kipte kapanmıyor, her zaman False.
     kapali: bool
     kirildi_mi: bool
     sonraki_durak: int | None

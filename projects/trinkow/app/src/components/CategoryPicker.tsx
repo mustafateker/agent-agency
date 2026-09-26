@@ -24,14 +24,17 @@ export function CategoryPicker({
   value,
   onChange,
   error,
+  secenekler = ILK_ALTI,
 }: {
   value: KategoriKodu | null;
   onChange: (k: KategoriKodu) => void;
   error?: string;
+  /** rev2 `RoutineSheet` (§5.2) — rutine özgü 6 kategori. Verilmezse §4 ILK_ALTI (geriye dönük uyumlu). */
+  secenekler?: KategoriKodu[];
 }) {
   const [acik, setAcik] = useState(false);
   const gorunecekler: KategoriKodu[] =
-    value && !ILK_ALTI.includes(value) ? [value, ...ILK_ALTI] : ILK_ALTI;
+    value && !secenekler.includes(value) ? [value, ...secenekler] : secenekler;
 
   return (
     <View>

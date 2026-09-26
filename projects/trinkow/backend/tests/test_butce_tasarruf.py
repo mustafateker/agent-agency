@@ -61,6 +61,52 @@ async def test_rutin_vazgecme_ayni_gun_guncellenir_ve_satin_alimla_sinirlanir(te
         await butce.vazgecme_yaz("u1", "2026-09-10", "kahve", "2026-09-10", 2)
 
 
+async def test_rutinler_gecmis_gunun_vazgecme_durumunu_geri_okur(temiz_veritabani: None) -> None:
+    butce = ButceService(get_database())
+    await butce.rutin_yaz("u1", "2026-09-01", "kahve", RutinIstegi(
+        ad="Kahve", kategori="kafe", gunluk_adet=1, birim_fiyat_kurus=5_000,
+    ))
+    await butce.vazgecme_yaz("u1", "2026-09-10", "kahve", "2026-09-10", 1)
+
+    ayni_gun = {r["id"]: r for r in await butce.rutinler("u1", "2026-09-10", "2026-09-10")}
+    assert ayni_gun["kahve"]["vazgecilen_adet"] == 1
+    # Mevcut alanlar korunmuş olmalı (geriye uyumluluk).
+    assert ayni_gun["kahve"]["ad"] == "Kahve"
+    assert ayni_gun["kahve"]["aktif"] is True
+
+    farkli_gun = {r["id"]: r for r in await butce.rutinler("u1", "2026-09-11", "2026-09-11")}
+    assert farkli_gun["kahve"]["vazgecilen_adet"] == 0
+
+
+async def test_ayni_gun_vazgecme_sonra_satin_alma_tasarrufu_sisirmez(temiz_veritabani: None) -> None:
+    db = get_database(); butce = ButceService(db); harcama = HarcamaService(db)
+    await butce.rutin_yaz("u1", "2026-09-01", "kahve", RutinIstegi(
+        ad="Kahve", kategori="kafe", gunluk_adet=1, birim_fiyat_kurus=5_000,
+    ))
+    await butce.vazgecme_yaz("u1", "2026-09-10", "kahve", "2026-09-10", 1)
+    # Kullanıcı sonradan fikrini değiştirip aynı gün rutini fiilen satın alıyor.
+    await harcama.harcama_ekle("u1", 5_000, "kafe", "2026-09-10T09:00:00", "2026-09-10", "kart", rutin_id="kahve", adet=1)
+
+    liste = {r["id"]: r for r in await butce.rutinler("u1", "2026-09-10", "2026-09-10")}
+    assert liste["kahve"]["vazgecilen_adet"] == 0
+
+    vazgecmeler = await butce.vazgecmeler("u1", "2026-09-10", "2026-09-10")
+    assert vazgecmeler[0]["adet"] == 0
+    assert vazgecmeler[0]["tasarruf_kurus"] == 0
+
+
+async def test_ayni_gun_kismi_satin_alma_vazgecmeyi_kismen_gecersiz_kilar(temiz_veritabani: None) -> None:
+    db = get_database(); butce = ButceService(db); harcama = HarcamaService(db)
+    await butce.rutin_yaz("u1", "2026-09-01", "sigara", RutinIstegi(
+        ad="Sigara", kategori="aliskanliklar", gunluk_adet=2, birim_fiyat_kurus=3_000,
+    ))
+    await butce.vazgecme_yaz("u1", "2026-09-10", "sigara", "2026-09-10", 2)
+    await harcama.harcama_ekle("u1", 3_000, "aliskanliklar", "2026-09-10T09:00:00", "2026-09-10", "kart", rutin_id="sigara", adet=1)
+
+    liste = {r["id"]: r for r in await butce.rutinler("u1", "2026-09-10", "2026-09-10")}
+    assert liste["sigara"]["vazgecilen_adet"] == 1
+
+
 async def test_tasarruf_tamamlanan_gunleri_sayar_gelecegi_saymaz(temiz_veritabani: None) -> None:
     db = get_database(); butce = ButceService(db); harcama = HarcamaService(db); tasarruf = TasarrufService(db)
     await butce.yaz("u1", "2026-09-01", ButceIstegi(gelir_kurus=300_000))

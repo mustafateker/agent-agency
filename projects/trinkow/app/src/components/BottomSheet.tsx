@@ -9,15 +9,22 @@ import { color, radius } from '@/theme/tokens';
  * `clay.raised-lg`, scrim `rgba(28,57,142,0.38)`. Ekranın tamamını
  * KAPLAMAZ — arkadaki yüzey (RN `Modal` altındaki ekran) görünür kalır.
  * Üstte 44×4 tutamak.
+ *
+ * `footer` (rev2 · §5.2 `RoutineSheet`) — verilirse ÜÇ bölge oluşur:
+ * tutamak (sabit) · `children` (kayan `ScrollView`) · `footer` (sabit).
+ * Birincil eylem klavye açıkken bile görünür kalır. Verilmezse davranış
+ * ÖNCEKİYLE AYNI (geriye dönük uyumlu — CategoryGridSheet/ProfilingSheet).
  */
 export function BottomSheet({
   visible,
   onClose,
   children,
+  footer,
 }: {
   visible: boolean;
   onClose: () => void;
   children: ReactNode;
+  footer?: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
   return (
@@ -34,11 +41,17 @@ export function BottomSheet({
           accessibilityLabel="Kapat"
           onPress={onClose}
         />
-        <View style={[stil.sheet, { paddingBottom: insets.bottom + 16 }]}>
+        <View style={[stil.sheet, { paddingBottom: footer ? 0 : insets.bottom + 16 }]}>
           <View style={stil.tutamacSatiri}>
             <View style={stil.tutamac} />
           </View>
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 8 }}>{children}</ScrollView>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            style={footer ? stil.esnek : undefined}
+            contentContainerStyle={{ paddingBottom: footer ? 0 : 8 }}>
+            {children}
+          </ScrollView>
+          {footer ? <View style={{ paddingBottom: insets.bottom + 16 }}>{footer}</View> : null}
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -56,6 +69,7 @@ const stil = StyleSheet.create({
     maxHeight: '90%',
     boxShadow: '0 -16px 32px -8px rgba(28,57,142,0.22)',
   },
+  esnek: { flexShrink: 1 },
   tutamacSatiri: { alignItems: 'center', paddingVertical: 12 },
   tutamac: { width: 44, height: 4, borderRadius: radius.pill, backgroundColor: color.line },
 });

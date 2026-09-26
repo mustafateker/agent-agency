@@ -29,6 +29,7 @@ export function InfoStrip({
   icon = 'info',
   onKapat,
   kapatEtiketi,
+  textTone,
 }: {
   variant: InfoStripVaryant;
   metin: string;
@@ -36,12 +37,14 @@ export function InfoStrip({
   /** v4 E-10 — kaydırma ipucu şeridi gibi kapatılabilir kareler (verilmezse X çizilmez). */
   onKapat?: () => void;
   kapatEtiketi?: string;
+  /** rev2-tasarruf-profil.md §3.3/§3.4 — metin rengini varyant mürekkebinin ÜZERİNE yazar (E-27: `text`). Verilmezse davranış ÖNCEKİYLE AYNI. */
+  textTone?: string;
 }) {
   return (
     <View style={[stil.serit, { backgroundColor: zemin[variant] }]}>
       <Icon name={icon} size={20} color={ikonTonu[variant]} />
       <View style={{ width: rhythm.blockInCard }} />
-      <Txt role="caption" tone={ikonTonu[variant]} style={stil.metin}>
+      <Txt role="caption" tone={textTone ?? ikonTonu[variant]} style={stil.metin}>
         {metin}
       </Txt>
       {onKapat ? (

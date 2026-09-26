@@ -1,3 +1,62 @@
+# Trinkow REV3 — 2026-09-26
+
+Mustafa'nın direktifi: rutinlerin Günlük'e taşınması · geri/ayarlar ikonları ·
+Tasarruf'un akordiyona çevrilmesi · Taksitler'de ürün bazlı takip ·
+"Seni tanıyalım" kartlarının çıkmaması.
+
+| Görev | Sahip | Durum | Kabul |
+|---|---|---|---|
+| REV3-01 seri kuralı: limit aşımı seriyi bozmaz + yanlış metinler | python + frontend | tamamlandı | 4 metin düzeltildi, regex testi kilitledi |
+| REV3-02 geri/ayarlar ikonları | frontend | tamamlandı | a11y etiketleri korundu |
+| REV3-03 "Seni tanıyalım" teşhisi | frontend | kodda hata yok | 10 test eklendi; cihaz denemesi Mustafa'da |
+| REV3-04 Günlük rutin + Tasarruf akordiyon tasarımı | ui-ux-designer | tamamlandı | r1 revizyonu sonrası PASS |
+| REV3-05 Taksitler tasarımı | ui-ux-designer | tamamlandı | r3 revizyonu sonrası PASS (4 tur) |
+| REV3-06 tasarım denetimleri | design-reviewer | tamamlandı | 9 bloklayıcı yakalandı, hepsi kapandı |
+| REV3-07 Günlük rutin + Tasarruf akordiyon kodlaması | frontend | tamamlandı | +17 test |
+| REV3-08 rutin vazgeçme kalıcılığı (`vazgecilen_adet`) | python + frontend | tamamlandı | backend 144/144, +10 test |
+| REV3-09 Taksitler kodlaması | frontend | tamamlandı | +13 test, kalan borç hatası da düzeltildi |
+| REV3-10 doküman artıkları + Profil aksan ölçümü | ui-ux-designer | tamamlandı | 4 prototip 0 bulgu |
+| REV3-11 QA kapanış | qa-engineer | **GEÇTİ** | tsc 0 · 95/95 · 144/144 · iOS+Android export |
+| REV3-12 cihaz doğrulama turu (11 madde, bkz. STAGE.md) | Mustafa | bekliyor | simülatör/gerçek cihaz |
+| REV3-13 odak halkası (`:focus-visible`) tüm prototiplerde | ui-ux-designer | bekliyor | tek ekranda çözülmemeli |
+| REV3-14 Tasarruf'ta bölüm bazlı yeniden deneme | frontend | bekliyor | tek istek/tek hata modeli değişmeli |
+| REV3-15 geçmiş ay taksitleri: Özet'e süzgeç | ui-ux-designer | bekliyor | ay seçici değil, süzgeç (K-T0) |
+| REV3-16 `vazgecmeler()` ile `rutinler()` capping mantığının birleştirilmesi | python | bekliyor | iki yerde küçük varyasyon |
+| REV3-17 tek kategori dalında 19px oturma | QA | cihaz turunda | animasyonla yumuşatıldı, görsel doğrulama |
+
+---
+
+# Trinkow REV2 — 2026-09-24
+
+Mustafa'nın oturum direktifi: açılış/kayıt akışı düzeltmeleri, onboarding yeniden
+tasarımı, navigasyon sadeleştirmesi, harcama ekle temizliği, Tasarruf + Profil
+modernizasyonu ve genel "canlılık" turu.
+
+| Görev | Sahip | Durum | Kabul |
+|---|---|---|---|
+| REV2-01 açılışta hata ekranı yerine giriş · FAB kaldırma · harcama ekle sadeleştirme | frontend | tamamlandı | tsc + 14/14 test temiz |
+| REV2-02 onboarding + kayıt tasarımı | ui-ux-designer | tamamlandı | r1 revizyonu sonrası PASS, 20 yüzey · 0 bulgu |
+| REV2-03 Tasarruf + Profil tasarımı + canlılık reçetesi | ui-ux-designer | tamamlandı | r1 revizyonu sonrası PASS, 12 yüzey · 0 bulgu |
+| REV2-04 tasarım denetimi (2 ekran × 2 tur) | design-reviewer | tamamlandı | ikisi de PASS |
+| REV2-05 onboarding + kayıt kodlaması | frontend | tamamlandı | tsc + 14/14, 6 yeni bileşen |
+| REV2-08 Günlük boş durum CTA'sı → kategori listesi | frontend | tamamlandı | kategorisiz çağrı tip düzeyinde imkansız |
+| REV2-11 denetim şartları + "bütçe dışı" sözlük + Profil aksan takviyesi | ui-ux-designer | tamamlandı | aksan %13,1 → %21,9 |
+| REV2-06 Tasarruf + Profil kodlaması | frontend | tamamlandı | 15 yeni bileşen, tsc temiz |
+| REV2-12 eksik testler | frontend | tamamlandı | 14 → 38 test |
+| REV2-09 ölü dosyalar (`CategoryValueRow`, `LegalConsentText`, `ClayKeypad`) — silme onayı → K-093 | Mustafa | bekliyor | onay sonrası silinir |
+| REV2-17 birikim tarih girişi: 21 günlük şerit mi, tarih seçici bağımlılığı mı → K-094 | Mustafa | bekliyor | geçmişe kayıt yolu geri gelir |
+| REV2-18 `/birikimler` ekranının kapsama alınması → K-095 | Mustafa | bekliyor | bilgi + onay |
+| REV2-19 doküman ekran numarası çakışması → K-096 | PM/tasarımcı | bekliyor | tek numara uzayı |
+| REV2-20 cihaz doğrulama turu (6 madde, bkz. STAGE.md) | Mustafa | bekliyor | simülatör/gerçek cihaz |
+| REV2-13 doküman senkronu | ui-ux-designer | tamamlandı | 48 düzeltme; bileşen 70→81, ekran 21→25 |
+| REV2-15 "maaş" → "gelir" dil tutarlılığı (bütçe/limitler/ayarlar) | frontend | tamamlandı | "maaş günü" kavramı korundu |
+| REV2-16 QA bulgu düzeltmeleri (Profil hata durumu · `/birikimler` guard) | frontend | tamamlandı | +5 regresyon testi |
+| REV2-07 QA ara regresyon | qa-engineer | tamamlandı (2026-09-25) | BLOCKER 0 · tsc 0 · 14/14 · 139/139 · iOS+Android export |
+| REV2-21 seri kuralı: limit aşımı seriyi bozmaz (backend temizlik + istemci metinleri) | python + frontend | tamamlandı (2026-09-26) | 141/141 · 45/45 · tsc 0 |
+| REV2-14 QA kapanış + delta | qa-engineer | **GEÇTİ** (2026-09-26) | tsc 0 · 38/38 · 139/139 · iOS+Android export |
+
+---
+
 # Trinkow Rev — 2026-09-23
 
 Kullanıcı planı açıkça uygulama için onayladı. Önceki değişiklikler korunacak.

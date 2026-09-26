@@ -8,8 +8,7 @@ import { MoneyInput } from '@/components/MoneyInput';
 import { istek } from '@/lib/api';
 import { AmountWell, type AmountWellGunButonu } from '@/components/AmountWell';
 import { Button } from '@/components/Button';
-import { CategoryPicker } from '@/components/CategoryPicker';
-import { CategoryValueRow } from '@/components/CategoryValueRow';
+import { CategoryIconBox } from '@/components/CategoryIconBox';
 import { Chip } from '@/components/Chip';
 import { InfoStrip } from '@/components/InfoStrip';
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -22,7 +21,6 @@ import { Txt } from '@/components/Txt';
 import type { KatalogOgesi } from '@/content/urunKatalogu';
 import {
   a11yEkleGun,
-  a11yEkleKategoriDeger,
   a11yEkleOneriCip,
   a11yEkleSonKullanilan,
   ekleAramaSatirGecen,
@@ -72,11 +70,20 @@ import { color, layout, rhythm } from '@/theme/tokens';
  * Ürün arama (F-18) bu bütçeyi UZATMAZ: arama boş bırakılırsa hiçbir dalda
  * doğrulama hatası doğmaz (delta-v4.md "Bilinçli tasarım kararları" #1).
  *
- * K-032: kategori önceden seçili GELMEZ (yalnız v4 K-049 "geçmiş güne geç
- * kayıt" ve K-051 kategori kartı "+" hızlı eklemesi istisna — `kategori`
- * route param'ıyla önceden dolar, kullanıcı isterse değiştirir).
+ * REV2: bu ekrana artık yalnız kategori bilgisi taşıyan yollardan girilir
+ * (Günlük kategori "+", favoriler, rutinler — hepsi `?kategori=` route
+ * param'ıyla açar) veya ürün seçimiyle kategori kendiliğinden dolar
+ * (`urunSec`/`katalogSec`). Kategori artık ekranda SEÇİLEMEZ, yalnız
+ * salt okunur bir gösterge olarak görünür. "Bugün boş" CTA'sı da artık
+ * formu kategorisiz AÇMIYOR — kullanıcıyı Günlük'teki kategori listesine
+ * kaydırıyor (bkz. `GunlukSayfa.kategorilereKaydir`); yani ekrana
+ * kategorisiz ulaşan bilinen bir yol kalmadı. `kategoriKodu` başlangıç
+ * değerindeki "Diğer" düşüşü yalnız savunma amaçlıdır (ör. ileride param
+ * eksik bir route eklenirse ekranın çökmesini önler) — kullanıcı isterse
+ * serbest ürün girişinde de kaydetmeden önce arama/favoriler üzerinden
+ * doğru kategoriyi taşıyan bir ürün seçebilir.
  * Nakite dönülürse taksit sessizce sıfırlanır (K-023). Kaydet yalnız
- * tutar>0 iken etkin; kategori eksikse gönderim anında hata gösterilir.
+ * tutar>0 iken etkin.
  */
 const TAKSIT_SECENEKLERI = [3, 6, 9, 12];
 
@@ -99,7 +106,6 @@ export default function HarcamaEkleEkrani() {
   const [istemciId] = useState(() => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.floor(Math.random() * 16); return (c === 'x' ? r : (r & 3) | 8).toString(16); }));
   const [rutinId, setRutinId] = useState<string | null>(params.rutinId ?? null);
   const [adet, setAdet] = useState('1');
-  const [sabitGiderKodu, setSabitGiderKodu] = useState<'kira'|'fatura'|'ulasim'|'kredi'|null>(null);
   const [rutinler, setRutinler] = useState<{id:string;ad:string;kategori:string;birim_fiyat_kurus:number}[]>([]);
 
   // F-18 — arama alanı. `urunAdi` doluysa alan "seçili" durumdadır (ürün
@@ -112,25 +118,26 @@ export default function HarcamaEkleEkrani() {
   const [oneriTutarKurus, setOneriTutarKurus] = useState<number | null>(null);
   const [tutarAltMetinTuru, setTutarAltMetinTuru] = useState<TutarAltMetinTuru>(null);
 
-  const [kategoriKodu, setKategoriKodu] = useState<KategoriKodu | null>(() =>
-    params.kategori ? kategoriGetir(params.kategori).kod : null,
+  // Kategori seçim arayüzü YOK (REV2) — değer daima param'dan ya da seçilen
+  // üründen gelir. "Diğer" düşüşü artık yalnız savunma amaçlıdır: bilinen
+  // hiçbir akış bu ekranı param'sız açmaz (bkz. dosya başındaki not).
+  // Serbest ürün girişinde de mevcut değer olduğu gibi korunur; kullanıcı
+  // isterse arama/favorilerden doğru kategoriyi taşıyan bir ürün seçer.
+  const [kategoriKodu, setKategoriKodu] = useState<KategoriKodu>(() =>
+    kategoriGetir(params.kategori ?? 'diger').kod,
   );
-  // F-18 — kategori ÜRÜNDEN mi doldu (değer satırı) yoksa kullanıcı mı
-  // seçiyor (çip şeridi)? Design point #4: tek kural, iki görünüm.
-  const [kategoriUrundenMi, setKategoriUrundenMi] = useState(false);
 
   // D-2c-1b — Ayarlar'daki "varsayılan ödeme" ön-seçim olarak gelir; burada
   // değiştirmek yalnız BU kaydı etkiler, tercihi KALICI değiştirmez.
   const [odeme, setOdeme] = useState<OdemeTipi>(ODEME_VARSAYILAN);
   const [taksitliAcik, setTaksitliAcik] = useState(false);
   const [taksitSayisi, setTaksitSayisi] = useState<number | null>(null);
-  // D-2d-2 — gün yalnız E-24 Gün seçici'den değişir (kip=sec); FAB'dan
-  // "Dün" ile açılan geçmiş sayfası akışı ilk değer olarak korunur (K-049).
+  // D-2d-2 — gün yalnız E-24 Gün seçici'den değişir (kip=sec); Günlük'ün
+  // "Dün" sayfasından açılan akışın ilk değeri korunur (K-049).
   const [secilenGunFarki, setSecilenGunFarki] = useState<number | null>(gunFarkiParam === -1 ? -1 : null);
   const [notAcik, setNotAcik] = useState(false);
   const [notMetni, setNotMetni] = useState('');
 
-  const [kategoriHata, setKategoriHata] = useState<string | undefined>();
   const [tutarHata, setTutarHata] = useState<string | undefined>();
   const [yazmaHata, setYazmaHata] = useState<string | undefined>();
   const [kaydediliyor, setKaydediliyor] = useState(false);
@@ -266,8 +273,6 @@ export default function HarcamaEkleEkrani() {
     setUrunAdi(ad);
     setAramaMetni('');
     setKategoriKodu(kategoriKoduSecilen);
-    setKategoriUrundenMi(true);
-    setKategoriHata(undefined);
     setTutarHata(undefined);
     setBuffer(kurustanTutarGirisi(gecmisTutarKurus));
     setTutarAltMetinTuru('gecmisten');
@@ -279,8 +284,6 @@ export default function HarcamaEkleEkrani() {
     setUrunAdi(oge.ad);
     setAramaMetni('');
     setKategoriKodu(efektifKod);
-    setKategoriUrundenMi(true);
-    setKategoriHata(undefined);
     setOneriTutarKurus(null);
     // Katalogda fiyat yok (K-050/K-037): tutar 0 kalırsa "sen yaz" denir.
     setTutarAltMetinTuru(tutarKurus === 0 ? 'katalogdan' : 'kategori');
@@ -291,8 +294,8 @@ export default function HarcamaEkleEkrani() {
     if (!ad) return;
     setUrunAdi(ad);
     setAramaMetni('');
-    // Kategoriyi ve tutarı sen seç — kategori otomatik dolmaz.
-    setKategoriUrundenMi(false);
+    // REV2 — serbest ürün girişinde kategori arayüzü yok; mevcut değer
+    // (param'dan ya da varsayılan "Diğer") olduğu gibi korunur.
     setOneriTutarKurus(null);
     setTutarAltMetinTuru(null);
   }
@@ -319,10 +322,6 @@ export default function HarcamaEkleEkrani() {
       setTutarHata(t['ekle.hata.tutar']);
       return;
     }
-    if (!kategoriKodu) {
-      setKategoriHata(t['ekle.hata.kategori']);
-      return;
-    }
     if (tutarKurus > TUTAR_BUYUK_ESIK_KURUS) {
       setTutarHata(t['hata.tutar_buyuk']);
       return;
@@ -343,7 +342,7 @@ export default function HarcamaEkleEkrani() {
         });
       } else {
         await harcamaEkle(db, {
-          istemciId, rutinId, adet: Number(adet) || 1, sabitGiderKodu,
+          istemciId, rutinId, adet: Number(adet) || 1,
           tutarKurus,
           kategori: kategoriKodu,
           urunAdi: urunAdi.trim() || null,
@@ -487,15 +486,9 @@ export default function HarcamaEkleEkrani() {
           <Txt role="label">Rutin harcama bağlantısı</Txt>
           <ScrollView horizontal keyboardShouldPersistTaps="handled" contentContainerStyle={{gap: 8}}>
             <Chip ad="Rutin değil" selected={!rutinId} onPress={() => setRutinId(null)} />
-            {rutinler.map(r => <Chip key={r.id} ad={r.ad} selected={rutinId === r.id} onPress={() => { urunSec(r.ad, kategoriGetir(r.kategori).kod, r.birim_fiyat_kurus); setRutinId(r.id); setSabitGiderKodu(null); }} />)}
+            {rutinler.map(r => <Chip key={r.id} ad={r.ad} selected={rutinId === r.id} onPress={() => { urunSec(r.ad, kategoriGetir(r.kategori).kod, r.birim_fiyat_kurus); setRutinId(r.id); }} />)}
           </ScrollView>
           {rutinId && <><Txt role="caption">Kaç adet aldın? Yukarıdaki tutar toplam harcama tutarıdır.</Txt><MoneyInput value={adet} onChangeText={setAdet} label="Alınan adet" integerOnly /></>}
-          <Txt role="label">Önceden bütçeden ayrılan sabit ödeme</Txt>
-          <Txt role="caption">Yalnız planında ayırdığın ödemeyi bağla. Planı aşan kısmı günlük bütçenden düşer.</Txt>
-          <ScrollView horizontal keyboardShouldPersistTaps="handled" contentContainerStyle={{gap: 8}}>
-            <Chip ad="Bağlama" selected={!sabitGiderKodu} onPress={() => setSabitGiderKodu(null)} />
-            {([['kira','Kira'],['fatura','Fatura'],['ulasim','Ulaşım'],['kredi','Kredi']] as const).map(([kod,ad]) => <Chip key={kod} ad={ad} selected={sabitGiderKodu === kod} onPress={() => {setSabitGiderKodu(kod); setRutinId(null);}} />)}
-          </ScrollView>
         </View>}
 
         {aramaAktif ? (
@@ -561,27 +554,15 @@ export default function HarcamaEkleEkrani() {
               <Txt role="label" tone={color.text2}>
                 {t['ekle.kategori.etiket']}
               </Txt>
-            </View>
-            <View style={{ height: rhythm.group }} />
-            {kategoriKodu && kategoriUrundenMi ? (
-              <View style={stil.pad}>
-                <CategoryValueRow
-                  kategori={kategoriGetir(kategoriKodu)}
-                  onPress={() => setKategoriUrundenMi(false)}
-                  accessibilityLabel={a11yEkleKategoriDeger(kategoriGetir(kategoriKodu).ad)}
-                />
+              <View style={{ height: rhythm.group }} />
+              {/* REV2 — kategori artık seçilemez, yalnız salt okunur bir
+                  gösterge (param'dan ya da seçilen üründen gelir). */}
+              <View style={stil.satir}>
+                <CategoryIconBox kategori={kategoriGetir(kategoriKodu)} />
+                <View style={{ width: rhythm.blockInCard }} />
+                <Txt role="bodyStrong">{kategoriGetir(kategoriKodu).ad}</Txt>
               </View>
-            ) : (
-              <CategoryPicker
-                value={kategoriKodu}
-                onChange={(k) => {
-                  setKategoriKodu(k);
-                  setKategoriUrundenMi(false);
-                  setKategoriHata(undefined);
-                }}
-                error={kategoriHata}
-              />
-            )}
+            </View>
           </>
         )}
 

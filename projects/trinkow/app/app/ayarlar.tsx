@@ -462,7 +462,7 @@ export default function AyarlarEkrani() {
         <ClaySurface level="raised" borderRadius={radius.card} style={stil.kart}>
           <Txt role="h2">Bütçe, rutinler ve favoriler</Txt>
           <View style={{ height: rhythm.blockInCard }} />
-          <Button label="Maaş ve bütçem" variant="secondary" onPress={() => router.push('/butce')} />
+          <Button label="Gelir ve bütçem" variant="secondary" onPress={() => router.push('/butce')} />
           <View style={{ height: rhythm.group }} />
           <Button label="Günlük ve kategori limitleri" variant="secondary" onPress={() => router.push('/limitler')} />
           <View style={{ height: rhythm.group }} />

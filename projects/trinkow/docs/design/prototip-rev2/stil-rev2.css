@@ -1,0 +1,166 @@
+/* ============================================================
+   Trinkow — prototip rev2 · SADECE DELTA
+   Görsel otorite değişmedi: ../prototip-v4/stil.css + docs/brand/tokens.md.
+   Bu dosyada yalnız v4'te karşılığı olmayan iki VARYANT vardır. Yeni
+   renk, punto, radius, boşluk, gölge ya da ikon ailesi açılmaz.
+   ============================================================ */
+
+/* 1) Kahraman sayının "bütçe dışı" varyantı.
+      v4'te limit dışı hero sayısı `warning-ink` olur (tokens §7.5) ama
+      `.t-hero` / `.t-hero-simge` rengi kendi kuralında verildiği için
+      `.c-warn` sınıfı tek başına baskın gelmiyordu. Yeni renk değil,
+      var olan kuralın hero rolüne uygulanması. */
+.t-hero.c-warn,
+.t-hero-simge.c-warn { color: var(--warning-ink); }
+
+/* 2) Denklem satırının sonuç kutusunun "bütçe dışı" hâli.
+      v4'teki `.denklem-kutu.sonuc` (primary-soft + kabartma) ile aynı
+      geometri; yalnız zemin `warning-soft`, metin `warning-ink`
+      (5.86:1 — tokens §1.9'da onaylı çift). Kırmızı KULLANILMAZ. */
+.denklem-kutu.disinda {
+  background-color: var(--warning-soft);
+  background-image: var(--clay-face);
+  box-shadow: var(--clay-raised);
+}
+.denklem-kutu.disinda .t-micro,
+.denklem-kutu.disinda .t-amount { color: var(--warning-ink); }
+
+/* 3) `Checkbox` — projede karşılığı olmayan TEK yeni bileşen (E-16 yasal
+      onayları). Ölçüler mevcut ailelerden: kutu 32, radius 16, satır 44,
+      aralık 12, glif 20pt. İşaretsiz = ÇUKUR boş kuyu; işaretli = KABARIK
+      düz `primary-deep` + beyaz `check` (5.37 — K-062, gradyan yok).
+      Gerekçesi rev2-onboarding-kayit.md §7.1'de: 32pt'de `primary-soft`
+      ile `well` farkı 1.0x, iki durum da çukur olsa ayırt edilemezdi. */
+.onay-satir { display: flex; flex-direction: row; align-items: center;
+  width: 100%; min-height: 44px; padding: 0; border: 0; background: transparent; text-align: left; }
+.onay-kutu { width: 32px; height: 32px; border-radius: 16px; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  background-color: var(--well); box-shadow: var(--clay-sunken); }
+.onay-kutu svg { width: 20px; height: 20px; stroke: #FFFFFF; fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.onay-kutu.isaretli { background-color: var(--primary-deep); box-shadow: var(--clay-raised); }
+.onay-satir.basili .onay-kutu { background-color: var(--groove); box-shadow: var(--clay-pressed); }
+.onay-satir.basili .onay-kutu.isaretli { background-color: var(--primary-press); box-shadow: var(--clay-action-pressed); }
+.onay-kutu.odakli { box-shadow: var(--clay-sunken), 0 0 0 2px var(--primary-text); }
+.onay-kutu.hatali { box-shadow: var(--clay-sunken), 0 0 0 2px var(--danger); }
+.onay-kutu.pasif { background-color: var(--disabled-bg); box-shadow: var(--clay-sunken); }
+.onay-kutu.pasif svg { stroke: var(--text-2); }
+
+/* 4) `MoneyRow` kuyusu — aynı ailenin tekrarlayan para alanları için
+      `.giris`in (56, tam genişlik) kompakt ikizi: 144×44, aynı zemin,
+      aynı çukur gölge, aynı radius. Yeni ölçü ailesi açılmadı. */
+.para-kuyu { display: flex; flex-direction: row; align-items: center;
+  width: 144px; height: 44px; flex: 0 0 auto; padding: 0 12px; border-radius: 16px;
+  background-color: var(--well); box-shadow: var(--clay-sunken); }
+.para-kuyu.odakli { box-shadow: var(--clay-sunken), 0 0 0 2px var(--primary-text); }
+.para-kuyu.hatali { box-shadow: var(--clay-sunken), 0 0 0 2px var(--danger); }
+
+/* 5) Adım göstergesi dolu oluğu — RENKLİ GÖLGE KALDIRILDI (rev2-r1).
+      v4'ten devralınan `.adim-dolu` kuralı `0 2px 4px -1px rgba(47,104,197,0.45)`
+      taşıyordu. tokens §5.2 iki cümleyle bunu yasaklıyor: "renkli gölge
+      yalnız `clay.action`" ve "gölgeli yüzey şartı: zemin `surface` /
+      `primary-deep`". Dolu oluk `grad.action` taşıyan 8pt bir DOLGUDUR,
+      kabarık bir nesne değil: derinliği oluğun kendi `clay.sunken`
+      çukurluğu verir. Yeni gölge üretilmedi, var olan kural kaldırıldı. */
+.adim-dolu { box-shadow: none; }
+
+/* 6) `button.ghost`ın "belge aç" satırı — yeni varyant DEĞİL, hizalama.
+      tokens §7.1: ghost 44 yükseklik · şeffaf zemin · `text-2` /
+      `body-strong` · yatay iç boşluk 16. Tam genişlik + sola hizalı olması
+      onu bir SATIR yapar ve dokunma hedefi 358×44 olur. Gerekçe (Ö4):
+      `hitSlop` bir `Pressable` prop'udur, iç içe `<Text onPress>`'te
+      yoktur — onay cümlesine gömülü bağlantının hedefi 18pt'de kalırdı. */
+.btn-ghost.belge { width: 100%; justify-content: flex-start; padding: 0 16px; }
+
+/* 7) `RoutineSheet`in ÜÇ BÖLGESİ (tutamak · kayan form · sabit alt blok).
+      Klavye açıldığında sheet'e kalan yükseklik ~475pt'ye iner, formun
+      doğal yüksekliği 513pt'dir. Doğru RN yapısı: sheet kabı küçülür,
+      ORTA bölge `ScrollView` olur, birincil düğme ve çıkış görünür kalır
+      (tokens §12/11c: kaydırma alanının altında dilimlenen satır olmaz).
+      Yalnız flexbox; yeni ölçü, renk, radius ya da gölge yok. */
+.sheet.sheet-bolgeli { display: flex; flex-direction: column; flex: 0 1 auto;
+  min-height: 0; overflow: hidden; }
+.sheet-bolgeli > .sheet-form { flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  display: flex; flex-direction: column; }
+.sheet-bolgeli > .sheet-form > * { flex-shrink: 0; }
+.sheet-bolgeli > .sheet-form::-webkit-scrollbar { display: none; }
+
+/* 8) Boş durum diskinin derinliği — REV2-r1 (E-27 / E-28 işi).
+      `.hero-daire` 224pt KAHRAMAN disk için yazıldı ve `clay.raised-lg`
+      taşıyor. 176pt boş durum diski (tokens §7.8) ise `clay.raised-lg` bir
+      kartın İÇİNDE duruyor: aynı yükseklik iki kez söylenince katman
+      hiyerarşisi düzleşir. Disk bir basamak iner — kart `raised-lg`, disk
+      `raised`. Yeni gölge değeri üretilmedi, var olan basamak kullanıldı. */
+.hero-daire-bos { box-shadow: var(--clay-raised); }
+
+/* ============================================================
+   REV3 — §9..§12 · Tasarruf akordiyonu (E-27) + Günlük rutin satırı (E-10)
+   Yeni renk / punto / gölge / ikon YOK. Ölçüler mevcut ailelerden:
+   44 (dokunma hedefi) · 64 (`.sekme` genişliği) · 16/24 radius · 4/8/12/16.
+   ============================================================ */
+
+/* 9) `Accordion` — Tasarruf'un bölüm kabı.
+      Kap KABARIK'tır (`surface` + `clay.raised`), çünkü kapalı hâli
+      dokunulabilir tek nesnedir: bu sistemde dokunulan yüzey kabarıktır
+      (`.ayar-satir`, `.satir-kart`, `.cip`). `well` + `sunken` bir kuyu
+      denendi ve düşürüldü: `well` (#E6EFFE) ekran zemininin (`bg`) aynı
+      değeri, yani kapalı bölüm "pasif alan" gibi okunuyordu.
+      Basılı durumda TÜM kart çöker (§8/10: nesne küçülmez, çöker) —
+      dokunma hedefi başlık satırıdır, geri bildirim kabın kendisidir. */
+.akordiyon { display: flex; flex-direction: column; padding: 16px; border-radius: 24px;
+  background-color: var(--surface); background-image: var(--clay-face);
+  box-shadow: var(--clay-raised); }
+.akordiyon.basili { background-image: none; background-color: var(--groove);
+  box-shadow: var(--clay-pressed); }
+.akordiyon-bas { display: flex; flex-direction: row; align-items: center; width: 100%;
+  min-height: 44px; padding: 0; border: 0; background: transparent; text-align: left; }
+.akordiyon-bas svg { width: 20px; height: 20px; flex: 0 0 auto; stroke: var(--text-2);
+  fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* Açık bölümün oku: YENİ GLİF YOK. `chevron-up` kilitli sette (varliklar.md
+   §1.2) bulunmadığı için aynı `chevron-down` 180° döner. RN karşılığı
+   `transform:[{rotate:'180deg'}]`; reduce-motion'da dönüş anında olur. */
+.akordiyon-bas .cev-acik { transform: rotate(180deg); }
+
+/* 10) Akordiyonun İÇİNDEKİ liste satırı bir basamak İNER.
+       §9/3 aynı yükseklik seviyesinin iç içe iki kez kullanılmasını
+       yasaklıyor: kap `clay.raised` ise satır `raised` kalamaz. Satır
+       `well` + `clay.sunken` olur; satırın içindeki 44pt gün kutusu ise
+       bir basamak geri ÇIKAR (`surface` + `raised`) — `.segment` /
+       `.segment-btn.secili` ile birebir aynı üç katmanlı dil. */
+.satir-kart.kuyu { background-color: var(--well); background-image: none;
+  box-shadow: var(--clay-sunken); }
+.satir-kart.kuyu.basili { background-color: var(--groove); box-shadow: var(--clay-pressed); }
+.satir-kart.kuyu .gun-kutu { background-color: var(--surface);
+  background-image: var(--clay-face); box-shadow: var(--clay-raised); }
+
+/* 11) `RoutineActionButton` — Günlük rutin satırının İKİ eylemi.
+       Ayrım renkle değil **ikon + görünür etiket** ile yapılır (WCAG
+       1.4.1): 20pt glif + 4 + 12pt `micro` etiket = 40 ≤ 44. Genişlik 64
+       (`.sekme` ile aynı değer), yani iki hedef arası 12pt boşluk kalır.
+       İşaretli hâl v4'ün karar verdiği dili izler (`.durak.gecildi`,
+       `.gun-kutu.altinda`, `.onay-kutu.isaretli`): düz `primary-deep` +
+       beyaz glif (5.37:1 — K-062), gradyan yok. */
+.rutin-eylem { display: flex; flex-direction: column; align-items: center;
+  justify-content: center; width: 64px; height: 44px; flex: 0 0 auto; padding: 0;
+  border: 0; border-radius: 16px; background-color: var(--well);
+  box-shadow: var(--clay-sunken); }
+.rutin-eylem svg { width: 20px; height: 20px; stroke: var(--primary-text); fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rutin-eylem .t-micro { color: var(--text-2); }
+.rutin-eylem.secili { background-color: var(--primary-deep); box-shadow: var(--clay-raised); }
+.rutin-eylem.secili svg { stroke: #FFFFFF; }
+.rutin-eylem.secili .t-micro { color: #FFFFFF; }
+.rutin-eylem.basili { background-color: var(--groove); box-shadow: var(--clay-pressed); }
+.rutin-eylem.secili.basili { background-color: var(--primary-press);
+  box-shadow: var(--clay-action-pressed); }
+.rutin-eylem.pasif { background-color: var(--disabled-bg); box-shadow: var(--clay-sunken); }
+.rutin-eylem.pasif svg { stroke: var(--text-2); }
+
+/* 12) Bölge [A] yardımı — RN'e KODLANMAZ.
+       Günlük ekranının rutin bölümü 10 kategori satırının altındadır (sabit ödeme
+       üçlüsü bu listede yer almaz — Ö6), yani
+       gerçek cihazda ilk katın dışında kalır. Prototip çerçevesi bu yüzden
+       ekranı **kaydırılmış** gösterir: kategori kartının üst kenarı
+       düzleşir. Kesme bir satırın ortasından değil, iki satır ARASINDAN
+       geçer (K-057/8 kuralı). */
+.kirpik-ust { border-top-left-radius: 0; border-top-right-radius: 0; }

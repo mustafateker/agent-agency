@@ -128,8 +128,28 @@ class ButceService:
         gun = gun or bugun
         gun_dogrula(gun)
         kayitlar = await self.db.rutin_surumleri.find({'kullanici_id': kullanici_id, 'yururluk_gunu': {'$lte': gun}}).sort('yururluk_gunu', 1).to_list(None)
-        son = {x['id']: dis_gorunum(x) for x in kayitlar}
+        son = {x['id']: dis_gorunum(x) | {'vazgecilen_adet': 0} for x in kayitlar}
+        await self._vazgecilenleri_isle(kullanici_id, gun, son)
         return list(son.values())
+
+    async def _vazgecilenleri_isle(self, kullanici_id: str, gun: str, rutinler: dict[str, dict[str, Any]]) -> None:
+        # Aynı gün hem vazgeçme hem harcama kaydı bulunabilir (ör. istemci yeniden
+        # başlatıldıktan sonra kullanıcı "Aldım" der). Yeni işaret (gerçek satın
+        # alma) öncekini geçersiz kılar: bildirilen vazgeçilen adet, o gün fiilen
+        # alınan miktar kadar düşürülür. Kayıtların hiçbiri silinmez/değiştirilmez,
+        # yalnız bu okuma ucunda etkin değer hesaplanır — tasarruf tutarı şişmez.
+        vazgecmeler = await self.db.rutin_vazgecmeleri.find({'kullanici_id': kullanici_id, 'gun': gun}).to_list(None)
+        if not vazgecmeler:
+            return
+        rutin_kimlikleri = [v['rutin_id'] for v in vazgecmeler]
+        harcamalar = await self.db.harcamalar.find(
+            {'kullanici_id': kullanici_id, 'gun': gun, 'rutin_id': {'$in': rutin_kimlikleri}}).to_list(None)
+        for kayit in vazgecmeler:
+            rutin = rutinler.get(kayit['rutin_id'])
+            if rutin is None or not rutin['aktif']:
+                continue
+            alinan = sum(x.get('adet', 1) for x in harcamalar if x.get('rutin_id') == kayit['rutin_id'])
+            rutin['vazgecilen_adet'] = min(kayit['adet'], max(0, rutin['gunluk_adet'] - alinan))
 
     async def rutin_yaz(self, kullanici_id: str, bugun: str, kimlik: str, istek: RutinIstegi) -> dict[str, Any]:
         kimlik_dogrula(kimlik)

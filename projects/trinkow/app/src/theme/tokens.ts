@@ -27,6 +27,13 @@ export const color = {
   onPrimary: '#FFFFFF',
 
   // §1.3 eylem ve durum
+  /**
+   * §5.4 "32pt ve altı kontroller" (rev2-onboarding-kayit.md §7.1) — bu
+   * ölçekte seçim DOLGU diliyle anlatılır (işaretsiz `well` çukur, işaretli
+   * düz `primaryDeep` + kabartma), seçim dili (`primarySoft`) DEĞİL: iki
+   * durum da çukur olunca `well`/`primarySoft` farkı (1.0x) ayırt etmiyor.
+   * Bkz. `Checkbox`. Yeni renk DEĞİL — mevcut `primaryDeep`/`well` kullanımı.
+   */
   primary: '#3B82F6',
   primaryDeep: '#2F68C5',
   primaryPress: '#295BAC',
@@ -373,6 +380,8 @@ export const motion = {
   arc: 250,
   count: 250,
   sheet: 250,
+  /** rev2-tasarruf-profil.md §3.12.3 · rev3-gunluk-rutin.md §3 — `Accordion` yükseklik/ok animasyonu. */
+  accordion: 200,
 } as const;
 
 /** §9 — Lucide, çizgi kalınlığı 2.0 (FAB 2.5, prototipte böyle) */

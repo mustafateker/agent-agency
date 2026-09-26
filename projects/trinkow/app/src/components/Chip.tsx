@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { ClayPressable } from '@/components/ClayPressable';
+import { Icon, type IconName } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
 import { clay, color, radius, rhythm, size } from '@/theme/tokens';
 
@@ -30,9 +31,11 @@ type Props = {
   onPress?: () => void;
   /** Tam ad + tutar; verilmezse ad/tutar'dan kurulur */
   accessibilityLabel?: string;
+  /** rev2-tasarruf-profil.md §3.2 — bütçe çipinin sağındaki `chevron-right` gibi rota ipucu. */
+  trailingIcon?: IconName;
 };
 
-export function Chip({ ad, tutar, selected = false, dotColor, dotAlways = false, onPress, accessibilityLabel }: Props) {
+export function Chip({ ad, tutar, selected = false, dotColor, dotAlways = false, onPress, accessibilityLabel, trailingIcon }: Props) {
   const etiket = accessibilityLabel ?? (tutar ? `${ad}, ${tutar}` : ad);
   return (
     <ClayPressable
@@ -65,6 +68,12 @@ export function Chip({ ad, tutar, selected = false, dotColor, dotAlways = false,
           <Txt role="label" tone={selected ? color.text : color.text2} numberOfLines={1} style={stil.tutar}>
             {tutar}
           </Txt>
+        </>
+      ) : null}
+      {trailingIcon ? (
+        <>
+          <View style={{ width: rhythm.sameObject }} />
+          <Icon name={trailingIcon} size={size.iconSm} color={color.text2} />
         </>
       ) : null}
     </ClayPressable>

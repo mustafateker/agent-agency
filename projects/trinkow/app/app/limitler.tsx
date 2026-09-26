@@ -34,10 +34,10 @@ export default function Limitler() {
   }
   return <RevScreen title="Limitler">
     <LoadState {...load}/>
-    {load.data&&!b?<Card><Txt role="h2">Önce bütçeni oluştur</Txt><Txt role="body">Günlük limit için maaş veya manuel tutar bilgisi gerekli.</Txt><Button variant="primary" label="Bütçeme git" onPress={()=>router.replace('/butce')}/></Card>:null}
+    {load.data&&!b?<Card><Txt role="h2">Önce bütçeni oluştur</Txt><Txt role="body">Günlük limit için gelir veya manuel tutar bilgisi gerekli.</Txt><Button variant="primary" label="Bütçeme git" onPress={()=>router.replace('/butce')}/></Card>:null}
     {b?<>
       <Txt role="body">Düzenleme bugün ve sonraki günlere uygulanır. Önceki günler değişmez.</Txt>
-      <Card><Button variant={mode==='otomatik'?'primary':'secondary'} label="Maaşa göre otomatik" onPress={()=>setMode('otomatik')}/><Button variant={mode==='manuel'?'primary':'secondary'} label="Günlük limiti ben belirleyeceğim" onPress={()=>setMode('manuel')}/>{mode==='manuel'?<MoneyInput label="Günlük limit · ₺" value={amount} onChangeText={setAmount}/>:<Txt role="body">Gelirine göre günlük pay: {money(b.gunluk_gelir_payi_kurus)}</Txt>}</Card>
+      <Card><Button variant={mode==='otomatik'?'primary':'secondary'} label="Gelire göre otomatik" onPress={()=>setMode('otomatik')}/><Button variant={mode==='manuel'?'primary':'secondary'} label="Günlük limiti ben belirleyeceğim" onPress={()=>setMode('manuel')}/>{mode==='manuel'?<MoneyInput label="Günlük limit · ₺" value={amount} onChangeText={setAmount}/>:<Txt role="body">Gelirine göre günlük pay: {money(b.gunluk_gelir_payi_kurus)}</Txt>}</Card>
       <Card><Txt role="h2">Kategori payları</Txt><Txt role="body">Bu paylar günlük limitin içindedir. Dağıtılmayan tutarı diğer harcamalarda kullanabilirsin.</Txt>
         {Object.entries(cats).map(([k,v])=><Card key={k}><MoneyInput label={`${kategoriGetir(k).ad} · günlük ₺`} value={v} onChangeText={n=>setCats(old=>({...old,[k]:n}))}/><Button variant="ghost" label="Payı kaldır" onPress={()=>setCats(old=>{const next={...old};delete next[k];return next;})}/></Card>)}
         <CategoryPicker value={cat} onChange={setCat}/><Button variant="secondary" label="Kategori payı ekle" disabled={!cat} onPress={()=>{if(cat)setCats(old=>({...old,[cat]:old[cat]||''}));setCat(null);}}/><Txt role="body">Kategori toplamı: {money(total)}</Txt><Txt role="body">Dağıtılmamış: {money(limit==null?null:limit-total)}</Txt>

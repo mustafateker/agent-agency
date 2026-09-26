@@ -96,8 +96,14 @@ Atlas kullanılacaksa `MONGODB_URI`yi Atlas bağlantı dizesiyle değiştirip Co
 veya `mongosh` ile bağlantıyı doğrula.
 
 ### 3. Uygulamayı çalıştır
+`backend/` klasöründen, sanal ortam etkinken:
 ```bash
-uvicorn app.main:app --reload
+python3 -m uvicorn app.main:app --reload
+```
+Alternatif olarak `app/` klasöründen doğrudan başlatabilirsin (otomatik yeniden yükleme olmadan):
+```bash
+cd app
+python3 main.py
 ```
 `http://127.0.0.1:8000/saglik` → `{"durum": "ayakta"}` dönerse servis ayaktadır.
 `http://127.0.0.1:8000/docs` üzerinden uç noktaları deneyebilirsin.

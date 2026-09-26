@@ -95,3 +95,32 @@ test('Katalog 304 yanıtını gövde okumadan kabul eder', async () => {
   const { api } = ortam(async () => new Response(null, { status: 304 }));
   assert.equal((await api.katalogGetir('v1')).degisti, false);
 });
+
+// --- rev3-gunluk-rutin.md §6 — geçmiş gün: `routinesGet` sorgulanan günü taşımalı ---
+
+const tarih = yukle('src/lib/tarih.ts');
+
+function revApiYukle(yakala) {
+  return yukle(
+    'src/lib/revApi.ts',
+    {
+      '@/lib/api': { istek: async (yol) => { yakala(yol); return { rutinler: [] }; } },
+      '@/lib/tarih': tarih,
+    },
+  );
+}
+
+test('routinesGet: gün verilmezse yalnız bugünün sorgusu gider ("gun=" eklenmez)', async () => {
+  let sonYol = null;
+  const api = revApiYukle((yol) => { sonYol = yol; });
+  await api.routinesGet();
+  assert.match(sonYol, /^\/butce\/rutinler\?bugun=\d{4}-\d{2}-\d{2}$/);
+  assert.doesNotMatch(sonYol, /[?&]gun=/);
+});
+
+test('routinesGet: geçmiş gün verilirse "gun=" sorgulanan günü taşır (vazgecilen_adet o güne ait gelsin)', async () => {
+  let sonYol = null;
+  const api = revApiYukle((yol) => { sonYol = yol; });
+  await api.routinesGet('2026-09-10');
+  assert.match(sonYol, /^\/butce\/rutinler\?bugun=\d{4}-\d{2}-\d{2}&gun=2026-09-10$/);
+});

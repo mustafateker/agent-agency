@@ -38,7 +38,6 @@ export default function GunlukEkrani() {
   }, [sinir.hazir, sinir.enEskiGunFarki]);
 
   const [aktifIndex, setAktifIndex] = useState(sayfalar.length - 1);
-  const [bugunBos, setBugunBos] = useState(false);
   const kaydirmaKilidi = useRef(false);
 
   // Sınır hazır olunca (ya da `?gun=` parametresi geldiğinde) doğru sayfaya atla.
@@ -76,9 +75,6 @@ export default function GunlukEkrani() {
     }
   }
 
-  const bugunuGoruyor = aktifIndex === sayfalar.length - 1;
-  const fabGizli = bugunuGoruyor && bugunBos;
-
   return (
     <View style={stil.ekran}>
       <View style={{ height: insets.top }} />
@@ -103,7 +99,6 @@ export default function GunlukEkrani() {
               seriDurum={seriOzet.durum}
               seriYukleniyor={seriOzet.yukleniyor}
               onKutlamaGosterildi={() => void kutlamaGosterildi()}
-              onBugunBosDegisti={setBugunBos}
               onGunDegistir={gunDegistir}
             />
           </View>
@@ -118,8 +113,6 @@ export default function GunlukEkrani() {
             if (key === 'tasarruflar') router.replace('/tasarruflar');
             else if (key === 'profil') router.replace('/profil');
           }}
-          onAdd={() => router.push('/harcama-ekle')}
-          fabGoster={!fabGizli}
         />
       </View>
     </View>

@@ -473,10 +473,19 @@ export async function taksitBuAyToplam(_db: SQLiteDatabase, buAy: string): Promi
   return kayitlar.filter((k) => k.taksit_id).reduce((t, k) => t + k.tutar_kurus, 0);
 }
 
-/** Bu ay dahil kalan TÜM taksit yükü — "Kalan toplam" (6 aylık pencereyle sınırlı değil). */
+/**
+ * Bu ay HARİÇ kalan TÜM taksit yükü — "Kalan toplam" (6 aylık pencereyle
+ * sınırlı değil). K-T7: `kalan` tanımı gereği bu aydan SONRASIdır; bu ayki
+ * tutar satırda ve ay toplamında zaten var, ikinci kez sayılmaz
+ * (rev3-taksitler.md §5). `buAyBaslangicGunu` yalnız sorgu penceresini
+ * daraltır, dışlama ay anahtarı karşılaştırmasıyla yapılır.
+ */
 export async function taksitKalanToplamKurus(_db: SQLiteDatabase, buAyBaslangicGunu: string): Promise<number> {
+  const buAy = buAyBaslangicGunu.slice(0, 7);
   const kayitlar = await tumSayfalariGetir({ baslangic_gun: buAyBaslangicGunu });
-  return kayitlar.filter((k) => k.taksit_id).reduce((t, k) => t + k.tutar_kurus, 0);
+  return kayitlar
+    .filter((k) => k.taksit_id && k.gun.slice(0, 7) > buAy)
+    .reduce((t, k) => t + k.tutar_kurus, 0);
 }
 
 /** En geç biten serinin son ay anahtarı ("2027-05") — yoksa null. */
@@ -488,38 +497,56 @@ export async function taksitSonAy(_db: SQLiteDatabase, buAyBaslangicGunu: string
 }
 
 export type SurenSeri = {
+  /** BU AYKİ harcama kaydının id'si — satır dokunuşu E-12'ye bunu açar. */
+  id: string;
   taksitId: string;
   kategori: string;
+  /** rev3-taksitler.md §5 — Ü-5 `urun_adi`; boşsa `null` (satır `taksit.urun_yok` yedeğini kullanır). */
+  urunAdi: string | null;
   taksitNo: number;
   taksitToplam: number;
   tutarKurus: number;
   /** "2027-05" — serinin son taksidinin ay anahtarı */
   sonAy: string;
+  /** rev3-taksitler.md §5/K-T7 — bu ay HARİÇ, serinin kalan taksitlerinin kuruş toplamı. */
+  kalanKurus: number;
 };
 
-/** Bu ayda ödemesi düşen (hâlâ süren) taksit serileri — E-18 "Süren seriler". */
+/**
+ * Bu ayda ödemesi düşen (hâlâ süren) taksit serileri — E-18 kategori/ürün
+ * kırılımı (rev3-taksitler.md). `urunAdi` ve `kalanKurus` YENİ bir alan/uç
+ * DEĞİL: `tumSayfalariGetir({})` zaten çektiği tam geçmişten türetilir.
+ */
 export async function surenSeriler(_db: SQLiteDatabase, buAy: string): Promise<SurenSeri[]> {
   const buAyKayitlari = (await tumSayfalariGetir({ baslangic_gun: `${buAy}-01`, bitis_gun: `${buAy}-31` })).filter(
     (k) => k.taksit_id,
   );
   if (buAyKayitlari.length === 0) return [];
-  // Serinin son ayını bulmak için taksit_id başına TÜM geçmiş gerekir.
+  // Serinin son ayını ve bu ay sonrası kalan tutarını bulmak için
+  // taksit_id başına TÜM geçmiş gerekir.
   const tumKayitlar = await tumSayfalariGetir({});
   const sonGunEslesme = new Map<string, string>();
+  const kalanKurusEslesme = new Map<string, number>();
   for (const k of tumKayitlar) {
     if (!k.taksit_id) continue;
-    const mevcut = sonGunEslesme.get(k.taksit_id);
-    if (!mevcut || k.gun > mevcut) sonGunEslesme.set(k.taksit_id, k.gun);
+    const mevcutSonGun = sonGunEslesme.get(k.taksit_id);
+    if (!mevcutSonGun || k.gun > mevcutSonGun) sonGunEslesme.set(k.taksit_id, k.gun);
+    if (k.gun.slice(0, 7) > buAy) {
+      kalanKurusEslesme.set(k.taksit_id, (kalanKurusEslesme.get(k.taksit_id) ?? 0) + k.tutar_kurus);
+    }
   }
   return [...buAyKayitlari]
     .sort((a, b) => b.tutar_kurus - a.tutar_kurus)
     .map((k) => ({
+      id: k.id,
       taksitId: k.taksit_id as string,
       kategori: k.kategori,
+      urunAdi: k.urun_adi,
       taksitNo: k.taksit_no as number,
       taksitToplam: k.taksit_toplam as number,
       tutarKurus: k.tutar_kurus,
       sonAy: (sonGunEslesme.get(k.taksit_id as string) ?? `${buAy}-01`).slice(0, 7),
+      kalanKurus: kalanKurusEslesme.get(k.taksit_id as string) ?? 0,
     }));
 }
 
@@ -527,8 +554,8 @@ export async function surenSeriler(_db: SQLiteDatabase, buAy: string): Promise<S
 export async function gecenAyBitenSeri(
   _db: SQLiteDatabase,
   gecenAy: string,
-): Promise<{ kategori: string; tutarKurus: number } | null> {
+): Promise<{ kategori: string; urunAdi: string | null; tutarKurus: number } | null> {
   const kayitlar = await tumSayfalariGetir({ baslangic_gun: `${gecenAy}-01`, bitis_gun: `${gecenAy}-31` });
   const biten = kayitlar.find((k) => k.taksit_id && k.taksit_no === k.taksit_toplam);
-  return biten ? { kategori: biten.kategori, tutarKurus: biten.tutar_kurus } : null;
+  return biten ? { kategori: biten.kategori, urunAdi: biten.urun_adi, tutarKurus: biten.tutar_kurus } : null;
 }

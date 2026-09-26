@@ -24,9 +24,9 @@ import { ToastHost } from '@/components/ToastHost';
 import { ApiHatasi, benKimim } from '@/lib/api';
 import { oturumDegisimineAbone, oturumOku, oturumSil } from '@/lib/oturumDeposu';
 import { gunSiniriSaatiniAyarla } from '@/lib/tarih';
-import { ErrorState } from '@/components/ErrorState';
 import { Spinner } from '@/components/Spinner';
-import { Button } from '@/components/Button';
+import { t } from '@/content/metinler';
+import { toastGoster } from '@/lib/toastBus';
 import { color } from '@/theme/tokens';
 
 function IlkYonlendirme({ onboarding }: { onboarding: boolean }) {
@@ -44,7 +44,7 @@ function IlkYonlendirme({ onboarding }: { onboarding: boolean }) {
 function OturumGezgini() {
   const db = useSQLiteContext();
   const [tetik, setTetik] = useState(0);
-  const [durum, setDurum] = useState<'yukleniyor' | 'hata' | 'kapali' | 'acik'>('yukleniyor');
+  const [durum, setDurum] = useState<'yukleniyor' | 'kapali' | 'acik'>('yukleniyor');
   const [ilkEkran, setIlkEkran] = useState('index');
 
   useEffect(() => oturumDegisimineAbone(() => {
@@ -77,8 +77,12 @@ function OturumGezgini() {
         if (hata instanceof ApiHatasi && [401, 403, 404].includes(hata.durum)) {
           await oturumSil();
         } else {
-          // Geçici ağ hatasında token'ı koru ve yeniden deneme sun.
-          setDurum('hata');
+          // Geçici ağ/sunucu hatasında açılışta hata ekranı GÖSTERİLMEZ —
+          // doğrudan giriş ekranına düşülür (token silinmez, bir sonraki
+          // başarılı doğrulamada oturum kaldığı yerden açılabilir) ve
+          // kullanıcı toast ile bilgilendirilir.
+          setDurum('kapali');
+          toastGoster({ tur: 'warning', metin: t['giris.oturum_dogrulanamadi'] });
         }
       }
     }
@@ -86,9 +90,9 @@ function OturumGezgini() {
     return () => { iptal = true; };
   }, [db, tetik]);
 
-  if (durum === 'yukleniyor' || durum === 'hata') {
+  if (durum === 'yukleniyor') {
     return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 }}>
-      {durum === 'hata' ? <><ErrorState onRetry={() => { setDurum('yukleniyor'); setTetik((n) => n + 1); }} /><Button label="Çıkış yap" variant="ghost" onPress={() => void oturumSil()} /></> : <Spinner />}
+      <Spinner />
     </View>;
   }
 
@@ -112,6 +116,7 @@ function OturumGezgini() {
         <Stack.Screen name="ayarlar" />
         <Stack.Screen name="hesap-sil" />
         <Stack.Screen name="tasarruflar" />
+        <Stack.Screen name="birikimler" />
         <Stack.Screen name="profil" />
         <Stack.Screen name="rutinler" />
         <Stack.Screen name="favoriler" />

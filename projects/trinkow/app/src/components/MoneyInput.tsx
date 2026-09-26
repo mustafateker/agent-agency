@@ -5,9 +5,11 @@ import { nativeTutarGirisi } from '@/lib/para';
 import { color, radius, type } from '@/theme/tokens';
 
 /** Native focus/selection/paste; money stays a decimal string until submission. */
-export function MoneyInput({ value, onChangeText, label = 'Tutar', autoFocus = false, style, integerOnly = false, hideLabel = false }: {
+export function MoneyInput({ value, onChangeText, label = 'Tutar', autoFocus = false, style, integerOnly = false, hideLabel = false, onFocus, onBlur }: {
   value: string; onChangeText: (value: string) => void; label?: string;
   autoFocus?: boolean; style?: StyleProp<TextStyle>; integerOnly?: boolean; hideLabel?: boolean;
+  /** `MoneyField`/`MoneyRow` (rev2) — kuyunun odak halkasını sürmek için. */
+  onFocus?: () => void; onBlur?: () => void;
 }) {
   const accessory = useId();
   return <View style={{ flexShrink: 1, minWidth: 96 }}>
@@ -15,6 +17,7 @@ export function MoneyInput({ value, onChangeText, label = 'Tutar', autoFocus = f
     <TextInput value={value} onChangeText={(text) => onChangeText(integerOnly ? text.replace(/\D/g, '').slice(0, 6) : nativeTutarGirisi(text))}
       accessibilityLabel={label} placeholder="0" placeholderTextColor={color.text2}
       keyboardType={integerOnly ? 'number-pad' : 'decimal-pad'} autoFocus={autoFocus}
+      onFocus={onFocus} onBlur={onBlur}
       selectTextOnFocus returnKeyType="done" onSubmitEditing={Keyboard.dismiss}
       inputAccessoryViewID={Platform.OS === 'ios' ? accessory : undefined}
       style={[styles.input, style]} />

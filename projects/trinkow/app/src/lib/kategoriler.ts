@@ -54,6 +54,21 @@ export const ILK_ALTI: KategoriKodu[] = [
   'akaryakit',
 ];
 
+/**
+ * rev2-onboarding-kayit.md §5.2 `RoutineSheet` — çip şeridi bu sırayla
+ * (prototip yüzey 6-9): günlük tekrar eden harcamalara özgü 6 kategori.
+ * §4 `ILK_ALTI`den (frekans sıralı, harcama ekle) FARKLI bir küme —
+ * hazır rutin çipleri yok, ad ve fiyatı kullanıcı yazar (K-050).
+ */
+export const RUTIN_KATEGORILERI: KategoriKodu[] = [
+  'kafe',
+  'ulasim',
+  'market',
+  'fatura',
+  'abonelik',
+  'aliskanliklar',
+];
+
 /** Kategori seçici tam ızgara — 13 kategori, aile bloklarına göre sıralı (prototip §"Kategori"). */
 export const TUM_KATEGORILER: KategoriKodu[] = [
   'market',

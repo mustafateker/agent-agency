@@ -1,3 +1,34 @@
+# Trinkow REV3 — 2026-09-26
+
+Mevcut aşama: **REV3 revizyon turu KAPANDI.** Aşama 2 → 3 → 4 döngüsü bu tur
+için tamamlandı; **Aşama 5 (DevOps/Yayın) hâlâ açılmadı.**
+
+REV3 kapıları: design-reviewer PASS ×2 (Günlük+Tasarruf r2'de · Taksitler r4'te) ·
+QA kapanış **GEÇTİ** (tsc 0 · mobil 95/95 · backend 144/144 · iOS+Android export).
+
+Cihazda doğrulanacaklar (otomasyon kapsamı dışı): Taksitler'in 9 durumu ·
+tek→çok kategori `LayoutAnimation` geçişi · uzun ürün adı kırpması · rutin
+satırında kazara dokunma · akordiyon açılış animasyonu · `LimitGauge mod="birikim"` ·
+`SavingsSheet` klavye · `DateField` kaydırma · kurulum kaydırma kesmesi ·
+`fontScale > 1.3` · "Seni tanıyalım" kartlarının çıkması.
+
+---
+# Trinkow REV2 — 2026-09-26
+
+Mevcut aşama: **REV2 revizyon turu KAPANDI.** Aşama 2 (tasarım) → 3 (geliştirme)
+→ 4 (kalite) döngüsü bu tur için tamamlandı; **Aşama 5 (DevOps/Yayın) hâlâ
+açılmadı.**
+
+REV2 kapıları: design-reviewer PASS ×2 (onboarding+kayıt, tasarruf+profil) ·
+QA kapanış GEÇTİ (tsc 0 · mobil 38/38 · backend 139/139 · iOS+Android export).
+
+Bekleyen: Mustafa'nın cihaz/simülatör doğrulaması ve K-093…K-096 kararları.
+Cihazda doğrulanacaklar (otomasyonun kapsamı dışında): `LimitGauge mod="birikim"`
+yay baskılama · `SavingsSheet` klavye+footer · hareket satırında sağdan sola
+silme jesti · `DateField` yatay kaydırma · kurulum formunda kaydırma kesmesi ·
+`fontScale > 1.3` görünümü.
+
+---
 # Trinkow Rev — 2026-09-23
 
 Kullanıcı planı açıkça uygulama için onayladı. Önceki değişiklikler korunacak.

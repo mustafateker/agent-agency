@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -16,6 +16,7 @@ import { Txt } from '@/components/Txt';
 import { CategoryQuickAddCard } from '@/components/pano/CategoryQuickAddCard';
 import { HeroCard } from '@/components/pano/HeroCard';
 import { LimitReviewCard } from '@/components/pano/LimitReviewCard';
+import { RoutineQuickSection } from '@/components/pano/RoutineQuickSection';
 import {
   altAltinda,
   altDisinda,
@@ -68,6 +69,12 @@ export function GunlukSayfa({
   const bugunMu = gunFarki === 0;
   const bos = veri.harcamalar.length === 0;
 
+  // Boş durum CTA'sı formu artık kategorisiz açmıyor — kullanıcıyı ekrandaki
+  // kategori listesine (`CategoryQuickAddCard`) kaydırıyor. `kategoriYRef`
+  // o kartın ScrollView içindeki y konumunu `onLayout`'tan tutar.
+  const kaydirRef = useRef<ScrollView>(null);
+  const kategoriYRef = useRef(0);
+
   const [ipucuKapatildi, setIpucuKapatildi] = useState(true);
   useEffect(() => {
     if (!bugunMu) return;
@@ -94,11 +101,21 @@ export function GunlukSayfa({
     veriDegisti();
   }
 
-  function harcamaEkleyeGit(kategoriKodu?: string) {
+  function harcamaEkleyeGit(kategoriKodu: string) {
     const parcalar: string[] = [];
     if (!bugunMu) parcalar.push(`gunFarki=${gunFarki}`);
-    if (kategoriKodu) parcalar.push(`kategori=${kategoriKodu}`);
-    router.push(`/harcama-ekle${parcalar.length ? `?${parcalar.join('&')}` : ''}` as never);
+    parcalar.push(`kategori=${kategoriKodu}`);
+    router.push(`/harcama-ekle?${parcalar.join('&')}` as never);
+  }
+
+  /**
+   * Boş durum CTA'sı — eskiden formu kategorisiz açıp "Diğer"e düşüyordu.
+   * Artık formu HİÇ açmıyor: kullanıcıyı aşağıdaki `CategoryQuickAddCard`
+   * listesine kaydırıyor; harcama oradaki bir kategorinin `+`'sına
+   * dokunularak (zaten kategori taşıyan tek yoldan) eklenir.
+   */
+  function kategorilereKaydir() {
+    kaydirRef.current?.scrollTo({ y: kategoriYRef.current, animated: true });
   }
 
   if (veri.hata) {
@@ -164,7 +181,7 @@ export function GunlukSayfa({
 
   return (
     <View style={stil.sayfa}>
-      <ScrollView contentContainerStyle={stil.kaydirIcerik} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={kaydirRef} contentContainerStyle={stil.kaydirIcerik} showsVerticalScrollIndicator={false}>
         <Baslik gunFarki={gunFarki} tarih={veri.tarih} seriDurum={seriDurum} seriYukleniyor={seriYukleniyor} />
 
         <View style={stil.pad}>
@@ -188,8 +205,9 @@ export function GunlukSayfa({
             </View>
             <View style={{ height: rhythm.blockInCard }} />
             <View style={stil.pad}>
-              {/* Ekran başına birincil buton en fazla 1 (§7.1) — FAB bu sırada gizlenir. */}
-              <Button label={t['eylem.harcama_ekle']} variant="primary" icon="plus" onPress={() => harcamaEkleyeGit()} />
+              {/* Ekran başına birincil buton en fazla 1 (§7.1) — FAB bu sırada gizlenir.
+                  Kategorisiz form açmak yerine aşağıdaki kategori listesine kaydırır. */}
+              <Button label={t['bos.pano.eylem']} variant="primary" icon="chevron-down" onPress={kategorilereKaydir} />
             </View>
           </>
         ) : null}
@@ -231,7 +249,11 @@ export function GunlukSayfa({
         {bugunMu ? (
           <>
             <View style={{ height: rhythm.section }} />
-            <View style={stil.pad}>
+            <View
+              style={stil.pad}
+              onLayout={(e) => {
+                kategoriYRef.current = e.nativeEvent.layout.y;
+              }}>
               <CategoryQuickAddCard
                 harcamalar={veri.harcamalar}
                 onEkle={(kategori) => harcamaEkleyeGit(kategori)}
@@ -240,6 +262,18 @@ export function GunlukSayfa({
             </View>
           </>
         ) : null}
+
+        {/* rev3-gunluk-rutin.md §2.1/§2.2 — kategori kartının 8pt altında (bugün);
+            geçmiş günde şeritlerden sonra 24pt (ilgisiz iki blok, §2.2). Boşluk
+            da `RoutineQuickSection`'ın İÇİNDE — rutin yoksa (§5/1) hiçbir iz
+            (gölge kutu, boş boşluk) kalmasın diye. */}
+        <RoutineQuickSection
+          gapUstu={bugunMu ? rhythm.group : rhythm.section}
+          tarih={veri.tarih}
+          gunAnahtariDeger={gunAnahtari(veri.tarih)}
+          bugunMu={bugunMu}
+          harcamalar={veri.harcamalar}
+        />
 
         {altListeSatirlari.length > 0 ? (
           <>

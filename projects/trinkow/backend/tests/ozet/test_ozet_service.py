@@ -70,19 +70,20 @@ def test_gun_izgara_durumu_asim_disinda_digeri_altinda() -> None:
 
 
 def test_seriye_sayilir_kayitsiz_gun_hile_kapisini_gecemez() -> None:
-    assert gun_seriye_sayilir_mi(0, 0, harcamasiz_isaretli=False, limit_kurus=10_000) is False
+    assert gun_seriye_sayilir_mi(0, harcamasiz_isaretli=False) is False
 
 
 def test_seriye_sayilir_harcamasiz_isaretli_gun_sayilir() -> None:
-    assert gun_seriye_sayilir_mi(0, 0, harcamasiz_isaretli=True, limit_kurus=10_000) is True
+    assert gun_seriye_sayilir_mi(0, harcamasiz_isaretli=True) is True
 
 
 def test_seriye_sayilir_limit_asilsa_da_takip_sayilir() -> None:
-    assert gun_seriye_sayilir_mi(15_000, 3, harcamasiz_isaretli=False, limit_kurus=10_000) is True
+    """Nihai kural: kayıt varken limit aşımının seriye hiçbir etkisi yok."""
+    assert gun_seriye_sayilir_mi(3, harcamasiz_isaretli=False) is True
 
 
 def test_seriye_sayilir_tam_limitte_sayilir() -> None:
-    assert gun_seriye_sayilir_mi(10_000, 1, harcamasiz_isaretli=False, limit_kurus=10_000) is True
+    assert gun_seriye_sayilir_mi(1, harcamasiz_isaretli=False) is True
 
 
 def test_milestone_sonraki_ve_onceki_durak_sinirlari() -> None:
@@ -100,8 +101,8 @@ def _nitelik(gun: str, harcanan: int, adet: int, harcamasiz: bool, limit: int) -
     return GunNitelik(gun=gun, harcanan_kurus=harcanan, kayit_adedi=adet, harcamasiz_isaretli=harcamasiz, efektif_limit_kurus=limit)
 
 
-def test_seri_hesapla_limitsiz_kipte_de_takip_acik() -> None:
-    sonuc = seri_hesapla([_nitelik("2026-09-17", 0, 1, False, 10_000)], limitsiz_mi=True)
+def test_seri_hesapla_tek_kayitli_gun_seriyi_acar() -> None:
+    sonuc = seri_hesapla([_nitelik("2026-09-17", 0, 1, False, 10_000)])
     assert sonuc.kapali is False
     assert sonuc.mevcut_seri == 1
     assert sonuc.en_uzun_seri == 1
@@ -113,7 +114,7 @@ def test_seri_hesapla_kayitsiz_gun_seriyi_kirar() -> None:
         _nitelik("2026-09-16", 0, 0, False, 10_000),  # kayıtsız ve işaretsiz -> kırar
         _nitelik("2026-09-17", 5_000, 1, False, 10_000),
     ]
-    sonuc = seri_hesapla(nitelikler, limitsiz_mi=False)
+    sonuc = seri_hesapla(nitelikler)
     assert sonuc.mevcut_seri == 1  # yalnız son gün
     assert sonuc.en_uzun_seri == 1
     assert sonuc.kirildi_mi is False  # mevcut > 0 olduğu için "kırıldı" değil
@@ -125,28 +126,51 @@ def test_seri_hesapla_harcamasiz_isaretli_gun_seriyi_korur() -> None:
         _nitelik("2026-09-16", 0, 0, True, 10_000),  # hile kapısı (b): işaretli
         _nitelik("2026-09-17", 5_000, 1, False, 10_000),
     ]
-    sonuc = seri_hesapla(nitelikler, limitsiz_mi=False)
+    sonuc = seri_hesapla(nitelikler)
     assert sonuc.mevcut_seri == 3
     assert sonuc.en_uzun_seri == 3
 
 
-def test_seri_hesapla_limit_degisiminden_bagimsizdir() -> None:
-    """K-064/1 — eski limit düşükken aşım sayılan bir gün, GÜNCEL limitle yeniden değerlendirilmez."""
+def test_seri_hesapla_limit_asimindan_bagimsizdir() -> None:
+    """Nihai kural: limit aşımı seride ARADA da olsa seriyi kırmaz — tek kırıcı kayıtsız gündür."""
     nitelikler = [
-        # O gün yürürlükteki limit 5.000 kuruştu, 6.000 harcanmış -> aşım, seriyi kırar.
+        # Her üç gün de kaydedilen limiti aşıyor; hiçbiri seriyi kırmaz.
         _nitelik("2026-09-10", 6_000, 1, False, 5_000),
-        # Limit sonradan 10.000'e çıktı; bu günden itibaren yeni limitle değerlendirilir.
-        _nitelik("2026-09-11", 8_000, 1, False, 10_000),
-        _nitelik("2026-09-12", 8_000, 1, False, 10_000),
+        _nitelik("2026-09-11", 18_000, 1, False, 10_000),  # seri ortasında aşım -> kırmaz
+        _nitelik("2026-09-12", 18_000, 1, False, 10_000),
     ]
-    sonuc = seri_hesapla(nitelikler, limitsiz_mi=False)
+    sonuc = seri_hesapla(nitelikler)
     assert sonuc.mevcut_seri == 3
     assert sonuc.en_uzun_seri == 3
+
+
+def test_seri_hesapla_her_gun_asimda_olsa_da_tam_uzunlukta_seri_verir() -> None:
+    """(c) Kesintisiz kayıt dizisinde HER gün limiti aşsa bile seri tam uzunlukta olmalı."""
+    nitelikler = [_nitelik(f"2026-09-{gun:02d}", 20_000, 1, False, 10_000) for gun in range(1, 8)]
+    sonuc = seri_hesapla(nitelikler)
+    assert sonuc.mevcut_seri == 7
+    assert sonuc.en_uzun_seri == 7
+    assert sonuc.kirildi_mi is False
+    # (d) Izgara, aşım günlerini hâlâ "disinda" olarak raporlar — seri kırılmasa da görsel bilgi korunur.
+    izgara = izgara_uret(nitelikler)
+    assert all(hucre.durum == "disinda" for hucre in izgara)
+
+
+def test_seri_hesapla_kayitsiz_gun_asimda_olmayan_seriyi_de_kirar() -> None:
+    """(b) Kayıt olmayan gün, önceki günler limit içinde olsa bile seriyi kırar."""
+    nitelikler = [
+        _nitelik("2026-09-01", 1_000, 1, False, 10_000),
+        _nitelik("2026-09-02", 0, 0, False, 10_000),  # kayıtsız -> kırar
+        _nitelik("2026-09-03", 1_000, 1, False, 10_000),
+    ]
+    sonuc = seri_hesapla(nitelikler)
+    assert sonuc.mevcut_seri == 1
+    assert sonuc.en_uzun_seri == 1
 
 
 def test_seri_hesapla_kirildi_mi_ve_gecilen_milestoneler() -> None:
     nitelikler = [_nitelik(f"2026-09-{gun:02d}", 1_000, 1, False, 10_000) for gun in range(1, 8)]
-    sonuc = seri_hesapla(nitelikler, limitsiz_mi=False)
+    sonuc = seri_hesapla(nitelikler)
     assert sonuc.mevcut_seri == 7
     assert sonuc.gecilen_milestoneler == [3, 7]
     assert sonuc.sonraki_durak == 14
@@ -155,17 +179,17 @@ def test_seri_hesapla_kirildi_mi_ve_gecilen_milestoneler() -> None:
 
     # Seri kırılınca "en uzun seri" saklanır, `kirildi_mi` suçlayıcı olmayan bayrak olur.
     nitelikler.append(_nitelik("2026-09-08", 0, 0, False, 10_000))
-    bekleyen = seri_hesapla(nitelikler, limitsiz_mi=False)
+    bekleyen = seri_hesapla(nitelikler)
     assert bekleyen.mevcut_seri == 7  # boş bugün için süre henüz dolmadı
     nitelikler.append(_nitelik("2026-09-09", 0, 0, False, 10_000))
-    kirilmis = seri_hesapla(nitelikler, limitsiz_mi=False)
+    kirilmis = seri_hesapla(nitelikler)
     assert kirilmis.mevcut_seri == 0
     assert kirilmis.en_uzun_seri == 7
     assert kirilmis.kirildi_mi is True
 
 
 def test_seri_hesapla_bos_liste_sifir_acik_seri() -> None:
-    sonuc = seri_hesapla([], limitsiz_mi=False)
+    sonuc = seri_hesapla([])
     assert sonuc.kapali is False
     assert sonuc.mevcut_seri == 0
 
@@ -207,11 +231,11 @@ def test_bugun_utc_ile_istemci_yerel_gunu_farkliysa_seri_istemci_gununu_esas_alm
         ]
 
     # Eski (hatalı) davranış: sunucu "bugün"ü UTC'den türetseydi hâlâ 17'ydi.
-    hatali_utc_gunu_sonucu = seri_hesapla(_nitelikleri_olustur("2026-09-17"), limitsiz_mi=False)
+    hatali_utc_gunu_sonucu = seri_hesapla(_nitelikleri_olustur("2026-09-17"))
     assert hatali_utc_gunu_sonucu.mevcut_seri == 0  # 18'deki kayıt aralığa hiç girmedi
 
     # Düzeltilmiş davranış: istemcinin gönderdiği yerel gün (18) esas alınır.
-    dogru_istemci_gunu_sonucu = seri_hesapla(_nitelikleri_olustur("2026-09-18"), limitsiz_mi=False)
+    dogru_istemci_gunu_sonucu = seri_hesapla(_nitelikleri_olustur("2026-09-18"))
     assert dogru_istemci_gunu_sonucu.mevcut_seri == 1  # 18'deki kayıt seriye girdi
 
 

@@ -10,7 +10,15 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+if __name__ == "__main__" and not __package__:
+    # `app/` içinden `python3 main.py` ile çalıştırıldığında paketi bul.
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.database import get_database, indeksleri_kur
@@ -34,6 +42,12 @@ async def yasam_dongusu(_uygulama: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="Trinkow Backend", lifespan=yasam_dongusu)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"^http://(localhost|127\.0\.0\.1|10(?:\.\d{1,3}){3}|192\.168(?:\.\d{1,3}){2}):\d+$",
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(auth_router)
 app.include_router(butce_router)
 app.include_router(tasarruf_router)
@@ -53,3 +67,10 @@ async def uygulama_hatasi_isleyici(_istek: Request, hata: UygulamaHatasi) -> JSO
 async def saglik_kontrolu() -> dict[str, str]:
     """Servisin ayakta olup olmadığını kontrol etmek için basit uç nokta."""
     return {"durum": "ayakta"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    # Fiziksel telefon, bilgisayarın LAN adresi üzerinden API'ye ulaşır.
+    uvicorn.run(app, host="0.0.0.0", port=8000)

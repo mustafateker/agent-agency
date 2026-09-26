@@ -16,6 +16,7 @@ export function PasswordField({
   label,
   value,
   onChangeText,
+  onBlur,
   placeholder,
   error,
   autoComplete,
@@ -25,6 +26,8 @@ export function PasswordField({
   label?: string;
   value: string;
   onChangeText: (v: string) => void;
+  /** rev2 §7.2 "Şifre tekrar" — doğrulama anı `onBlur` ve gönderimde, her tuşta değil. */
+  onBlur?: () => void;
   placeholder?: string;
   error?: string;
   /** RN inşa notu 4 — şifre yöneticileri çalışsın diye doğru autofill eşlemesi. */
@@ -62,7 +65,10 @@ export function PasswordField({
           numberOfLines={1}
           accessibilityLabel={accessibilityLabel ?? label ?? placeholder}
           onFocus={() => setOdakli(true)}
-          onBlur={() => setOdakli(false)}
+          onBlur={() => {
+            setOdakli(false);
+            onBlur?.();
+          }}
           style={stil.girdi}
         />
         <Pressable

@@ -1,3 +1,79 @@
+# REV3 açık kararlar (2026-09-26)
+
+## K-097 — Onay alınmadan silinen bileşen dosyası
+- Durum: **Mustafa'da** (geriye dönük onay).
+- `frontend-developer`, Taksitler kodlamasında `src/components/SeriesRow.tsx`'i
+  **onay almadan sildi.** CLAUDE.md dosya silmeyi onaya bağlıyor; ajan bunu atladı.
+- Zarar sınırlı: git'te izleniyor, tek kullanıcısı Taksitler'di ve yerine
+  `InstallmentSeriesRow.tsx` geldi. QA grep ile sıfır referans doğruladı.
+- Seçenekler: **A)** silme onaylanır (dosya geri gelmez) · B) `git checkout` ile
+  geri alınır ve ölü dosya olarak durur.
+- **PM önerisi: A.** İşlevi yeni bileşene geçti; geri getirmek ölü kod üretir.
+- Aynı turda kullanımdan düşen üç metin anahtarı da (`taksit.her_ay`,
+  `taksitSeri`, `taksitBitis`) kaldırıldı — QA sıfır referans doğruladı.
+
+## K-093 — Ölü bileşen dosyaları (REV2'den devam)
+- Durum: **Mustafa'da.** `LegalConsentText.tsx` · `CategoryValueRow.tsx` ·
+  `ClayKeypad.tsx` — QA üçüncü kez sıfır referans doğruladı.
+- **PM önerisi: silinsin.**
+
+## K-094 — Birikim hareketinde tarih girişi (REV2'den devam)
+- Durum: **Mustafa'da** (B seçeneği yeni bağımlılık = onay gerektirir).
+- Şu an son 21 günü listeleyen kaydırmalı şerit → **iki ay önceki bir hareket
+  girilemiyor/düzenlenemiyor.**
+- **A)** şerit + "daha eski tarih" için metin girişi kaçışı (sıfır bağımlılık) ·
+  **B)** `@react-native-community/datetimepicker` eklenmesi.
+- **PM önerisi: A.**
+
+## K-095 — `/birikimler` ekranı (REV2'den devam)
+- Durum: **Mustafa'da** (bilgi + onay). "Tüm hareketler" bağlantısı ölü kalmasın
+  diye eklenen salt okunur liste; ekran envanterine E-29 olarak girdi.
+- **PM önerisi: kalsın.**
+
+## K-096 — Doküman ekran numarası çakışması (REV2'den devam)
+- Durum: **PM/tasarımcı borcu**, kod etkisi yok.
+- **PM önerisi:** envanter numaralandırması esas alınsın, `rev2/rev3-*.md`
+  referansları ona göre düzeltilsin.
+
+---
+# REV2 açık kararlar (2026-09-26)
+
+## K-093 — Ölü bileşen dosyaları silinsin mi?
+- Durum: **Mustafa'da.**
+- `src/components/LegalConsentText.tsx` · `CategoryValueRow.tsx` · `ClayKeypad.tsx`
+  üçünün de referansı sıfır (QA `grep` ile iki kez doğruladı).
+- Seçenekler: **A)** silinsin · B) kalsın.
+- **PM önerisi: A.** Kullanılmayan bileşen sonraki turlarda yanlış yere kopyalanır
+  ve envanteri şişirir; git'te izlendikleri için geri dönüş mümkün.
+
+## K-094 — Birikim hareketinde tarih girişi
+- Durum: **Mustafa'da** (yeni bağımlılık onay gerektirir).
+- Eskiden serbest metin alanıydı ("YYYY-AA-GG"). Onaylı takvim kütüphanesi
+  olmadığı için geliştirici **son 21 günü** listeleyen kaydırmalı şerit yaptı.
+  Yan etki: iki ay önceki bir hareket girilemiyor/düzenlenemiyor.
+- Seçenekler: **A)** şerit kalsın + "daha eski tarih" için metin girişi kaçış
+  yolu eklensin (sıfır bağımlılık) · B) `@react-native-community/datetimepicker`
+  eklenip gerçek tarih seçici kullanılsın (yeni bağımlılık).
+- **PM önerisi: A.** Geçmişe kayıt yolu geri gelir, bağımlılık yüzeyi büyümez.
+
+## K-095 — `/birikimler` ekranının kapsama alınması
+- Durum: **Mustafa'da** (bilgi + onay).
+- Tasarruf ekranındaki "Tüm hareketler" bağlantısı ölü kalmasın diye salt okunur
+  bir liste ekranı eklendi. Spesifikasyonda yoktu, kapsam dışı bir ekleme.
+- Seçenekler: **A)** kalsın (ekran envanterine E-29 olarak girdi) · B) kaldırılsın
+  ve "Tüm hareketler" bağlantısı sheet'e/başka bir çözüme bağlanalım.
+- **PM önerisi: A.** Bağlantı ölü bırakmak kalite hatası olurdu.
+
+## K-096 — Doküman ekran numarası çakışması
+- Durum: **PM/tasarımcı borcu**, kod etkisi yok.
+- `rev2-*.md` giriş=E-15, kayıt=E-16 diyor; ekran envanterinde bu numaralar
+  Kategori detayı ve Özet'te (gerçek eşleme E-22/E-23). Tasarımcı hiçbir numarayı
+  kendi başına değiştirmedi, çakışmayı not etti — doğru davranış.
+- Seçenekler: **A)** envanter numaralandırması esas alınıp `rev2-*.md` referansları
+  düzeltilsin · B) iki belge ayrı numara uzayı sayılsın ve bu yazılsın.
+- **PM önerisi: A.** Tek numara uzayı olmazsa sonraki turda yanlış ekran denetlenir.
+
+---
 # Kararlar
 
 Bu dosya, PM ajanının Mustafa'nın onayını beklediği veya Mustafa'nın verdiği

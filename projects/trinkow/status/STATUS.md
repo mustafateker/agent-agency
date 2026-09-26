@@ -1,3 +1,91 @@
+# Trinkow REV3 — 2026-09-26 (kapandı)
+
+Mustafa'nın 5 maddelik direktifi uygulandı. Tasarım iki grup hâlinde
+`design-reviewer` PASS'i aldı (Günlük+Tasarruf 2 turda, Taksitler 4 turda),
+kod indi, QA kapanış kapısı **GEÇTİ**: tsc 0 · mobil **95/95** ·
+backend **144/144** · iOS+Android export · `git diff --check` temiz.
+
+| İş | Sonuç |
+|---|---|
+| Günlük'te rutin bölümü (açılır, "Aldım"/"Almadım" hızlı eylem) | tamam |
+| Rutin yönetimi `/rutinler`de kaldı, Günlük'e yalnız günlük eylem taşındı | tamam |
+| Tasarruf ekranı akordiyon (ilk bölüm açık, diğerleri katlı) | tamam |
+| Menülerde "Geri"/"Ayarlar" yazıları → ikon | tamam |
+| Taksitler: toplam + kategori + **ürün bazlı** kırılım | tamam |
+| "Seni tanıyalım" kartları | kodda hata yok; Mustafa'nın cihaz denemesi bekliyor |
+
+Bu turda bulunup düzeltilen gerçek hatalar:
+- **Seri kuralı metinleri yalan söylüyordu:** dört yerde "günü limit altında
+  kapatırsan seri sürer" yazıyordu; kural zaten kayıt temelliydi. Metinler
+  düzeltildi, regex testiyle kilitlendi.
+- **"Almadım" işareti kalıcı değildi** (yalnız oturum içi). Backend'e
+  `vazgecilen_adet` eklendi; kural: gerçek satın alma vazgeçmeyi geçersiz kılar.
+- **Rutin verisi geçmiş güne bakarken de "bugün" için sorgulanıyordu.**
+- **`taksitKalanToplamKurus` içinde bulunulan ayı sayıyordu** → kalan borç
+  olduğundan fazla görünüyordu. Tek çağrı yeri var, izole düzeltildi.
+- Ay adı bulunma eki sabitlenmişti ("Eylül'ta") — 12 ayın 8'i bozuktu.
+
+Tasarım denetiminin yakaladığı en kritik kusur: ilk ekran yüksekliği **yanlış
+pencere** üzerine ölçülmüştü (766 yerine sekmeli ekranlarda 693, itilen
+ekranlarda 769). Tasarruf'ta bir kart 7px kesilecekti.
+
+Test sayısı 14 → **95** (backend 139 → 144).
+
+Sonraki adım: Mustafa'nın cihaz turu + K-093…K-097 kararları. Yayın kapısı
+açılmadı.
+
+---
+# Trinkow REV2 — 2026-09-26 (kapandı)
+
+Mustafa'nın 11 maddelik oturum direktifi uygulandı. Tasarım iki ekran grubu için
+`design-reviewer` PASS'i aldı (her biri bir revizyon turundan sonra), kod indi,
+QA kapanış kapısı **GEÇTİ**: tsc 0 · mobil 38/38 · backend 139/139 ·
+iOS+Android export · `git diff --check` temiz.
+
+## 2026-09-26 — Seri kuralı: limit aşımı seriyi bozmuyor
+
+Mustafa'nın direktifi: "Seri günlük limiti aşsın ya da aşmasın kayıt girdiği
+müddetçe devam etsin."
+
+**Nihai kural:** Bir gün, o gün en az bir harcama kaydı varsa YA DA "harcamasız
+gün" işaretlenmişse seriyi sürdürür. Limitin aşılıp aşılmaması seriye etki
+etmez; seriyi kıran tek şey o güne hiç kayıt girilmemiş olmasıdır.
+
+- Backend'de kural zaten doğruydu (commit `e92c45a`). Bu turda ölü
+  `limit_kurus`/`limitsiz_mi` parametreleri temizlendi, yanlış docstring'ler
+  düzeltildi, eksik testler yazıldı.
+- İstemcide kopya/eski hesap YOKTU — seri tamamen sunucudan geliyor (K-068).
+- **Asıl kusur metinlerdeydi:** dört yerde kullanıcıya "günü limit altında
+  kapatırsan seri sürer" deniyordu. Düzeltildi (`seri.kural.1`,
+  `gunluk.seri_baslar.govde`, `seri.bos.govde`, `seriAktifGovde`).
+- Izgara durumları (`altinda`/`disinda`/`bos`) ve limit karşılaştırması kasıtlı
+  olarak KORUNDU: kullanıcı limiti aştığı günleri görmeye devam ediyor.
+- Kanıt: backend 141/141 · mobil 45/45 · tsc 0 hata.
+
+| İş | Sonuç |
+|---|---|
+| Açılışta hata ekranı → giriş ekranı | tamam |
+| Kayıt: şifre tekrar · mahremiyet notu kaldırıldı · iki yasal onay checkbox'ı | tamam |
+| Kurulum: SetupShell + sabit adım göstergesi, seçenek kartları, animasyonlu geçiş | tamam |
+| Kurulum metinleri motive edici tona çekildi ("Hadi başlayalım!") | tamam |
+| Adım 2 "Gelir ve Gider" + analiz/plan açıklaması + niyete göre hedef etiketi | tamam |
+| "maaş" dili tüm ekranlarda "gelir"e çevrildi ("maaş günü" kavramı korundu) | tamam |
+| Navigasyon: `+` FAB kaldırıldı, 3 sekme | tamam |
+| Harcama ekle: kategori seçimi ve sabit ödeme bölümü kaldırıldı | tamam |
+| Günlük boş durum CTA'sı → kategori listesi (kategorisiz kayıt yolu kapandı) | tamam |
+| Tasarruf + Profil baştan tasarlandı ve kodlandı | tamam |
+| Canlılık: Profil aksan oranı %3 → %21,9 | tamam |
+
+Turda bulunup düzeltilen iki gerçek hata: Profil ekranı ağ hatasında sessizce
+"bütçen/limitin/rutinin yok" gösteriyordu (yanlış finansal bilgi) · `/birikimler`
+rotası oturum korumasına eklenmemişti. İkisi de regresyon testiyle kilitlendi.
+
+Test sayısı 14 → 38. Bileşen envanteri 70 → 81, ekran envanteri 21 → 25 yüzey.
+
+Sonraki adım: Mustafa'nın cihaz turu (aşağıdaki doğrulama listesi) + K-093…K-096
+kararları. Yayın kapısı hâlâ açılmadı.
+
+---
 # Trinkow Rev — 2026-09-23
 
 ## 2026-09-24 — Onboarding rutin akışı sadeleştirmesi

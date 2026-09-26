@@ -1,15 +1,15 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ClayGloss } from '@/components/ClayGloss';
-import { GradFill } from '@/components/GradFill';
 import { Icon, type IconName } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
-import { clay, color, gradient, icon, radius, rhythm, size } from '@/theme/tokens';
+import { clay, color, radius, rhythm, size } from '@/theme/tokens';
 
 /**
- * §7.7 — yüzen sekme çubuğu + merkez eylem.
- * Faz 1: 3 sekme + FAB. Etiketsiz ikon YOK.
- * FAB bar üst kenarından 16 yukarı taşar, sağdan 8.
+ * §7.7 — yüzen sekme çubuğu. REV2: merkez "+" FAB kaldırıldı (harcama ekleme
+ * artık yalnız Günlük kategori satırındaki "+", favoriler ve rutinlerden
+ * yapılır — bkz. app/index.tsx, favoriler.tsx, rutinler.tsx). 3 sekme çubuk
+ * içinde eşit ve ortalanmış dağılır. Etiketsiz ikon YOK.
  */
 export type TabKey = 'gunluk' | 'tasarruflar' | 'profil';
 
@@ -22,17 +22,9 @@ const SEKMELER: { key: TabKey; ad: string; ikon: IconName }[] = [
 export function TabBar({
   active,
   onSelect,
-  onAdd,
-  fabGoster = true,
 }: {
   active: TabKey;
   onSelect?: (key: TabKey) => void;
-  onAdd?: () => void;
-  /**
-   * v4 E-10 — "bugün boş" CTA'sı zaten aynı eylemi sunarken FAB gizlenir
-   * (ekranın tek birincil eylemi kalsın, §7.1). Diğer tüm ekranlarda görünür.
-   */
-  fabGoster?: boolean;
 }) {
   return (
     <View style={stil.alan}>
@@ -71,40 +63,8 @@ export function TabBar({
             </Pressable>
           );
         })}
-        {/* FAB'ın yerini açan boşluk — sekmeler ortalanmış kalsın */}
-        <View style={stil.bosluk} />
       </View>
-
-      {fabGoster ? <FloatingAdd onPress={onAdd} /> : null}
     </View>
-  );
-}
-
-function FloatingAdd({ onPress }: { onPress?: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel="Harcama ekle"
-      style={({ pressed }) => [
-        stil.fab,
-        {
-          backgroundColor: pressed ? color.primaryPress : color.primaryDeep,
-          boxShadow: pressed ? clay.actionPressed : clay.action,
-        },
-      ]}>
-      {({ pressed }) => (
-        <>
-          <GradFill colors={pressed ? gradient.actionPressed : gradient.action} />
-          <Icon
-            name="plus"
-            size={size.iconFab}
-            color={color.onPrimary}
-            strokeWidth={icon.strokeWidthFab}
-          />
-        </>
-      )}
-    </Pressable>
   );
 }
 
@@ -140,16 +100,4 @@ const stil = StyleSheet.create({
     borderRadius: radius.pill,
   },
   sekmeEtiketi: { width: '100%', textAlign: 'center' },
-  bosluk: { width: size.tabItemWidth, height: size.tabItemHeight },
-  fab: {
-    position: 'absolute',
-    right: size.fabRight,
-    top: 0,
-    width: size.fab,
-    height: size.fab,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
 });

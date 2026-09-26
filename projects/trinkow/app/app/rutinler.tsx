@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -10,7 +9,7 @@ import { TextField } from '@/components/TextField';
 import { Txt } from '@/components/Txt';
 import { kategori as kategoriGetir, type KategoriKodu } from '@/lib/kategoriler';
 import { kurustanTutarGirisi, tutarGirisindenKurus } from '@/lib/para';
-import { routinePut, routineSkip, routinesGet, yeniId, type Routine } from '@/lib/revApi';
+import { routinePut, routinesGet, yeniId, type Routine } from '@/lib/revApi';
 import { veriDegisti } from '@/lib/veriBus';
 
 const HAZIR_RUTINLER: [string, KategoriKodu][] = [
@@ -30,7 +29,6 @@ export function RoutinePanel({ onboarding = false }: { onboarding?: boolean }) {
   const [id, setId] = useState(yeniId);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
-  const [skip, setSkip] = useState<Record<string, string>>({});
 
   function edit(rutin: Routine) {
     setId(rutin.id);
@@ -127,48 +125,13 @@ export function RoutinePanel({ onboarding = false }: { onboarding?: boolean }) {
 
       {message ? <Txt role="body" accessibilityLiveRegion="polite">{message}</Txt> : null}
 
+      {/* rev3-gunluk-rutin.md §1/§9/§10.2 — günlük eylem (Aldım/Almadım) buradan
+          Günlük'e (`RoutineQuickSection`) taşındı. Bu ekranda yalnız YÖNETİM
+          (ekle/düzenle/kaldır, adet/fiyat) kalır. */}
       {active.map((rutin) => (
         <Card key={rutin.id}>
           <Txt role="h2">{rutin.ad}</Txt>
           <Txt role="body">{kategoriGetir(rutin.kategori).ad} · Günde {rutin.gunluk_adet} × {money(rutin.birim_fiyat_kurus)}</Txt>
-          {!onboarding ? (
-            <>
-              <Button
-                variant="secondary"
-                label="+ Harcama ekle"
-                onPress={() => router.push({
-                  pathname: '/harcama-ekle',
-                  params: {
-                    kategori: rutin.kategori,
-                    ad: rutin.ad,
-                    tutarKurus: String(rutin.birim_fiyat_kurus),
-                    rutinId: rutin.id,
-                  },
-                })}
-              />
-              <TextField
-                label="Bugün vazgeçtiğim adet"
-                value={skip[rutin.id] ?? '1'}
-                keyboardType="number-pad"
-                onChangeText={(value) => setSkip((old) => ({ ...old, [rutin.id]: value.replace(/\D/g, '') }))}
-              />
-              <Button
-                variant="secondary"
-                label="Bugün almadım"
-                disabled={busy || Number(skip[rutin.id] ?? 1) <= 0}
-                onPress={() => void run(
-                  () => routineSkip(rutin.id, Number(skip[rutin.id] ?? 1)),
-                  'Bugünkü vazgeçişin kaydedildi. Bu işlem birikim hesabına para eklemez.',
-                )}
-              />
-              <Button
-                variant="ghost"
-                label="Bugünkü vazgeçişi geri al"
-                disabled={busy}
-                onPress={() => void run(() => routineSkip(rutin.id, 0))}
-              />
-            </>
-          ) : null}
           <Button variant="ghost" label="Düzenle" onPress={() => edit(rutin)} />
           <Button
             variant="ghost"

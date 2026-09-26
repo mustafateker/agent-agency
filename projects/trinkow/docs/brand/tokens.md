@@ -221,6 +221,8 @@ Kütüphane: `expo-linear-gradient` · yay için `react-native-svg`
 
 ### 1.9 Onaylı kontrast çiftleri (hesaplandı, 2026-09-12)
 
+> **Bir çift = bir satır.** `primary-text`/`well` üç ayrı satırda duruyordu; `well` ve `bg` aynı hex (`#E6EFFE`) olduğu için üçü de aynı **5.12**'ydi — temel tablodaki `well` = `bg` satırı korundu, kullanım yerleri (E-23 yasal bağlantı · E-10 düğme glifi) o satırın notuna taşındı, tur bazlı iki tekrar silindi. Değer değişmedi.
+
 | Ön plan | Arka plan | Oran | Sonuç |
 |---|---|---|---|
 | `text` | `surface` | **10.37** | AAA |
@@ -238,6 +240,7 @@ Kütüphane: `expo-linear-gradient` · yay için `react-native-svg`
 | `#FFFFFF` | `danger` | **4.83** | AA |
 | `primary-text` | `surface` | **5.92** | AA |
 | `primary-text` | `primary-soft` | **5.06** | AA |
+| `primary-text` | `well` = `bg` (ikisi de `#E6EFFE`) | **5.12** | AA — bu çiftin **tek** kaydı. Kullanım yerleri: yasal bağlantı (E-23) · kuyu yüzeyli düğmenin 20pt glifi (E-10 `RoutineActionButton`) · kuyu zeminli etiketler (E-17 `Limit yok`) |
 | `warning-ink` | `surface` | **6.80** | AA |
 | `warning-ink` | `warning-soft` | **5.86** | AA |
 | `warning-ink` | `bg` | **5.87** | AA |
@@ -271,11 +274,12 @@ Kütüphane: `expo-linear-gradient` · yay için `react-native-svg`
 | **v4'te eklenen çiftler (2026-09-18 · hesaplandı + render edilen pikselden örneklendi)** | | | |
 | `#FFFFFF` | `primary-deep` (birincil buton gövdesi, dolu gün kutusu, geçilmiş durak) | **5.37** | AA (K-062 · K-061/1) |
 | `#FFFFFF` | `primary-press` (birincil buton `pressed`) | **6.59** | AA |
-| `primary-text` | `bg` (yasal bağlantı, E-23) | **5.12** | AA |
 | `danger-ink` | `bg` (alan hatası metni, E-22/E-23) | **4.97** | AA |
 | `warning-ink` | `warning-soft` (limit dışı gün kutusu) | **5.86** | AA |
 | `text-2` | `well` (kayıt yok kutusu) | **5.13** | AA |
 | `text-2` | `disabled-bg` (pasif `IconButton` ikonu) | **4.73** | AA |
+| **REV3'te eklenen kayıt (2026-09-26)** | | | |
+| `cat.*.solid` çubuk dolgusu (`.cubuk-oluk`) | `groove` oluk — **artık `well` kuyulu taksit satırının içinde** | dolgu/oluk **4.20 – 4.78** · dolgu/`well` **≥3** | ✅ komşuluk kaydı: oluk kuyu zemine oturdu, dolgu her iki komşuya karşı 3:1'i geçiyor → yeni WCAG sorunu yok |
 | **Grafik / pasif (3:1 eşiği ya da kapsam dışı)** | | | |
 | `success-ink` | `bg` (E-23 kural onay ikonu) | **4.24** | ✅ grafik — **metin olarak kullanılmadı** |
 | `text-3` | `disabled-bg` (yalnız **pasif ve dokunulmaz** gün sayısı, E-24) | **3.40** | ✅ WCAG 1.4.3 pasif bileşenleri kapsam dışı bırakır; etkin hiçbir metin bu çiftle çizilmez |
@@ -360,7 +364,7 @@ Kütüphane: `expo-linear-gradient` · yay için `react-native-svg`
 | İtalik | Kullanılmaz |
 | Para tutarı | `tabular-nums` zorunlu (Montserrat) |
 | Para biçimi | `1.250,50 ₺` — binlik nokta, kuruş virgül, simge sonda, tek boşluk. Liste ve kahraman sayıda kuruş yok. |
-| `hero` rolünde `₺` | 56pt değil **32pt** (`display` ölçüsü), taban çizgisine hizalı, sayıyla aynı renk. Gerekçe: yayın iç alanı 198px; `1.250 ₺` 56pt'de sığmaz. Yalnız `hero` rolüne özgüdür. |
+| `hero` rolünde `₺` | 56pt değil **32pt** (`display` ölçüsü), taban çizgisine hizalı, sayıyla aynı renk. Gerekçe: yayın iç alanı **156px** (§7.5 ile tek değer; eski 198 rakamı v3.1'in 296pt diskinden kalmıştı — §13.4); `1.250 ₺` 56pt'de 189px ile sığmaz (tabular ölçüm — §7.5). Yalnız `hero` rolüne özgüdür. |
 | Negatif tutar | `-60 ₺` yazılmaz → `60 ₺ limit dışı` |
 | `TL` yazımı | Kullanılmaz, `₺` |
 | Arayüz cümlesi | En fazla 12 kelime |
@@ -538,6 +542,7 @@ biri eksikse yüzey düz görünür.
 | İki dil aynı elemanda birleşmez | `.gun-kutu.altinda` (veri) ve `.gun-kutu.secili` (seçim) **ayrı sınıf** olarak durur |
 | Renk tek kanal değildir | Seçim ayrıca `accessibilityState={{selected:true}}`; veri durumu ayrıca `accessibilityLabel` ile söylenir (WCAG 1.4.1) |
 | Bilinen sınır | Seçili kart `bg #E6EFFE` üstünde `primary-soft #E4EEFE` ile durur — iki renk neredeyse aynı. Ayrımı **derinlik + ikon kabarması** taşır. Gerekirse çözüm "seçili kart zeminini `surface`'e çıkarmak"tır, **halka değil** |
+| **32pt ve altı kontroller** | Seçimi **dolgu diliyle** anlatır: işaretsiz = çukur `well` kuyu · işaretli = düz `primary-deep` + kabartma + beyaz glif (5.37 ✅). Gerekçe: 32pt'de `well #E6EFFE` ile `primary-soft #E4EEFE` farkı 1.0x'tir ve iki hâl de çukur olduğu için derinlik de ayırt etmez → seçim dili bu ölçekte çalışmaz. Halka yine **yok**. Nerede: `Checkbox` (E-16 yasal onayları · `design/rev2-onboarding-kayit.md` §7.1) |
 | Üçüncü bir "seçili" dili | Üretilemez |
 
 ---
@@ -610,7 +615,7 @@ biri eksikse yüzey düz görünür.
 | Sağ tutar | `amount` / `text`, sağa hizalı, tabular |
 | Gölge | `clay.raised` (v1/v2'de yoktu — clay'de satır da bir nesnedir) |
 | Limit dışı satır | Zemin `warning-soft`, tutarın altında `caption` / `warning-ink` "limit dışı". Ünlem/üstü çizili/kırmızı yok. |
-| Kaydırarak silme | Sağa kaydırma → `danger` zeminli "Sil". Tek harcama: **onay yok**, 6 sn geri al toast'ı. Taksitli kayıt: onay diyaloğu (K-029). |
+| Kaydırarak silme | **Sağdan sola (trailing) kaydırma** → `danger` zeminli "Sil". Soldan sağa **kullanılmaz**: iOS'ta sistem "geri" hareketidir ve silmeyle çakışır (§13.4). Tek harcama: **onay yok**, 6 sn geri al toast'ı. Taksitli kayıt: onay diyaloğu (K-029). |
 
 ### 7.4 Metin girişi
 
@@ -639,10 +644,11 @@ biri eksikse yüzey düz görünür.
 | Dolgu parlaması | Dolgunun üstüne 5pt `rgba(255,255,255,0.30)` ikinci yay (yuvarlaklık hissi) |
 | Topuz | 26pt `surface` daire (r 13) + 4pt `primary-deep` halka + altına kaydırılmış `rgba(28,57,142,0.18)` gölge dairesi + üstte `rgba(255,255,255,0.55)` parlama yayı. **Zorunlu.** |
 | Ortada | `hero` 56pt sayı (tabular) + altında `label` 13pt `text-2` |
-| **Uzun tutar** | İç alan 156px. Ölçüldü: `1.250 ₺` = 137px ✅, `12.500 ₺` = 163px ❌. Sayı **6+ karakterse** rol bir basamak iner: `hero` 56 → `display` 32, `₺` 32 → `amount` 17. §7.11'deki kuralla aynıdır; keyfi ara punto üretilmez. |
+| **Uzun tutar** | İç alan **156px** = 2 × (86 − 8), §2.3 ile tek değer. Ölçüldü (`Montserrat-Bold.ttf`, `prototip-v4/fonts`) — **`tabular-nums` ilerleme genişliğiyle**: `820 ₺` = **139px** ✅ · `1.250 ₺` = **189px** ❌ · `6.240 ₺` = **189px** ❌ · `12.500 ₺` = **226px** ❌. `"{sayı} ₺"` **6 karakteri aşıyorsa** rol bir basamak iner: `hero` 56 → `display` 32, `₺` 32 → `amount` 17 — yani 4+ haneli tutar daima `display`. §7.11'deki kuralla aynıdır; keyfi ara punto üretilmez. |
+| **Ölçüm yöntemi** (tek kaynak) | §2.3 `tabular-nums` zorunlu olduğu için **her rakam aynı genişliktedir**: Montserrat'ın `tnum` biçimi **700/1000 em** (oransal `1` = 392, `4` = 689 — bu değerler tabular akışta kullanılmaz). Formül: `56/1000 × (700 × hane + 262 × nokta) − 2,0 × karakter_sayısı + 4 (boşluk) + 32/1000 × 752 (₺) − 1,0`. Sonuç: aynı hane sayısındaki iki tutar **daima eşit genişlikte** — `1.250 ₺` ile `6.240 ₺` farklı ölçülemez. Bir hane eklemek **+37,2px**. |
 | Eşik işareti | **Yok.** Oluğun kendisi 0→%100 aralığını temsil eder; ayrı bir çentik gereksiz işaret gürültüsüdür. |
 | Taşma yayı | Merkez yarıçapı **102** (ana yayın 8pt dışında, diskten 6 içeride), 8pt kalınlık, `grad.arc-over`, saat 12'den saat yönünde, zemini `surface` (3.19:1 ✅) |
-| Limit dışı | Ana yay %100 dolu kalır + taşma yayı çıkar + `hero` sayı `warning-ink` olur + altında "limit dışı" |
+| Limit dışı | Ana yay %100 dolu kalır + taşma yayı çıkar + `hero` sayı `warning-ink` olur + altında "limit dışı". **Kapsam:** bu satır dolgunun *harcanan* olduğu gösterge için geçerlidir (Günlük, E-10) — orada %100 "bütçeyi bitirdin" demektir. Dolgu *biriken* olan kipte (`mod="birikim"`, E-27) taşmada dolgu **0**'dır: ana yay ve topuz çizilmez, oluk boş kalır ve yalnız taşma yayı konuşur — %100 mavi yay + "bütçe dışı" etiketi birbirini çürütürdü. Bkz. `design/rev2-tasarruf-profil.md` §3.2. |
 | Animasyon | 250ms ease-out (DESIGN.md 150–250ms), sayı eş zamanlı sayar |
 | %100+ | Renk **kırmızıya dönmez**, yanıp sönmez, titremez, ikon değişmez |
 
@@ -921,6 +927,24 @@ inset **yasaktı** · spacing 4/8/12/16/20/24/32/48/64 · Lucide 1.75.
 ### 13.3 Yön B "Ölçüm Aleti" (hiç seçilmedi)
 `bg #0E1110` · `surface #171B1A` · `text #E8EDEB` · `accent #E8A33D` ·
 IBM Plex Sans/Mono · radius 8/4 · Tabler 2.0.
+
+### 13.4 v4 ve REV2-r2'de düzeltilen değerler (2026-09-25 · PM izniyle)
+
+| Eski | Yeni | Neden |
+|---|---|---|
+| §2.3 "yayın iç alanı **198px**" | **156px** | 198, v3.1'in **296pt** diskinden kalmıştı; 224pt diskte iç alan 2 × (86 − 8) = 156. §7.5 zaten 156 diyordu — iki bölüm tek değere getirildi. Prototiple doğrulandı (`prototip-rev2/_uret/lib.py`). |
+| §7.5 "`1.250 ₺` = 137px ✅" | `1.250 ₺` = **189px ❌** | İki kez düzeltildi. (1) v4'te 137 → 158: ölçüm `Montserrat-Bold.ttf` ilerleme genişlikleriyle yeniden yapıldı; eski rakam kuralın kendisiyle de çelişiyordu ("6+ karakterse rol iner" diyip 7 karakteri sığdırıyordu). (2) REV2-r2'de 158 → **189**: 158 rakamı **oransal** rakam genişlikleriyle ölçülmüştü (`1` = 392/1000), oysa §2.3 para için `tabular-nums` **zorunlu** kılıyor — tabular akışta her rakam 700/1000'dir. Yeni set: `820 ₺` **139 ✅** · `1.250 ₺` **189 ❌** · `6.240 ₺` **189 ❌** · `12.500 ₺` **226 ❌**. Kuralın sonucu değişmedi (4+ hane daima `display` 32); değişen yalnız sayılar. Formül §7.5'in "Ölçüm yöntemi" satırında. |
+| §7.3 "**Sağa** kaydırma → Sil" | **Sağdan sola (trailing)** | Soldan sağa kaydırma iOS'ta sistem geri hareketidir; silmeyi oraya bağlamak iki hareketi çakıştırır. `agency/reference/rn-tasarim-kisitlari.md` ile uyumlu. |
+
+Bu üç satır **uygulanır** (arşiv değil); §13'e yazılma sebebi eski değerlerin
+nereden geldiğinin kaydını tutmaktır.
+
+> **Denetçi tahminiyle fark.** REV2-r2 denetiminde `1.250 ₺ ≈ 177` ve
+> `12.500 ₺ ≈ 213` önerilmişti. O tahmin `6.240 ₺` = 177 değerini doğru kabul
+> edip 1.250'yi ona eşitliyordu; ama 177 de oransal ölçümdü (6·2·4·0 haneleri
+> ortalama 649/1000 ilerliyor, tabular 700 değil). Tabularda dört hane +
+> nokta = 189, beş hane + nokta = 226. Tahminin *yönü* (ikisi eşit olmalı,
+> sayılar büyümeli) doğruydu, mutlak değerleri 12-13px düşüktü.
 
 ---
 
