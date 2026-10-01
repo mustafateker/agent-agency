@@ -1,14 +1,28 @@
 # agency/ — Otomasyon Sistemi
 
-Burası **ajansın kendisi**: tüm projelerde tekrar kullanılan varlıklar.
-Ürünler `projects/` altında yaşar, buraya karışmaz.
+Burası **ajansın kendisi**: ajan tanımları, operasyon kuralları, ortak
+varlıklar ve projelerin doküman/durum kayıtları. Çalışan ürün kodu bu
+klasöre girmez; repo kökündeki `../mobile/` ve `../backend/` altında yaşar.
 
 ```
 agency/
+├── CLAUDE.md   ← ajans talimatları ve onay kuralları
+├── .claude/   ← uzman ajan tanımları ve ayarları
 ├── templates/   ← her projede kurulan iskeletler
 ├── reference/   ← her projede uyulan kurallar ve kaynak listeleri
-└── vendor/      ← dışarıdan alınan, bizim yazmadığımız kaynaklar
+├── vendor/      ← dışarıdan alınan, bizim yazmadığımız kaynaklar
+└── projects/    ← proje bağlamı, tasarım belgeleri ve operasyon durumu
 ```
+
+## Çalıştırma
+
+```bash
+cd agency
+claude
+```
+
+`.claude/settings.json` oturumu `pm-orchestrator` ile açar. Aktif proje
+`projects/trinkow/`; uygulama kodu sırasıyla `../mobile/` ve `../backend/`dedir.
 
 ## templates/
 | Dosya | Ne işe yarar |
@@ -38,7 +52,8 @@ gerekirse kaynağından yeniden çekilir.
 ## Bir dosya nereye ait?
 
 > **"İkinci bir proje başlasa bu dosyayı kopyalar mıydım?"**
-> Evet → `agency/` · Hayır → `projects/<ad>/`
+> Evet → ajansın `templates/`, `reference/` veya `vendor/` alanı ·
+> Hayır → `projects/<ad>/`
 
 Örnekler:
 - RN kısıtları → **agency** (her mobil projede aynı)

@@ -80,10 +80,10 @@ okunur ve tek kaynak** halinde üretip herkesin oradan okumasını sağlar.
 
 # B. Tasarım referans varlıkları
 
-## P-5 — Projeye özel referans seti · `agency/reference/referans-repolar.md` (proje kopyası)
+## P-5 — Projeye özel referans seti · `reference/referans-repolar.md` (proje kopyası)
 - **Ne zaman:** Aşama 2 başlamadan önce
 - **Kim:** ui-ux-designer, PM onaylar
-- **Ne:** Bu repodaki **global** `agency/reference/referans-repolar.md`'den
+- **Ne:** Bu repodaki **global** `reference/referans-repolar.md`'den
   başla, projeye göre **buda ve genişlet**:
   - Alakasız kategorileri çıkar (ör. pazarlama sitesinde veri-viz gerekmez)
   - Alan-bazlı repoları ekle (global listenin "Alan-bazlı" bölümünden)
@@ -154,7 +154,7 @@ okunur ve tek kaynak** halinde üretip herkesin oradan okumasını sağlar.
 **Stack'e göre ek kurulum:** Proje web dışı bir hedefe (React Native,
 masaüstü vb.) gidiyorsa, o platformun **inşa edilebilirlik kısıtları** ayrı
 bir dosyaya yazılır ve tasarım ajanlarına bağlanır.
-Örnek: `agency/reference/rn-tasarim-kisitlari.md` (React Native — CSS yok, hover
+Örnek: `reference/rn-tasarim-kisitlari.md` (React Native — CSS yok, hover
 yok, grid yok). Tasarımcı web alışkanlığıyla inşa edilemez bir şey üretirse
 sonuç doğrudan revizyon turudur.
 

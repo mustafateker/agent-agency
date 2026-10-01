@@ -1,12 +1,12 @@
 # open-design (Claude Design) Entegrasyon Kuralları
 
 Kaynak: `github.com/nexu-io/open-design` — Apache-2.0, ücretsiz (K-009 uyumlu).
-Yerel kopya: `agency/vendor/open-design/` (ağdan tekrar çekme, orası yeterli).
+Yerel kopya: `vendor/open-design/` (ağdan tekrar çekme, orası yeterli).
 
 Mustafa: *"claude design'i kullan işte mobil tasarım için."*
 
 ```
-agency/vendor/open-design/
+vendor/open-design/
 ├── mobile-app/
 │   ├── SKILL.md                  ← iş akışı
 │   ├── assets/template.html      ← iPhone 15 Pro çerçevesi + ekran ilkelleri
@@ -107,7 +107,7 @@ Aşağıdakiler **bilinçli sapmadır**, denetimde ihlal sayılmaz.
 
 ## Kullanım sırası (ui-ux-designer için)
 
-1. `agency/vendor/open-design/mobile-app/assets/template.html`'i **baştan sona oku**
+1. `vendor/open-design/mobile-app/assets/template.html`'i **baştan sona oku**
    (`<style>` bloğu dahil). Çerçeveyi yeniden yazma.
 2. `references/layouts.md`'yi oku — 6 arketipi tanı.
 3. Yeni `projects/trinkow/docs/brand/tokens.md`'yi oku, şablonun `:root` değişkenlerini
